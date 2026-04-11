@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from './contexts/AuthContext';
 import { LoginPage } from './components/LoginPage';
+import { WaitlistPage } from './components/WaitlistPage';
 import { LandingPage } from './components/LandingPage';
 import { WhatIsWorklonePage } from './components/WhatIsWorklonePage';
 import { IntegrationCallback } from './components/IntegrationCallback';
@@ -125,6 +126,7 @@ export default function App() {
         <>
           <Route path="/" element={<LandingPage />} />
           <Route path="/what-is-worklone" element={<WhatIsWorklonePage />} />
+          <Route path="/waitlist" element={<WaitlistPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>

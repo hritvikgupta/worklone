@@ -127,7 +127,7 @@ export function LandingPage() {
             </div>
 
             <Link
-              to="/login"
+              to="/waitlist"
               className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
             >
               Join Waitlist
@@ -159,7 +159,7 @@ export function LandingPage() {
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                to="/login"
+                to="/waitlist"
                 className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
               >
                 Join Waitlist
@@ -348,7 +348,14 @@ export function LandingPage() {
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Connect</div>
               <div className="mt-4 space-y-2.5 text-base text-white/72">
-                <span className="block">Twitter</span>
+                <a
+                  href="https://x.com/worklonemployee"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block transition-colors hover:text-white"
+                >
+                  Twitter
+                </a>
                 <span className="block">LinkedIn</span>
                 <span className="block">GitHub</span>
               </div>
