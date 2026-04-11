@@ -51,6 +51,14 @@ function normalizeText(value?: string) {
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Content-Type', 'application/json');
 
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      ok: true,
+      hasDatabaseUrl: Boolean(TURSO_DATABASE_URL),
+      hasAuthToken: Boolean(TURSO_AUTH_TOKEN),
+    });
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed.' });
@@ -73,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await client.execute(`
       CREATE TABLE IF NOT EXISTS waitlist_signups (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         email TEXT NOT NULL UNIQUE,
         name TEXT,
         company TEXT,
@@ -84,18 +92,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await client.execute({
       sql: `
-        INSERT INTO waitlist_signups (email, name, company, source)
+        INSERT OR IGNORE INTO waitlist_signups (email, name, company, source)
         VALUES (?, ?, ?, ?)
-        ON CONFLICT(email) DO UPDATE SET
-          name = COALESCE(excluded.name, waitlist_signups.name),
-          company = COALESCE(excluded.company, waitlist_signups.company),
-          source = COALESCE(excluded.source, waitlist_signups.source)
       `,
       args: [
         normalizedEmail,
         normalizeText(name),
         normalizeText(company),
         normalizeText(source) || 'landing_page',
+      ],
+    });
+
+    await client.execute({
+      sql: `
+        UPDATE waitlist_signups
+        SET
+          name = COALESCE(?, name),
+          company = COALESCE(?, company),
+          source = COALESCE(?, source)
+        WHERE email = ?
+      `,
+      args: [
+        normalizeText(name),
+        normalizeText(company),
+        normalizeText(source) || 'landing_page',
+        normalizedEmail,
       ],
     });
 
@@ -107,6 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Waitlist signup failed:', error);
     return res.status(500).json({
       error: 'Unable to record your email right now.',
+      reason: error instanceof Error ? error.message : 'unknown_error',
     });
   }
 }
