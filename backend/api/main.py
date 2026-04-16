@@ -2,14 +2,17 @@
 FastAPI Main Application
 """
 
+import asyncio
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from backend.api.routes import router
-
 load_dotenv(override=True)
+
+from backend.api.routes import router
+from backend.store.workflow_store import WorkflowStore
+from backend.workflows.worker import BackgroundWorker
 
 app = FastAPI(
     title="CEO Agent Backend",
@@ -17,17 +20,39 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Build CORS origins from defaults + env so OAuth tunnel domains work.
+default_origins = {
+    "http://localhost:3000",
+    "http://localhost:3002",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3002",
+    "http://127.0.0.1:5173",
+}
+
+env_origins = set()
+for key, value in os.environ.items():
+    if not value:
+        continue
+    if key == "FRONTEND_URL" or key.endswith("_FRONTEND_URL"):
+        env_origins.add(value.strip())
+
+for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(","):
+    normalized = origin.strip()
+    if normalized:
+        env_origins.add(normalized)
+
+allowed_origins = sorted(default_origins | env_origins)
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3002",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3002",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
+    # Allow dynamic tunnel hosts if you are rotating Cloudflare/ngrok/localtunnel URLs.
+    allow_origin_regex=os.getenv(
+        "CORS_ALLOWED_ORIGIN_REGEX",
+        r"https://.*\.trycloudflare\.com",
+    ),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +60,26 @@ app.add_middleware(
 
 # Include routes
 app.include_router(router, prefix="/api")
+
+workflow_store = WorkflowStore()
+workflow_worker = BackgroundWorker(workflow_store)
+workflow_worker_task: asyncio.Task | None = None
+
+
+@app.on_event("startup")
+async def start_workflow_worker():
+    global workflow_worker_task
+    if workflow_worker_task is None or workflow_worker_task.done():
+        workflow_worker_task = asyncio.create_task(workflow_worker.start())
+
+
+@app.on_event("shutdown")
+async def stop_workflow_worker():
+    global workflow_worker_task
+    await workflow_worker.stop()
+    if workflow_worker_task is not None:
+        workflow_worker_task.cancel()
+        workflow_worker_task = None
 
 
 @app.get("/health")

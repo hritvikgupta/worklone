@@ -1,17 +1,28 @@
-import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, BookOpen, MessageSquare, Zap, Github, CalendarClock, FolderOpen, LogOut } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Users, UserRound, BookOpen, MessageSquare, Zap, Github, CalendarClock, FolderOpen, LogOut, Sun, Moon, Briefcase, ChevronDown, Coins, DollarSign, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { getDashboardStats, DashboardStat } from '@/src/api/dashboard';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 const navItems = [
   { to: '/chat', label: 'Chat', icon: MessageSquare },
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  // { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/current-sprint', label: 'Current Sprint', icon: Zap },
   { to: '/workflows', label: 'Workflows', icon: CalendarClock },
   { to: '/agent-files', label: 'Agent Files', icon: FolderOpen },
-  { to: '/agents', label: 'Employees', icon: Users },
+  { to: '/agents', label: 'Employees', icon: Briefcase },
+  { to: '/teams', label: 'Teams', icon: Users },
   { to: '/skill-library', label: 'Skill Library', icon: BookOpen },
   { to: '/integrations', label: 'Integrations', icon: Github },
 ];
@@ -19,19 +30,100 @@ const navItems = [
 export function Sidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isDark, setIsDark] = useState(() => {
+    const stored = localStorage.getItem('theme');
+    return stored ? stored === 'dark' : true;
+  });
+
+  const [stats, setStats] = useState<DashboardStat[]>([]);
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await getDashboardStats();
+        setStats(data);
+      } catch (error) {
+        console.error("Failed to load stats", error);
+      }
+    }
+    loadStats();
+  }, []);
+
+  const STAT_ICONS: Record<string, any> = {
+    "Token Burn": Coins,
+    "Expenditure": DollarSign,
+    "Total Uptime": Clock
+  };
+
+  const isCollapsed = location.pathname === '/chat';
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
+
+  const toggleTheme = () => setIsDark((prev) => !prev);
 
   return (
-    <div className="w-60 border-r bg-sidebar flex flex-col h-screen sticky top-0 select-none">
-      <NavLink to="/dashboard" className="p-4 flex items-center gap-2 hover:bg-sidebar-accent cursor-pointer transition-colors m-2 rounded-md">
+    <div className={cn("border-r bg-sidebar flex flex-col h-screen sticky top-0 select-none transition-all duration-300", isCollapsed ? "w-[72px]" : "w-60")}>
+      <NavLink to="/dashboard" className={cn("p-4 flex items-center gap-2 hover:bg-sidebar-accent cursor-pointer transition-colors m-2 rounded-md", isCollapsed && "justify-center px-0")}>
         <img
-          src="/brand/worklone-mark-black.png"
+          src={isDark ? "/brand/worklone-mark-white.png" : "/brand/worklone-mark-black.png"}
           alt="Worklone"
-          className="h-5 w-auto"
+          className="h-5 w-auto shrink-0"
         />
-        <h1 className="font-semibold text-[15px] tracking-tight text-sidebar-foreground">Worklone</h1>
+        {!isCollapsed && <h1 className="font-semibold text-[15px] tracking-tight text-sidebar-foreground whitespace-nowrap overflow-hidden">Worklone</h1>}
       </NavLink>
 
-      <nav className="flex-1 px-2 py-4 space-y-0.5">
+      {!isCollapsed && (
+        <div className="px-2 pb-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between h-9 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent font-medium group">
+                <div className="flex items-center gap-2">
+                  <LayoutDashboard className="w-4 h-4 shrink-0 text-sidebar-foreground/50 group-hover:text-sidebar-foreground transition-colors" />
+                  <span>Project Stats</span>
+                </div>
+                <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-60" align="start">
+              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase tracking-wider">
+                Quick Metrics
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {stats.map(stat => {
+                return (
+                  <DropdownMenuItem key={stat.title} className="flex flex-col items-start gap-1.5 p-3">
+                    <div className="flex flex-col w-full">
+                      <span className="text-xs font-semibold text-foreground/90">{stat.title}</span>
+                      <span className="text-[10px] text-muted-foreground leading-tight mt-0.5">{stat.description}</span>
+                    </div>
+                    <div className="flex items-center gap-2 w-full justify-between mt-1">
+                      <span className="text-sm font-bold">{stat.value}</span>
+                      {stat.trend && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-slate-500 bg-slate-500/10">
+                          {stat.trend}
+                        </span>
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="px-2 mt-2">
+            <Separator className="opacity-50" />
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-hidden">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -39,16 +131,18 @@ export function Sidebar() {
             className={({ isActive }) =>
               cn(
                 'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm font-medium transition-colors',
+                isCollapsed && "justify-center px-0",
                 isActive
                   ? 'bg-sidebar-accent text-sidebar-foreground'
                   : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
               )
             }
+            title={isCollapsed ? item.label : undefined}
           >
             {({ isActive }) => (
               <>
-                <item.icon className={cn('w-4 h-4', isActive ? 'text-sidebar-foreground' : 'text-sidebar-foreground/50')} />
-                {item.label}
+                <item.icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-sidebar-foreground' : 'text-sidebar-foreground/50')} />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">{item.label}</span>}
               </>
             )}
           </NavLink>
@@ -58,14 +152,23 @@ export function Sidebar() {
       <div className="p-2 mt-auto">
         <Separator className="mb-2 opacity-50" />
         <button
+          onClick={toggleTheme}
+          title={isCollapsed ? (isDark ? 'Light Mode' : 'Dark Mode') : undefined}
+          className={cn("w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors", isCollapsed && "justify-center px-0")}
+        >
+          {isDark ? <Sun className="w-4 h-4 shrink-0 text-sidebar-foreground/50" /> : <Moon className="w-4 h-4 shrink-0 text-sidebar-foreground/50" />}
+          {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">{isDark ? 'Light Mode' : 'Dark Mode'}</span>}
+        </button>
+        <button
           onClick={() => {
             logout();
             navigate('/');
           }}
-          className="w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+          title={isCollapsed ? 'Logout' : undefined}
+          className={cn("w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors", isCollapsed && "justify-center px-0")}
         >
-          <LogOut className="w-4 h-4 text-sidebar-foreground/50" />
-          Logout
+          <LogOut className="w-4 h-4 shrink-0 text-sidebar-foreground/50" />
+          {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">Logout</span>}
         </button>
       </div>
     </div>

@@ -110,7 +110,7 @@ function priorityClasses(priority: RoadmapItem['priority']): string {
 function headerClasses(tone?: Column['tone']): string {
   if (tone === 'highlight') return 'bg-amber-500 text-white border-amber-500';
   if (tone === 'success') return 'bg-emerald-600 text-white border-emerald-600';
-  return 'bg-transparent text-zinc-800 border-transparent';
+  return 'bg-transparent text-foreground border-transparent';
 }
 
 export function Roadmap() {
@@ -149,7 +149,7 @@ export function Roadmap() {
   };
 
   return (
-    <div className="relative h-full flex flex-col bg-[#f7f7f5] overflow-hidden">
+    <div className="relative h-full flex flex-col bg-background overflow-hidden">
       <motion.div
         animate={{
           filter: selectedIssue ? 'blur(2px)' : 'blur(0px)',
@@ -158,21 +158,21 @@ export function Roadmap() {
         transition={{ duration: 0.2 }}
         className={cn('h-full flex flex-col', selectedIssue && 'pointer-events-none')}
       >
-        <div className="px-7 pt-6 pb-4 border-b border-zinc-200/70">
-          <h1 className="text-[28px] font-semibold tracking-tight text-[#37352f]">Current Sprint</h1>
-          <p className="text-sm text-zinc-500 mt-1">Active tasks and agent assignments for the current cycle.</p>
+        <div className="px-7 pt-6 pb-4 border-b border-border">
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">Current Sprint</h1>
+          <p className="text-sm text-muted-foreground mt-1">Active tasks and agent assignments for the current cycle.</p>
         </div>
 
-        <div className="px-7 py-3.5 flex items-center gap-2 border-b border-zinc-200/70 bg-[#f7f7f5]">
-        <Button className="h-10 px-4 bg-white text-zinc-800 border border-zinc-300 hover:bg-zinc-50 shadow-none">
+        <div className="px-7 py-3.5 flex items-center gap-2 border-b border-border bg-background">
+        <Button className="h-10 px-4 bg-card text-foreground border border-border hover:bg-muted shadow-none">
           <Plus className="w-4 h-4 mr-2" />
           Add Column
         </Button>
-        <Button variant="ghost" className="h-10 px-3 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100">
+        <Button variant="ghost" className="h-10 px-3 text-muted-foreground hover:text-foreground hover:bg-muted">
           <SlidersHorizontal className="w-4 h-4 mr-2" />
           Filter
         </Button>
-        <Button variant="ghost" className="h-10 px-3 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100">
+        <Button variant="ghost" className="h-10 px-3 text-muted-foreground hover:text-foreground hover:bg-muted">
           <LayoutGrid className="w-4 h-4 mr-2" />
           Display
         </Button>
@@ -185,22 +185,22 @@ export function Roadmap() {
                 <div key={column.id} className="w-[312px] flex-shrink-0 flex flex-col">
                   <div className={cn('rounded-md px-3.5 py-2.5 border flex items-center justify-between', headerClasses(column.tone))}>
                     <div className="flex items-center gap-2.5">
-                      <Circle className={cn('w-3.5 h-3.5', column.tone ? 'text-white' : 'text-zinc-400')} />
+                      <Circle className={cn('w-3.5 h-3.5', column.tone ? 'text-white' : 'text-muted-foreground')} />
                       <span className="text-[15px] font-semibold">{column.title}</span>
                       <span
                         className={cn(
                           'inline-flex items-center justify-center rounded-full min-w-5 h-5 px-1.5 text-[11px] font-semibold',
-                          column.tone ? 'bg-white/25 text-white' : 'bg-zinc-200 text-zinc-700'
+                          column.tone ? 'bg-card/25 text-white' : 'bg-muted text-foreground'
                         )}
                       >
                         {column.items.length}
                       </span>
                     </div>
-                    <div className={cn('flex items-center gap-1', column.tone ? 'text-white/90' : 'text-zinc-500')}>
-                      <Button variant="ghost" size="icon" className={cn('h-6 w-6', column.tone ? 'hover:bg-white/20 hover:text-white' : 'hover:bg-zinc-100 hover:text-zinc-900')}>
+                    <div className={cn('flex items-center gap-1', column.tone ? 'text-white/90' : 'text-muted-foreground')}>
+                      <Button variant="ghost" size="icon" className={cn('h-6 w-6', column.tone ? 'hover:bg-card/20 hover:text-white' : 'hover:bg-muted hover:text-foreground')}>
                         <MoreHorizontal className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className={cn('h-6 w-6', column.tone ? 'hover:bg-white/20 hover:text-white' : 'hover:bg-zinc-100 hover:text-zinc-900')}>
+                      <Button variant="ghost" size="icon" className={cn('h-6 w-6', column.tone ? 'hover:bg-card/20 hover:text-white' : 'hover:bg-muted hover:text-foreground')}>
                         <Plus className="w-3.5 h-3.5" />
                       </Button>
                     </div>
@@ -213,7 +213,7 @@ export function Roadmap() {
                         ref={provided.innerRef}
                         className={cn(
                           'mt-3 space-y-2.5 rounded-lg flex-1 min-h-[440px] transition-colors',
-                          snapshot.isDraggingOver ? 'bg-zinc-100/60 p-2' : ''
+                          snapshot.isDraggingOver ? 'bg-muted/60 p-2' : ''
                         )}
                       >
                         {column.items.map((item, index) => (
@@ -226,13 +226,13 @@ export function Roadmap() {
                                 {...dragProvided.dragHandleProps}
                                 onClick={() => setSelectedIssueId(item.id)}
                                 className={cn(
-                                  'w-full text-left bg-white border border-zinc-200 rounded-lg p-4 space-y-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all hover:shadow-[0_3px_12px_rgba(0,0,0,0.08)]',
-                                  dragSnapshot.isDragging && 'border-zinc-400 shadow-lg rotate-1'
+                                  'w-full text-left bg-card border border-border rounded-lg p-4 space-y-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-all hover:shadow-[0_3px_12px_rgba(0,0,0,0.08)]',
+                                  dragSnapshot.isDragging && 'border-border shadow-lg rotate-1'
                                 )}
                               >
-                                <div className="text-zinc-400 text-[11px] font-semibold tracking-wide">{item.issueKey}</div>
-                                <h3 className="text-[15px] font-semibold text-[#37352f] leading-snug">{item.title}</h3>
-                                <p className="text-[13px] text-zinc-500 leading-6">{item.summary}</p>
+                                <div className="text-muted-foreground text-[11px] font-semibold tracking-wide">{item.issueKey}</div>
+                                <h3 className="text-[15px] font-semibold text-foreground leading-snug">{item.title}</h3>
+                                <p className="text-[13px] text-muted-foreground leading-6">{item.summary}</p>
                                 <div className={cn('inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wide w-fit', priorityClasses(item.priority))}>
                                   <Bot className="w-3 h-3" />
                                   {item.priority}
@@ -242,7 +242,7 @@ export function Roadmap() {
                           </Draggable>
                         ))}
                         {provided.placeholder}
-                        <button className="w-full h-10 rounded-md border border-dashed border-zinc-300 text-[13px] text-zinc-500 hover:text-zinc-900 hover:border-zinc-500 transition-colors text-left px-3">
+                        <button className="w-full h-10 rounded-md border border-border border-border text-[13px] text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-colors text-left px-3">
                           <Plus className="w-3.5 h-3.5 inline mr-2" />
                           New
                         </button>
@@ -264,7 +264,7 @@ export function Roadmap() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedIssueId(null)}
-              className="absolute inset-0 bg-zinc-900/10 backdrop-blur-[1px] z-30"
+              className="absolute inset-0 bg-primary/10 backdrop-blur-[1px] z-30"
               aria-label="Close issue drawer overlay"
             />
             <motion.aside
@@ -272,20 +272,20 @@ export function Roadmap() {
               animate={{ x: 0 }}
               exit={{ x: 540 }}
               transition={{ type: 'spring', damping: 30, stiffness: 260 }}
-              className="absolute inset-y-0 right-0 w-[500px] bg-white border-l border-zinc-200 shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col z-40"
+              className="absolute inset-y-0 right-0 w-[500px] bg-card border-l border-border shadow-[0_10px_40px_rgba(0,0,0,0.08)] flex flex-col z-40"
             >
-              <div className="h-14 border-b border-zinc-200 px-5 flex items-center justify-between">
+              <div className="h-14 border-b border-border px-5 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-zinc-500">{selectedIssue.issueKey.toLowerCase()}</span>
-                    <span className="rounded-full border border-zinc-300 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
+                    <span className="text-sm text-muted-foreground">{selectedIssue.issueKey.toLowerCase()}</span>
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {selectedIssueStatus}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                       <ExternalLink className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900" onClick={() => setSelectedIssueId(null)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setSelectedIssueId(null)}>
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
@@ -293,57 +293,57 @@ export function Roadmap() {
 
               <div className="flex-1 overflow-y-auto px-7 py-6 space-y-6">
                   <div>
-                    <h2 className="text-2xl font-semibold tracking-tight text-[#37352f] leading-tight">{selectedIssue.title}</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground leading-tight">{selectedIssue.title}</h2>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {selectedIssue.labels.map((label) => (
-                        <span key={label} className="rounded-md bg-zinc-100 px-2 py-1 text-[11px] font-semibold text-zinc-600">
+                        <span key={label} className="rounded-md bg-muted px-2 py-1 text-[11px] font-semibold text-muted-foreground">
                           #{label}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  <div className="border-t border-zinc-200 pt-5 grid grid-cols-2 gap-6">
+                  <div className="border-t border-border pt-5 grid grid-cols-2 gap-6">
                     <div>
-                      <div className="text-[12px] font-bold tracking-wide uppercase text-zinc-500 mb-2">Agent</div>
-                      <div className="flex items-center gap-2 text-zinc-800">
-                        <Bot className="w-4 h-4 text-zinc-400" />
+                      <div className="text-[12px] font-bold tracking-wide uppercase text-muted-foreground mb-2">Agent</div>
+                      <div className="flex items-center gap-2 text-foreground">
+                        <Bot className="w-4 h-4 text-muted-foreground" />
                         <span>{selectedIssue.agent}</span>
                       </div>
                     </div>
                     <div>
-                      <div className="text-[12px] font-bold tracking-wide uppercase text-zinc-500 mb-2">Assignee</div>
-                      <div className="flex items-center gap-2 text-zinc-800">
-                        <UserCircle2 className="w-4 h-4 text-zinc-400" />
+                      <div className="text-[12px] font-bold tracking-wide uppercase text-muted-foreground mb-2">Assignee</div>
+                      <div className="flex items-center gap-2 text-foreground">
+                        <UserCircle2 className="w-4 h-4 text-muted-foreground" />
                         <span>{selectedIssue.assignee}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-zinc-200 pt-5">
-                    <div className="flex items-center gap-2 text-zinc-800 font-semibold mb-3">
-                      <Clock3 className="w-4 h-4 text-zinc-500" />
+                  <div className="border-t border-border pt-5">
+                    <div className="flex items-center gap-2 text-foreground font-semibold mb-3">
+                      <Clock3 className="w-4 h-4 text-muted-foreground" />
                       Task Description
                     </div>
-                    <p className="text-zinc-600 leading-relaxed">{selectedIssue.description}</p>
+                    <p className="text-muted-foreground leading-relaxed">{selectedIssue.description}</p>
                   </div>
 
-                  <div className="border-t border-zinc-200 pt-5">
-                    <div className="flex items-center gap-2 text-zinc-800 font-semibold mb-3">
-                      <RotateCcw className="w-4 h-4 text-zinc-500" />
+                  <div className="border-t border-border pt-5">
+                    <div className="flex items-center gap-2 text-foreground font-semibold mb-3">
+                      <RotateCcw className="w-4 h-4 text-muted-foreground" />
                       Agent Process
                     </div>
-                    <p className="text-zinc-600 leading-relaxed">{selectedIssue.process}</p>
+                    <p className="text-muted-foreground leading-relaxed">{selectedIssue.process}</p>
                   </div>
               </div>
 
-              <div className="border-t border-zinc-200 p-4">
+              <div className="border-t border-border p-4">
                 <div className="flex items-center gap-2">
                   <input
-                    className="flex-1 h-11 rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-zinc-500"
+                    className="flex-1 h-11 rounded-md border border-border px-3 text-sm outline-none focus:border-border"
                     placeholder="Add a comment for the agent..."
                   />
-                  <Button className="h-11 px-4 bg-zinc-900 text-white hover:bg-zinc-800">Send</Button>
+                  <Button className="h-11 px-4 bg-primary text-primary-foreground hover:bg-primary/80">Send</Button>
                 </div>
               </div>
             </motion.aside>

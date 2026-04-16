@@ -109,7 +109,17 @@ export async function getOAuthUrl(token: string, provider: string, frontendUrl: 
     if (response.status === 401) {
       throw new Error(AUTH_EXPIRED_ERROR);
     }
-    if (!response.ok) return null;
+    if (!response.ok) {
+      let errorMessage = `Failed to authorize ${provider}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData?.detail || errorData?.error || errorMessage;
+      } catch {
+        const errorText = await response.text();
+        if (errorText) errorMessage = errorText;
+      }
+      throw new Error(errorMessage);
+    }
     const data = await response.json();
     return data.auth_url;
   } catch (error) {
@@ -117,7 +127,7 @@ export async function getOAuthUrl(token: string, provider: string, frontendUrl: 
       throw error;
     }
     console.error('Get OAuth URL error:', error);
-    return null;
+    throw error;
   }
 }
 

@@ -4,122 +4,158 @@ Files Router - Authenticated markdown file browser endpoints
 
 from pathlib import Path
 from typing import Dict, List, Optional
+import urllib.parse
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Response
 from pydantic import BaseModel
 
-from backend.routers.auth import get_current_user
+from backend.lib.auth.session import get_current_user
+from backend.store.file_store import FileStore
 
 router = APIRouter()
-
+file_store = FileStore()
 
 class MarkdownUpdateRequest(BaseModel):
     scope: str
     path: str
     content: str
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-AGENT_ROOT = PROJECT_ROOT / "agentic-os" if (PROJECT_ROOT / "agentic-os").exists() else PROJECT_ROOT
-SHARED_ROOT = PROJECT_ROOT / ".reference" / "sim" if (PROJECT_ROOT / ".reference" / "sim").exists() else PROJECT_ROOT
-FILE_ROOTS: Dict[str, Path] = {
-    "agent": AGENT_ROOT,
-    "shared": SHARED_ROOT,
-}
-
-EXCLUDED_DIRS = {
-    ".git",
-    "node_modules",
-    "venv",
-    "__pycache__",
-    ".next",
-    "dist",
-    "build",
-}
-
-
 def _require_user(user):
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
+def _build_tree_from_paths(files_metadata: List[Dict]) -> List[Dict]:
+    """Build a nested tree structure from a flat list of file metadata paths."""
+    tree = []
+    
+    # Use a dictionary to keep track of folder nodes
+    folders = {"": {"children": tree}}
+    
+    for meta in files_metadata:
+        path_parts = meta["path"].split("/")
+        
+        current_path = ""
+        current_node = folders[""]
+        
+        # Build folder structure
+        for i, part in enumerate(path_parts):
+            is_last = (i == len(path_parts) - 1)
+            
+            if current_path:
+                current_path += "/" + part
+            else:
+                current_path = part
+                
+            if current_path not in folders:
+                if is_last and meta["type"] == "file":
+                    # It's a file
+                    node = {
+                        "type": "file",
+                        "name": meta["name"],
+                        "path": meta["path"]
+                    }
+                    current_node["children"].append(node)
+                else:
+                    # It's a folder (either explicit or implicit parent)
+                    node_name = meta["name"] if is_last else part
+                    node = {
+                        "type": "folder",
+                        "name": node_name,
+                        "path": current_path,
+                        "children": []
+                    }
+                    current_node["children"].append(node)
+                    folders[current_path] = node
+            
+            if current_path in folders:
+                current_node = folders[current_path]
 
-def _get_root(scope: str) -> Path:
-    root = FILE_ROOTS.get(scope)
-    if not root or not root.exists():
-        raise HTTPException(status_code=404, detail="File scope not found")
-    return root.resolve()
-
-
-def _is_allowed_file(path: Path) -> bool:
-    return path.is_file() and path.suffix.lower() == ".md"
-
-
-def _build_tree(path: Path, root: Path) -> Optional[dict]:
-    if path.name in EXCLUDED_DIRS:
-        return None
-
-    if path.is_dir():
-        children: List[dict] = []
-        try:
-            entries = sorted(path.iterdir(), key=lambda entry: (entry.is_file(), entry.name.lower()))
-        except PermissionError:
-            return None
-
-        for child in entries:
-            node = _build_tree(child, root)
-            if node:
-                children.append(node)
-
-        if not children:
-            return None
-
-        relative_path = path.relative_to(root)
-        return {
-            "type": "folder",
-            "name": path.name if relative_path.parts else root.name,
-            "path": "" if not relative_path.parts else str(relative_path),
-            "children": children,
-        }
-
-    if _is_allowed_file(path):
-        return {
-            "type": "file",
-            "name": path.name,
-            "path": str(path.relative_to(root)),
-        }
-
-    return None
-
-
-def _resolve_file_path(scope: str, relative_path: str) -> Path:
-    root = _get_root(scope)
-    candidate = (root / relative_path).resolve()
-    try:
-        candidate.relative_to(root)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail="Invalid file path") from exc
-
-    if not _is_allowed_file(candidate):
-        raise HTTPException(status_code=404, detail="Markdown file not found")
-
-    return candidate
-
+    return tree
 
 @router.get("/tree")
 async def get_markdown_tree(
     scope: str = Query("agent"),
     user=Depends(get_current_user),
 ):
-    """Return a tree of markdown files for the given scope."""
+    """Return a tree of files for the given scope and user."""
     _require_user(user)
-    root = _get_root(scope)
-    tree = _build_tree(root, root)
+    
+    files = file_store.list_files(user["id"], scope)
+    tree_nodes = _build_tree_from_paths(files)
+    
     return {
         "success": True,
         "scope": scope,
-        "root_name": root.name,
-        "tree": tree["children"] if tree else [],
+        "root_name": "Root",
+        "tree": tree_nodes,
     }
 
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    scope: str = Query("agent"),
+    path: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+):
+    """Upload a file to the user's storage."""
+    _require_user(user)
+    
+    content = await file.read()
+    name = file.filename
+    # If no path provided, just use the filename
+    file_path = path if path else name
+    
+    updated_meta = file_store.save_file_bytes(
+        user["id"], 
+        scope, 
+        file_path, 
+        name, 
+        content
+    )
+
+    return {
+        "success": True,
+        "scope": scope,
+        "path": updated_meta["path"],
+        "name": updated_meta["name"],
+    }
+
+@router.get("/raw")
+async def get_raw_file(
+    scope: str = Query("agent"),
+    path: str = Query(...),
+    user=Depends(get_current_user),
+):
+    """Serve the raw file content."""
+    _require_user(user)
+    
+    metadata = file_store.get_file_metadata(user["id"], scope, path)
+    if not metadata or metadata["type"] != "file":
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    content = file_store.read_file_bytes(user["id"], scope, path)
+    if content is None:
+         raise HTTPException(status_code=404, detail="File content not found")
+
+    # Determine content type based on extension
+    content_type = "application/octet-stream"
+    if path.lower().endswith(".pdf"):
+        content_type = "application/pdf"
+    elif path.lower().endswith(".md"):
+        content_type = "text/markdown"
+    elif path.lower().endswith(".txt"):
+        content_type = "text/plain"
+        
+    # urlencode filename for header
+    encoded_name = urllib.parse.quote(metadata["name"])
+
+    return Response(
+        content=content, 
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f"inline; filename*=utf-8''{encoded_name}"
+        }
+    )
 
 @router.get("/content")
 async def get_markdown_content(
@@ -129,16 +165,22 @@ async def get_markdown_content(
 ):
     """Return markdown file content for the given scope/path."""
     _require_user(user)
-    file_path = _resolve_file_path(scope, path)
-    root = _get_root(scope)
+    
+    metadata = file_store.get_file_metadata(user["id"], scope, path)
+    if not metadata or metadata["type"] != "file":
+        raise HTTPException(status_code=404, detail="Markdown file not found")
+        
+    content = file_store.read_file_content(user["id"], scope, path)
+    if content is None:
+         raise HTTPException(status_code=404, detail="Markdown file content not found")
 
     return {
         "success": True,
         "scope": scope,
-        "root_name": root.name,
-        "path": str(file_path.relative_to(root)),
-        "name": file_path.name,
-        "content": file_path.read_text(encoding="utf-8"),
+        "root_name": "Root",
+        "path": metadata["path"],
+        "name": metadata["name"],
+        "content": content,
     }
 
 
@@ -149,15 +191,23 @@ async def update_markdown_content(
 ):
     """Update markdown file content for the given scope/path."""
     _require_user(user)
-    file_path = _resolve_file_path(request.scope, request.path)
-    root = _get_root(request.scope)
-    file_path.write_text(request.content, encoding="utf-8")
+    
+    name = request.path.split("/")[-1]
+    
+    # Save or update the file content
+    updated_meta = file_store.save_file_content(
+        user["id"], 
+        request.scope, 
+        request.path, 
+        name, 
+        request.content
+    )
 
     return {
         "success": True,
         "scope": request.scope,
-        "root_name": root.name,
-        "path": str(file_path.relative_to(root)),
-        "name": file_path.name,
+        "root_name": "Root",
+        "path": updated_meta["path"],
+        "name": updated_meta["name"],
         "content": request.content,
     }

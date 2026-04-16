@@ -25,24 +25,13 @@ from datetime import datetime
 
 import httpx
 
-from backend.workflows.tools.registry import ToolRegistry
-from backend.workflows.tools.base import ToolResult
-from backend.workflows.tools.llm_tool import LLMTool
-from backend.workflows.tools.http_tool import HTTPTool
-from backend.workflows.tools.function_tool import FunctionTool
-from backend.workflows.tools.slack_tool import SlackTool
-from backend.workflows.tools.gmail_tool import GmailTool
-from backend.workflows.store import WorkflowStore
+from backend.services.llm_config import get_provider_config, detect_provider, get_headers, get_payload_extras
+from backend.tools.catalog import create_all_tools
+from backend.tools.system_tools.registry import ToolRegistry
+from backend.tools.system_tools.base import ToolResult
+from backend.store.workflow_store import WorkflowStore
 from backend.workflows.logger import get_logger
-
-# Import PM-specific tools
-from backend.product_manager.tools.jira_tool import JiraTool
-from backend.product_manager.tools.notion_tool import NotionTool
-from backend.product_manager.tools.analytics_tool import AnalyticsTool
-from backend.product_manager.tools.research_tool import ResearchTool
-from backend.product_manager.tools.github_tool import GitHubTool
 from backend.product_manager.types import PMContext, UserInsight, ProductDecision
-from backend.product_manager.pm_tools import create_pm_tools
 
 logger = get_logger("katy")
 
@@ -253,9 +242,12 @@ class KatyPMAgent:
         self.messages: List[ContextMessage] = []
         self.steps: List[ReActStep] = []
 
-        # OpenRouter config
-        self.api_key = os.getenv("OPENROUTER_API_KEY", "")
-        self.base_url = "https://openrouter.ai/api/v1"
+        # LLM provider config from centralized service
+        self.model = model if model else os.getenv("KATY_MODEL", "openai/gpt-4o")
+        self.provider_name = detect_provider(self.model)
+        llm_config = get_provider_config(self.model)
+        self.api_key = llm_config["api_key"]
+        self.base_url = llm_config["base_url"]
 
         # Register all tools
         self._register_tools()
@@ -263,28 +255,8 @@ class KatyPMAgent:
         logger.info(f"Katy PM Agent initialized for user: {self.user_id}")
 
     def _register_tools(self):
-        """Register all available tools."""
-        # Communication tools
-        self.tool_registry.register(SlackTool())
-        self.tool_registry.register(GmailTool())
-        self.tool_registry.register(HTTPTool())
-        self.tool_registry.register(FunctionTool())
-
-        # PM-specific tools
-        self.tool_registry.register(JiraTool())
-        self.tool_registry.register(NotionTool())
-        self.tool_registry.register(AnalyticsTool())
-        self.tool_registry.register(ResearchTool())
-        self.tool_registry.register(GitHubTool())
-
-        # Workflow creation tools (so Katy can build automations)
-        from backend.workflows.coworker_tools import create_workflow_tools
-        for tool in create_workflow_tools():
-            self.tool_registry.register(tool)
-
-        # High-level PM tools
-        pm_tools = create_pm_tools()
-        for tool in pm_tools:
+        """Register every centralized tool from the shared catalog."""
+        for tool in create_all_tools():
             self.tool_registry.register(tool)
 
         logger.info(f"Registered {len(self.tool_registry.list_names())} tools")
@@ -486,8 +458,8 @@ class KatyPMAgent:
         No parsing of "ACTION:" strings. No regex. Native structured output.
         """
         if not self.api_key:
-            logger.error("OPENROUTER_API_KEY not set")
-            yield {"type": "error", "message": "OPENROUTER_API_KEY not set"}
+            logger.error(f"{self.provider_name.upper()}_API_KEY not set")
+            yield {"type": "error", "message": f"{self.provider_name.upper()}_API_KEY not set"}
             return
 
         payload = {
@@ -497,10 +469,16 @@ class KatyPMAgent:
             "max_tokens": 4096,
             "stream": True,
         }
+        payload.update(get_payload_extras(self.model))
 
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
+
+        logger.info(
+            f"[Katy] LLM CALL | Provider: {self.provider_name.upper()} | Model: {self.model} | "
+            f"Messages: {len(messages)} | Tools: {len(tools) if tools else 0}"
+        )
 
         print(f"{Colors.CYAN}[LLM] Model: {self.model} | Messages: {len(messages)} | Tools: {len(tools) if tools else 0}{Colors.ENDC}")
 
@@ -511,8 +489,7 @@ class KatyPMAgent:
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://ceo-agent.local",
-                    "X-Title": "CEO Agent - Katy PM",
+                    **get_headers(self.model),
                 },
                 json=payload,
             ) as response:

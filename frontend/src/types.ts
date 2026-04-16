@@ -25,10 +25,29 @@ export interface IssueComment {
   type: 'user' | 'agent' | 'system';
 }
 
+export interface IssueRunStep {
+  id: string;
+  title: string;
+  status: 'todo' | 'in_progress' | 'done' | 'blocked' | 'cancelled' | string;
+  updatedAt: string;
+}
+
+export interface IssueRun {
+  id: string;
+  status: 'running' | 'done' | 'failed' | string;
+  employeeName: string;
+  summary: string;
+  error: string;
+  createdAt: string;
+  updatedAt: string;
+  steps: IssueRunStep[];
+}
+
 export interface Issue {
   id: string;
   title: string;
   description: string;
+  requirements?: string;
   status: IssueStatus;
   assigneeId?: string;
   agentId?: string;
@@ -37,6 +56,7 @@ export interface Issue {
   createdAt: string;
   fileChanges?: string[];
   comments: IssueComment[];
+  runs?: IssueRun[];
 }
 
 export interface Activity {
@@ -54,4 +74,59 @@ export interface Skill {
   description: string;
   category: 'coding' | 'testing' | 'devops' | 'research';
   level: number;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  avatar?: string;
+  task?: string;
+}
+
+export interface TeamEdge {
+  from: string;
+  to: string;
+}
+
+export interface TeamRunMember {
+  id: string;
+  run_id: string;
+  employee_id: string;
+  employee_name: string;
+  employee_role: string;
+  assigned_task: string;
+  task_status: 'assigned' | 'in_progress' | 'done' | 'blocked';
+  result: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamRun {
+  id: string;
+  team_id: string;
+  owner_id: string;
+  conversation_id: string;
+  goal: string;
+  status: 'pending' | 'running' | 'paused' | 'completed' | 'failed';
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  members?: TeamRunMember[];
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  goal: string;
+  topology: string;
+  projectType: string;
+  deadline: string;
+  members: TeamMember[];
+  attachedFiles: string[];
+  edges: TeamEdge[];
+  sequenceOrder: string[];
+  broadcasterId: string;
+  createdAt: string;
+  runs?: TeamRun[];
 }

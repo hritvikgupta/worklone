@@ -1,17 +1,19 @@
 """
-Background Worker — wakes up the Executor Agent to execute scheduled workflows.
+Background Worker — executes scheduled workflows via DAG executor.
 
 Simple polling loop:
 - Finds workflows triggered by schedule
-- Calls the CoWorkerAgent (Harry) to execute them
-- No hardcoded DAG logic — the ReAct agent figures it out
+- Executes via WorkflowExecutor (deterministic DAG traversal)
+- Handles pause/resume for human-in-the-loop blocks
+- Processes pending resume requests
 """
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from backend.workflows.store import WorkflowStore
-from backend.workflows.coworker import create_coworker_agent
+from backend.store.workflow_store import WorkflowStore
+from backend.workflows.schedules.normalize import next_run_from_cron, normalize_schedule_config
+from backend.workflows.engine.executor import WorkflowExecutor
 from backend.workflows.logger import get_logger
 
 logger = get_logger("worker")
@@ -19,9 +21,10 @@ logger = get_logger("worker")
 
 class BackgroundWorker:
     """
-    Simple background job processor.
+    Background job processor.
 
-    Polls for scheduled workflows → wakes up the CoWorkerAgent (Harry) to execute them.
+    Polls for scheduled workflows and pending resumes,
+    executes via the deterministic DAG executor.
     """
 
     def __init__(
@@ -31,10 +34,12 @@ class BackgroundWorker:
         max_concurrent: int = 10,
     ):
         self.store = store
+        self.executor = WorkflowExecutor(store)
         self.poll_interval = poll_interval
         self.max_concurrent = max_concurrent
         self.running = False
         self._tasks: list[asyncio.Task] = []
+        self._active_workflow_ids: set[str] = set()
 
     async def start(self):
         """Start the worker loop."""
@@ -57,43 +62,58 @@ class BackgroundWorker:
         logger.info("Worker stopped")
 
     async def _process_tick(self):
-        """Find scheduled workflows and wake up the Executor Agent to run them."""
+        """Find scheduled workflows and pending resumes to process."""
+        # 1. Process scheduled workflows
         scheduled = self.store.get_scheduled_workflows()
-
-        if not scheduled:
-            return
-
-        logger.info(f"Found {len(scheduled)} scheduled workflows to execute")
-
-        for workflow in scheduled[:self.max_concurrent]:
-            task = asyncio.create_task(self._execute_workflow(workflow))
-            self._tasks.append(task)
+        if scheduled:
+            logger.info(f"Found {len(scheduled)} scheduled workflows to execute")
+            for workflow in scheduled[:self.max_concurrent]:
+                workflow_id = workflow.get("id")
+                if not workflow_id or workflow_id in self._active_workflow_ids:
+                    continue
+                self._active_workflow_ids.add(workflow_id)
+                task = asyncio.create_task(self._execute_workflow(workflow))
+                self._tasks.append(task)
 
         # Clean up finished tasks
         self._tasks = [t for t in self._tasks if not t.done()]
 
     async def _execute_workflow(self, workflow: dict):
-        """Wake up the Executor Agent to execute a workflow."""
+        """Execute a workflow via the DAG executor."""
         workflow_id = workflow["id"]
         workflow_name = workflow.get("name", workflow_id)
-        user_id = workflow.get("user_id", "anonymous")
+        owner_id = workflow.get("owner_id", "")
 
         logger.info(f"[Worker] Starting workflow: {workflow_name} ({workflow_id})")
 
         try:
-            # Mark as running
+            workflow_def = self.store.get_workflow(workflow_id, owner_id or None)
+            if workflow_def:
+                now = datetime.now()
+                for trigger in workflow_def.triggers:
+                    if trigger.trigger_type.value != "schedule" or not trigger.enabled:
+                        continue
+                    normalized_config = normalize_schedule_config(trigger.config)
+                    cron_expression = trigger.cron_expression or normalized_config.get("cron", "")
+                    next_run = next_run_from_cron(cron_expression) if cron_expression else now + timedelta(minutes=5)
+                    self.store.update_schedule(trigger.id, now, next_run)
+
             self.store.update_workflow_status(workflow_id, "running")
 
-            # Wake up the Executor Agent
-            agent = create_coworker_agent(user_id=user_id)
-            
-            # Execute the workflow via the agent's ReAct loop
-            async for chunk in agent.execute_workflow(workflow_id, stream=False):
-                pass  # Agent handles execution internally
+            result = await self.executor.execute_workflow(
+                workflow_id=workflow_id,
+                owner_id=owner_id,
+                trigger_type="schedule",
+            )
 
-            # Mark as completed
-            self.store.update_workflow_status(workflow_id, "completed")
-            logger.info(f"[Worker] Completed workflow: {workflow_name}")
+            if result.status.value == "paused":
+                logger.info(f"[Worker] Workflow paused (human approval needed): {workflow_name}")
+            elif result.status.value == "completed":
+                self.store.update_workflow_status(workflow_id, "active")
+                logger.info(f"[Worker] Completed workflow: {workflow_name}")
+            else:
+                self.store.update_workflow_status(workflow_id, "active")
+                logger.warning(f"[Worker] Workflow {workflow_name} ended with status: {result.status.value}")
 
         except Exception as e:
             logger.exception(f"[Worker] Failed to execute workflow {workflow_id}: {e}")
@@ -101,3 +121,5 @@ class BackgroundWorker:
                 self.store.update_workflow_status(workflow_id, "failed", error=str(e))
             except Exception:
                 pass
+        finally:
+            self._active_workflow_ids.discard(workflow_id)

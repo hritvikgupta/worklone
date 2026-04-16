@@ -13,7 +13,7 @@ export function SkillStats() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat) => (
-        <div key={stat.label} className="space-y-1 p-4 rounded-xl border border-border/50 hover:bg-secondary/30 transition-colors group cursor-default">
+        <div key={stat.label} className="space-y-1 p-4 rounded-xl border border-border hover:bg-secondary/30 transition-colors group cursor-default">
           <div className="flex items-center gap-2">
             <stat.icon className={`w-3.5 h-3.5 ${stat.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">

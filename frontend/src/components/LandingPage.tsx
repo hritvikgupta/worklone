@@ -3,33 +3,11 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
-
-const workforceProfiles = [
-  {
-    name: 'Katy',
-    role: 'Product Manager',
-    image: '/workforce/employee-5.png',
-    summary: 'Katy owns roadmap definition, requirement quality, and execution cadence across the workspace. She translates ambiguous requests into clear plans, creates the right artifacts, and keeps product, engineering, and operations aligned around the next highest-leverage move.',
-  },
-  {
-    name: 'Sam',
-    role: 'Data Analyst',
-    image: '/workforce/employee-4.png',
-    summary: 'Sam turns messy operational and product data into decisions that can actually be acted on. He explains movement in the numbers, monitors health across the business, and produces concise analysis that helps the team move faster with less guesswork.',
-  },
-  {
-    name: 'Mira',
-    role: 'Growth Lead',
-    image: '/workforce/employee-1.png',
-    summary: 'Mira drives acquisition, positioning, and funnel improvement through disciplined experimentation. She identifies where growth is stalling, tests what changes conversion, and keeps demand generation tied to measurable commercial outcomes.',
-  },
-  {
-    name: 'Leo',
-    role: 'Backend Engineer',
-    image: '/workforce/employee-3.png',
-    summary: 'Leo builds the backend systems that keep the operating environment reliable under real use. He owns API quality, integration resilience, and the operational details that make sessions, workflows, and infrastructure behave predictably at scale.',
-  },
-];
+import { AgentProgressSection } from './AgentProgressSection';
+import { CreateWorkflowSection } from './CreateWorkflowSection';
+import { WorkforceStickySection } from './WorkforceStickySection';
+import { AgentNetworkSection } from './AgentNetworkSection';
+import { HowItWorksSection } from './HowItWorksSection';
 
 // Integration icon component - uses simple SVG icons from public CDN
 const IntegrationIcon: React.FC<{ name: string }> = ({ name }) => {
@@ -43,7 +21,6 @@ const IntegrationIcon: React.FC<{ name: string }> = ({ name }) => {
     'HubSpot': 'https://cdn.simpleicons.org/hubspot/FF7A59',
     'Google Drive': 'https://cdn.simpleicons.org/googledrive/4285F4',
     'Asana': 'https://cdn.simpleicons.org/asana/F06A6A',
-    'Salesforce': 'https://cdn.simpleicons.org/salesforce/00A1E0',
     'Zendesk': 'https://cdn.simpleicons.org/zendesk/03363D',
     'Confluence': 'https://cdn.simpleicons.org/confluence/172B4D',
     'Stripe': 'https://cdn.simpleicons.org/stripe/635BFF',
@@ -82,7 +59,7 @@ const IntegrationIcon: React.FC<{ name: string }> = ({ name }) => {
 
 const integrationRows = [
   ['Gmail', 'Jira', 'Notion', 'GitHub', 'Slack', 'Linear', 'HubSpot', 'Google Drive'],
-  ['Asana', 'Salesforce', 'Zendesk', 'Confluence', 'Stripe', 'Calendar', 'Airtable', 'Figma'],
+  ['Asana', 'Zendesk', 'Confluence', 'Stripe', 'Calendar', 'Airtable', 'Figma'],
   ['Snowflake', 'Postgres', 'BigQuery', 'ClickUp', 'Intercom', 'Dropbox', 'Trello', 'Zapier'],
 ];
 
@@ -135,43 +112,43 @@ export function LandingPage() {
             </Link>
           </div>
 
-          <div className="mt-6 bg-white">
-            <img
-              src="/landing-hero.png"
-              alt="Worklone hero artwork"
-              className="block h-[300px] w-full bg-white object-cover object-center sm:h-[380px] lg:h-[440px]"
-            />
-          </div>
-
-          <div className="relative z-10 mx-auto -mt-12 max-w-4xl px-4 pb-20 text-center sm:-mt-18">
+          <div className="relative z-10 mx-auto max-w-4xl px-4 pt-16 pb-6 text-center sm:pt-20">
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55 }}
-              className="mx-auto mt-6 max-w-3xl text-balance text-[48px] font-semibold tracking-[-0.05em] text-zinc-950 sm:text-[68px] sm:leading-[0.95]"
+              className="mx-auto mt-6 max-w-3xl text-balance text-[40px] font-medium tracking-tight text-zinc-950 sm:text-[56px] sm:leading-[1.1]"
             >
-              Build your team of AI employees
+              Build and hire your first AI employee
             </motion.h1>
 
-            <p className="mx-auto mt-5 max-w-2xl text-[16px] leading-7 text-zinc-600 sm:text-[18px]">
+            <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-7 text-zinc-600 sm:text-[18px]">
               Hire specialized AI employees for real work across your business. One operating system for AI coworkers that actually do the work.
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/waitlist"
-                className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+                className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
               >
                 Join Waitlist
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 to="/what-is-worklone"
-                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-6 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-6 py-3.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-white"
               >
                 What is Worklone
               </Link>
             </div>
+          </div>
+
+          <div className="mt-2 bg-white pb-10">
+            <img
+              src="/landinghero.png"
+              alt="Worklone hero artwork"
+              className="block h-[300px] w-full bg-white object-cover object-center sm:h-[380px] lg:h-[500px]"
+            />
           </div>
         </div>
       </section>
@@ -182,49 +159,15 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-white px-6 py-8 sm:px-8 lg:px-10">
-        <div className="mx-auto mb-14 max-w-3xl text-center">
-          <h2
-            className="text-4xl font-semibold tracking-tight text-zinc-950"
-          >
-            Meet the employees behind the system
-          </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-zinc-600">
-            Scroll through the team. Each employee owns a real lane of execution inside Worklone.
-          </p>
-        </div>
+      <HowItWorksSection />
 
-        <div className="space-y-24">
-          {workforceProfiles.map((profile, index) => (
-            <motion.div
-              key={profile.name}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.45 }}
-              className="grid items-center gap-6 lg:grid-cols-[minmax(0,560px)_360px] lg:justify-center"
-            >
-              <div className="max-w-[560px]">
-                <h3 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950">
-                  {profile.name}
-                </h3>
-                <div className="mt-2 text-xl font-medium text-zinc-500">
-                  {profile.role}
-                </div>
-                <p className="mt-6 text-[17px] leading-8 text-zinc-700">{profile.summary}</p>
-              </div>
+      <AgentNetworkSection />
 
-              <div className="flex justify-center lg:justify-start">
-                <img
-                  src={profile.image}
-                  alt={`${profile.name} portrait`}
-                  className="block max-h-[520px] w-auto max-w-[360px] bg-white object-contain object-center"
-                />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+      <WorkforceStickySection />
+
+      <CreateWorkflowSection />
+
+      <AgentProgressSection />
 
       <section className="overflow-hidden bg-white px-6 py-16 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-4xl text-center">

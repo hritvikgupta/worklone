@@ -1,0 +1,42 @@
+[
+  {
+    "id": "msg_1",
+    "from": "marketing@company.com",
+    "to": "user@example.com",
+    "subject": "Weekly Marketing Report - April 13, 2026",
+    "date": "2026-04-13T09:15:00Z",
+    "body": "Here's your weekly marketing report. Our campaign performance shows a 12% increase in click-through rates compared to last week. Social media engagement is up by 8%. Please review the attached metrics and let me know if you have any questions."
+  },
+  {
+    "id": "msg_2",
+    "from": "support@saasplatform.com",
+    "to": "user@example.com",
+    "subject": "Your subscription renewal is coming up",
+    "date": "2026-04-12T16:30:00Z",
+    "body": "Your premium subscription will renew automatically on April 20, 2026. Your current plan includes 50GB storage, advanced analytics, and priority support. If you'd like to make any changes to your plan before renewal, please visit your account settings."
+  },
+  {
+    "id": "msg_3",
+    "from": "team@projectmanagement.com",
+    "to": "user@example.com",
+    "subject": "Project Alpha - Status Update",
+    "date": "2026-04-12T14:22:00Z",
+    "body": "Project Alpha is currently 75% complete. All critical milestones have been met on schedule. The development team has completed the core functionality, and QA testing begins next week. We anticipate final delivery by April 30 as planned."
+  },
+  {
+    "id": "msg_4",
+    "from": "newsletter@industryinsights.com",
+    "to": "user@example.com",
+    "subject": "Industry Insights: AI Trends Q2 2026",
+    "date": "2026-04-11T10:00:00Z",
+    "body": "This quarter's AI trends show significant growth in multimodal models and agent frameworks. Companies are increasingly adopting AI for workflow automation, with 68% of enterprises reporting ROI within 6 months of implementation. Regulatory frameworks are evolving to address ethical concerns."
+  },
+  {
+    "id": "msg_5",
+    "from": "events@techconference.com",
+    "to": "user@example.com",
+    "subject": "You're invited: Tech Innovation Summit 2026",
+    "date": "2026-04-10T13:45:00Z",
+    "body": "Join us at the Tech Innovation Summit 2026, happening May 15-17 in San Francisco. This year's theme is 'Building the Future Together.' Early bird registration ends April 30. As a previous attendee, you qualify for a 15% discount using code RETURN15."
+  }
+]

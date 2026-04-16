@@ -37,7 +37,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 to-zinc-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-white to-zinc-100 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -45,7 +45,7 @@ export function LoginPage() {
       >
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-zinc-200">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4">
+            <div className="w-16 h-16 bg-zinc-100 rounded-2xl flex items-center justify-center mb-4">
               <img
                 src="/brand/worklone-mark-black.png"
                 alt="Worklone"
@@ -65,14 +65,14 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label className="block text-sm font-medium text-zinc-700 mb-1.5">Full Name</label>
+                <label className="block text-sm font-medium text-zinc-900 mb-1.5">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-sm"
+                    className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-sm bg-white text-zinc-900"
                     placeholder="John Doe"
                     required={!isLogin}
                   />
@@ -81,14 +81,14 @@ export function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-zinc-900 mb-1.5">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-sm bg-white text-zinc-900"
                   placeholder="you@example.com"
                   required
                 />
@@ -96,14 +96,14 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1.5">Password</label>
+              <label className="block text-sm font-medium text-zinc-900 mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-sm"
+                  className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-sm bg-white text-zinc-900"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -122,7 +122,7 @@ export function LoginPage() {
               disabled={isLoading}
               className={cn(
                 'w-full py-2.5 rounded-lg font-medium text-sm transition-all',
-                'bg-zinc-900 text-white hover:bg-zinc-800',
+                'bg-primary text-primary-foreground hover:bg-primary/80',
                 'disabled:opacity-50 disabled:cursor-not-allowed'
               )}
             >

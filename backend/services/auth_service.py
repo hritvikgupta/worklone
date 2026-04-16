@@ -6,46 +6,8 @@ import os
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
-from backend.models.auth_db import AuthDB
-
-# OAuth provider configurations
-OAUTH_PROVIDERS = {
-    "google": {
-        "name": "Gmail",
-        "icon": "mail",
-        "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
-        "token_url": "https://oauth2.googleapis.com/token",
-        "scopes": "https://www.googleapis.com/auth/gmail.modify",
-    },
-    "slack": {
-        "name": "Slack",
-        "icon": "message-circle",
-        "auth_url": "https://slack.com/oauth/v2/authorize",
-        "token_url": "https://slack.com/api/oauth.v2.access",
-        "scopes": "chat:write,channels:read,groups:read,im:read,mpim:read",
-    },
-    "notion": {
-        "name": "Notion",
-        "icon": "file-text",
-        "auth_url": "https://api.notion.com/v1/oauth/authorize",
-        "token_url": "https://api.notion.com/v1/oauth/token",
-        "scopes": "",
-    },
-    "github": {
-        "name": "GitHub",
-        "icon": "github",
-        "auth_url": "https://github.com/login/oauth/authorize",
-        "token_url": "https://github.com/login/oauth/access_token",
-        "scopes": "repo,user,read:org",
-    },
-    "jira": {
-        "name": "Jira",
-        "icon": "briefcase",
-        "auth_url": "https://auth.atlassian.com/authorize",
-        "token_url": "https://auth.atlassian.com/oauth/token",
-        "scopes": "read:jira-work write:jira-work offline_access",
-    },
-}
+from backend.store.auth_store import AuthDB
+from backend.lib.oauth.providers import OAUTH_PROVIDERS
 
 
 class AuthService:
@@ -53,6 +15,15 @@ class AuthService:
 
     def __init__(self):
         self.db = AuthDB()
+
+    @staticmethod
+    def _is_placeholder_secret(value: str) -> bool:
+        normalized = (value or "").strip().lower()
+        return (
+            not normalized
+            or normalized.startswith("your-")
+            or normalized in {"your-google-client-id", "your-google-client-secret", "changeme", "replace-me"}
+        )
 
     # ─── Authentication ─────────────────────────────────────────────
 
@@ -124,25 +95,64 @@ class AuthService:
             return str(raw_expires_in)
         return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
 
-    def get_oauth_url(self, provider: str, frontend_url: str, user_id: str) -> Optional[str]:
-        """Generate OAuth authorization URL"""
+    @staticmethod
+    def _get_provider_frontend_url(provider: str, frontend_url: Optional[str] = None) -> str:
+        env_override = os.getenv(f"PROVIDER_{provider.upper()}_FRONTEND_URL", "").strip()
+        if env_override:
+            return env_override.rstrip("/")
+        if frontend_url:
+            return frontend_url.rstrip("/")
+        return os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+
+    @staticmethod
+    def _get_provider_env_value(provider: str, suffix: str) -> tuple[str, str]:
+        """
+        Resolve provider-specific env vars with compatibility fallbacks.
+        Primary: PROVIDER_<NAME>_<SUFFIX>
+        Fallback: <NAME>_<SUFFIX>
+        Google Drive and Calendar share credentials with the base Google provider.
+        """
+        provider_upper = provider.upper()
+        candidates = [
+            f"PROVIDER_{provider_upper}_{suffix}",
+            f"{provider_upper}_{suffix}",
+        ]
+        # Google Drive and Calendar use the same OAuth app as Gmail
+        if provider_upper in ("GOOGLE_DRIVE", "GOOGLE_CALENDAR"):
+            candidates += [f"PROVIDER_GOOGLE_{suffix}", f"GOOGLE_{suffix}"]
+        for key in candidates:
+            value = os.getenv(key, "").strip()
+            if value:
+                return value, key
+        return "", candidates[0]
+
+    def get_oauth_url(self, provider: str, frontend_url: str, user_id: str) -> Dict[str, Any]:
+        """Generate OAuth authorization URL with explicit error context."""
         import urllib.parse
         import secrets
 
         provider_config = OAUTH_PROVIDERS.get(provider)
         if not provider_config:
-            return None
+            return {"success": False, "error": f"Unknown provider: {provider}"}
 
         state = secrets.token_urlsafe(16)
-        callback_url = f"{frontend_url}/integrations/callback"
+        callback_url = f"{self._get_provider_frontend_url(provider, frontend_url)}/integrations/callback"
 
         # Embed user_id in state so we know who is connecting
         full_state = self._encode_state(state, user_id, provider)
 
         # Get credentials from environment
-        client_id = os.getenv(f"PROVIDER_{provider.upper()}_CLIENT_ID", "")
+        client_id, client_id_key = self._get_provider_env_value(provider, "CLIENT_ID")
         if not client_id:
-            return None
+            return {
+                "success": False,
+                "error": f"Missing OAuth client id for {provider} (expected env: {client_id_key})",
+            }
+        if self._is_placeholder_secret(client_id):
+            return {
+                "success": False,
+                "error": f"OAuth client id for {provider} looks like a placeholder ({client_id_key})",
+            }
 
         # Build authorization URL
         params = {
@@ -152,7 +162,7 @@ class AuthService:
             "state": full_state,
         }
 
-        if provider == "google":
+        if provider in ("google", "google_drive", "google_calendar"):
             params["scope"] = provider_config["scopes"]
             params["access_type"] = "offline"
             params["prompt"] = "consent"
@@ -165,10 +175,13 @@ class AuthService:
             params["audience"] = "api.atlassian.com"
             params["scope"] = provider_config["scopes"]
             params["prompt"] = "consent"
+        elif provider == "notion":
+            # Notion requires owner to be explicit in OAuth authorize URL.
+            params["owner"] = "user"
 
         auth_url = provider_config["auth_url"]
         query_string = urllib.parse.urlencode(params)
-        return f"{auth_url}?{query_string}"
+        return {"success": True, "auth_url": f"{auth_url}?{query_string}"}
 
     async def handle_oauth_callback(
         self,
@@ -178,6 +191,7 @@ class AuthService:
         redirect_uri: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Handle OAuth callback and store tokens"""
+        import base64
         import httpx
 
         # Extract user_id/provider from state.
@@ -195,16 +209,21 @@ class AuthService:
             return {"success": False, "error": "Unknown provider"}
 
         # Get client credentials from environment
-        client_id = os.getenv(f"PROVIDER_{provider.upper()}_CLIENT_ID", "")
-        client_secret = os.getenv(f"PROVIDER_{provider.upper()}_CLIENT_SECRET", "")
+        client_id, client_id_key = self._get_provider_env_value(provider, "CLIENT_ID")
+        client_secret, client_secret_key = self._get_provider_env_value(provider, "CLIENT_SECRET")
 
-        if not client_id or not client_secret:
-            return {"success": False, "error": f"OAuth credentials not configured for {provider}"}
+        if self._is_placeholder_secret(client_id):
+            return {
+                "success": False,
+                "error": f"OAuth client id not configured for {provider} (env: {client_id_key})",
+            }
+        if self._is_placeholder_secret(client_secret):
+            return {
+                "success": False,
+                "error": f"OAuth client secret not configured for {provider} (env: {client_secret_key})",
+            }
 
-        callback_url = (
-            redirect_uri
-            or (os.getenv("FRONTEND_URL", "http://localhost:3000") + "/integrations/callback")
-        )
+        callback_url = redirect_uri or f"{self._get_provider_frontend_url(provider)}/integrations/callback"
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -226,6 +245,18 @@ class AuthService:
                     token_headers["Accept"] = "application/json"
                     token_headers["Content-Type"] = "application/json"
                     token_request_kwargs["json"] = token_data
+                elif provider == "notion":
+                    # Notion OAuth token exchange requires HTTP Basic auth with client_id:client_secret
+                    # and a JSON body (not form-encoded client credentials).
+                    basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
+                    token_headers["Accept"] = "application/json"
+                    token_headers["Content-Type"] = "application/json"
+                    token_headers["Authorization"] = f"Basic {basic}"
+                    token_request_kwargs["json"] = {
+                        "grant_type": "authorization_code",
+                        "code": code,
+                        "redirect_uri": callback_url,
+                    }
                 else:
                     token_request_kwargs["data"] = token_data
 

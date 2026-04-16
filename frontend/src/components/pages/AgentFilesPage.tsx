@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { FolderOpen, Globe, FileText, Folder, RefreshCw, Share2, Download, Eye, Code2, Copy, Pencil, X, Save } from 'lucide-react';
+import { FileText, FileImage, File, Upload, RefreshCw, Share2, Download, Eye, Code2, Copy, Pencil, X, Save, FileType2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -9,6 +9,8 @@ import {
   getMarkdownContent,
   getMarkdownTree,
   updateMarkdownContent,
+  uploadFile,
+  fetchRawFileBlob,
   type MarkdownFileContent,
   type MarkdownTreeNode,
 } from '@/lib/api';
@@ -16,38 +18,38 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const markdownComponents = {
   h1: ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h1 className={cn('text-[42px] leading-[1.05] font-semibold tracking-tight text-zinc-950 mb-8', className)} {...props} />
+    <h1 className={cn('text-[42px] leading-[1.05] font-semibold tracking-tight text-foreground mb-8', className)} {...props} />
   ),
   h2: ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h2 className={cn('mt-10 mb-4 text-[28px] leading-tight font-semibold tracking-tight text-zinc-950', className)} {...props} />
+    <h2 className={cn('mt-10 mb-4 text-[28px] leading-tight font-semibold tracking-tight text-foreground', className)} {...props} />
   ),
   h3: ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h3 className={cn('mt-8 mb-3 text-[20px] leading-tight font-semibold text-zinc-900', className)} {...props} />
+    <h3 className={cn('mt-8 mb-3 text-[20px] leading-tight font-semibold text-foreground', className)} {...props} />
   ),
   p: ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p className={cn('mb-5 text-[16px] leading-8 text-zinc-700', className)} {...props} />
+    <p className={cn('mb-5 text-[16px] leading-8 text-foreground', className)} {...props} />
   ),
   ul: ({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-    <ul className={cn('mb-5 list-disc space-y-2 pl-6 text-[16px] leading-8 text-zinc-700', className)} {...props} />
+    <ul className={cn('mb-5 list-disc space-y-2 pl-6 text-[16px] leading-8 text-foreground', className)} {...props} />
   ),
   ol: ({ className, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-    <ol className={cn('mb-5 list-decimal space-y-2 pl-6 text-[16px] leading-8 text-zinc-700', className)} {...props} />
+    <ol className={cn('mb-5 list-decimal space-y-2 pl-6 text-[16px] leading-8 text-foreground', className)} {...props} />
   ),
   li: ({ className, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
     <li className={cn('pl-1', className)} {...props} />
   ),
-  hr: (props: React.HTMLAttributes<HTMLHRElement>) => <hr className="my-8 border-zinc-200" {...props} />,
+  hr: (props: React.HTMLAttributes<HTMLHRElement>) => <hr className="my-8 border-border" {...props} />,
   code: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
-    <code className={cn('rounded bg-zinc-100 px-1.5 py-0.5 text-[0.92em] text-zinc-900', className)} {...props} />
+    <code className={cn('rounded bg-muted px-1.5 py-0.5 text-[0.92em] text-foreground', className)} {...props} />
   ),
   pre: ({ className, ...props }: React.HTMLAttributes<HTMLPreElement>) => (
-    <pre className={cn('mb-6 overflow-x-auto rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-[13px] leading-6', className)} {...props} />
+    <pre className={cn('mb-6 overflow-x-auto rounded-xl border border-border bg-muted p-4 text-[13px] leading-6', className)} {...props} />
   ),
   strong: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
-    <strong className={cn('font-semibold text-zinc-950', className)} {...props} />
+    <strong className={cn('font-semibold text-foreground', className)} {...props} />
   ),
   a: ({ className, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a className={cn('text-zinc-900 underline decoration-zinc-300 underline-offset-4', className)} {...props} />
+    <a className={cn('text-foreground underline decoration-zinc-300 underline-offset-4', className)} {...props} />
   ),
   table: ({ className, ...props }: React.HTMLAttributes<HTMLTableElement>) => (
     <div className="mb-6 overflow-x-auto">
@@ -55,10 +57,10 @@ const markdownComponents = {
     </div>
   ),
   th: ({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) => (
-    <th className={cn('border-b border-zinc-200 px-3 py-2 font-semibold text-zinc-900', className)} {...props} />
+    <th className={cn('border-b border-border px-3 py-2 font-semibold text-foreground', className)} {...props} />
   ),
   td: ({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) => (
-    <td className={cn('border-b border-zinc-100 px-3 py-2 text-zinc-700', className)} {...props} />
+    <td className={cn('border-b border-border px-3 py-2 text-foreground', className)} {...props} />
   ),
 };
 
@@ -69,104 +71,67 @@ function flattenFiles(nodes: MarkdownTreeNode[]): MarkdownTreeNode[] {
   });
 }
 
-function relativeParts(path: string): string[] {
-  return path.split('/').filter(Boolean);
-}
-
-function renderTree(
-  nodes: MarkdownTreeNode[],
-  selectedPath: string,
-  onSelect: (node: MarkdownTreeNode) => void
-): React.ReactNode {
-  return nodes.map((node) => {
-    if (node.type === 'folder') {
-      return (
-        <div key={node.path || node.name} className="space-y-1">
-          <div className="flex items-center gap-2 px-3 py-1.5 text-[13px] text-zinc-600">
-            <Folder className="w-3.5 h-3.5 text-blue-500" />
-            <span className="font-medium">{node.name}</span>
-          </div>
-          <div className="space-y-1 pl-4">{node.children ? renderTree(node.children, selectedPath, onSelect) : null}</div>
-        </div>
-      );
-    }
-
-    return (
-      <button
-        key={node.path}
-        onClick={() => onSelect(node)}
-        className={cn(
-          'w-full flex items-center gap-2 rounded-md px-3 py-1.5 text-left text-[13px] transition-colors',
-          selectedPath === node.path ? 'bg-zinc-100 text-zinc-900' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
-        )}
-      >
-        <FileText className="w-3.5 h-3.5 text-zinc-400" />
-        <span>{node.name}</span>
-      </button>
-    );
-  });
+function getFileIcon(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return <FileType2 className="w-4 h-4 text-rose-500" />;
+  if (lower.endsWith('.md')) return <FileText className="w-4 h-4 text-blue-500" />;
+  if (lower.endsWith('.txt')) return <File className="w-4 h-4 text-zinc-500" />;
+  return <File className="w-4 h-4 text-muted-foreground" />;
 }
 
 export function AgentFilesPage() {
   const { logout } = useAuth();
-  const [scope, setScope] = useState<'agent' | 'shared'>('agent');
-  const [tree, setTree] = useState<MarkdownTreeNode[]>([]);
+  const [files, setFiles] = useState<MarkdownTreeNode[]>([]);
   const [selectedPath, setSelectedPath] = useState('');
   const [fileContent, setFileContent] = useState<MarkdownFileContent | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isCodeView, setIsCodeView] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draftContent, setDraftContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingTree, setIsLoadingTree] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const files = useMemo(() => flattenFiles(tree), [tree]);
+  const loadFiles = async () => {
+    setIsLoadingFiles(true);
+    setError(null);
+    try {
+      const nextTree = await getMarkdownTree('agent');
+      const flatFiles = flattenFiles(nextTree);
+      setFiles(flatFiles);
+      
+      setSelectedPath((current) => {
+        if (current && flatFiles.some((file) => file.path === current)) {
+          return current;
+        }
+        return flatFiles[0]?.path || '';
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message === CHAT_AUTH_EXPIRED_ERROR) {
+        logout();
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Failed to load files');
+    } finally {
+      setIsLoadingFiles(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadTree() {
-      setIsLoadingTree(true);
-      setError(null);
-      try {
-        const nextTree = await getMarkdownTree(scope);
-        if (cancelled) {
-          return;
-        }
-        setTree(nextTree);
-        const firstFile = flattenFiles(nextTree)[0];
-        setSelectedPath((current) => {
-          if (current && flattenFiles(nextTree).some((file) => file.path === current)) {
-            return current;
-          }
-          return firstFile?.path || '';
-        });
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-        if (err instanceof Error && err.message === CHAT_AUTH_EXPIRED_ERROR) {
-          logout();
-          return;
-        }
-        setError(err instanceof Error ? err.message : 'Failed to load files');
-      } finally {
-        if (!cancelled) {
-          setIsLoadingTree(false);
-        }
-      }
-    }
-
-    loadTree();
-    return () => {
-      cancelled = true;
-    };
-  }, [scope, logout]);
+    loadFiles();
+  }, [logout]);
 
   useEffect(() => {
     if (!selectedPath) {
       setFileContent(null);
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        setBlobUrl(null);
+      }
       return;
     }
 
@@ -175,12 +140,26 @@ export function AgentFilesPage() {
     async function loadContent() {
       setIsLoadingContent(true);
       setError(null);
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        setBlobUrl(null);
+      }
+      
       try {
-        const content = await getMarkdownContent(scope, selectedPath);
-        if (!cancelled) {
-          setFileContent(content);
-          setDraftContent(content.content);
-          setIsEditing(false);
+        if (selectedPath.toLowerCase().endsWith('.pdf')) {
+          const blob = await fetchRawFileBlob('agent', selectedPath);
+          if (!cancelled) {
+            const url = URL.createObjectURL(blob);
+            setBlobUrl(url);
+            setFileContent({ scope: 'agent', root_name: 'Root', path: selectedPath, name: selectedPath.split('/').pop() || '', content: '' });
+          }
+        } else {
+          const content = await getMarkdownContent('agent', selectedPath);
+          if (!cancelled) {
+            setFileContent(content);
+            setDraftContent(content.content);
+            setIsEditing(false);
+          }
         }
       } catch (err) {
         if (cancelled) {
@@ -190,7 +169,7 @@ export function AgentFilesPage() {
           logout();
           return;
         }
-        setError(err instanceof Error ? err.message : 'Failed to load markdown content');
+        setError(err instanceof Error ? err.message : 'Failed to load file content');
       } finally {
         if (!cancelled) {
           setIsLoadingContent(false);
@@ -202,30 +181,20 @@ export function AgentFilesPage() {
     return () => {
       cancelled = true;
     };
-  }, [scope, selectedPath, logout]);
+  }, [selectedPath, logout]);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
 
   const selectedFile = files.find((file) => file.path === selectedPath) || files[0] || null;
-  const breadcrumb = selectedPath ? relativeParts(selectedPath) : [];
+  const isEditable = selectedFile?.name.toLowerCase().endsWith('.md') || selectedFile?.name.toLowerCase().endsWith('.txt');
 
   async function handleRefresh() {
-    setIsLoadingTree(true);
-    setError(null);
-    try {
-      const nextTree = await getMarkdownTree(scope);
-      setTree(nextTree);
-      const nextFiles = flattenFiles(nextTree);
-      if (!nextFiles.some((file) => file.path === selectedPath)) {
-        setSelectedPath(nextFiles[0]?.path || '');
-      }
-    } catch (err) {
-      if (err instanceof Error && err.message === CHAT_AUTH_EXPIRED_ERROR) {
-        logout();
-        return;
-      }
-      setError(err instanceof Error ? err.message : 'Failed to refresh files');
-    } finally {
-      setIsLoadingTree(false);
-    }
+    await loadFiles();
   }
 
   async function handleCopy() {
@@ -238,15 +207,23 @@ export function AgentFilesPage() {
   }
 
   async function handleShare() {
-    if (!fileContent?.path) return;
-    await navigator.clipboard.writeText(`${scope}:${fileContent.path}`);
+    if (!selectedFile?.path) return;
+    await navigator.clipboard.writeText(selectedFile.path);
   }
 
   function handleDownload() {
+    if (blobUrl && selectedFile?.name.toLowerCase().endsWith('.pdf')) {
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = selectedFile.name;
+      link.click();
+      return;
+    }
+    
     const contentToDownload = isEditing ? draftContent : fileContent?.content;
-    const name = fileContent?.name;
+    const name = selectedFile?.name;
     if (!contentToDownload || !name) return;
-    const blob = new Blob([contentToDownload], { type: 'text/markdown;charset=utf-8' });
+    const blob = new Blob([contentToDownload], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -271,7 +248,7 @@ export function AgentFilesPage() {
     setIsSaving(true);
     setError(null);
     try {
-      const updated = await updateMarkdownContent(scope, fileContent.path, draftContent);
+      const updated = await updateMarkdownContent('agent', fileContent.path, draftContent);
       setFileContent(updated);
       setDraftContent(updated.content);
       setIsEditing(false);
@@ -280,166 +257,195 @@ export function AgentFilesPage() {
         logout();
         return;
       }
-      setError(err instanceof Error ? err.message : 'Failed to save markdown content');
+      setError(err instanceof Error ? err.message : 'Failed to save file content');
     } finally {
       setIsSaving(false);
     }
   }
 
+  async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(null);
+    try {
+      await uploadFile('agent', file);
+      await loadFiles();
+      // Select the newly uploaded file
+      setSelectedPath(file.name);
+    } catch (err) {
+      if (err instanceof Error && err.message === CHAT_AUTH_EXPIRED_ERROR) {
+        logout();
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'Failed to upload file');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+
   return (
-    <div className="h-full overflow-hidden bg-[#f7f7f5] animate-in slide-in-from-bottom-4 duration-300">
+    <div className="h-full overflow-hidden bg-background animate-in slide-in-from-bottom-4 duration-300">
       <div className="h-full flex min-h-0">
-        <aside className="w-[300px] shrink-0 border-r border-zinc-200 bg-[#fbfbfa] flex flex-col min-h-0">
-          <div className="px-4 pt-4 pb-3 border-b border-zinc-200">
-            <div className="grid grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1">
-              <button
-                onClick={() => {
-                  setScope('agent');
-                  setSelectedPath('');
-                }}
-                className={cn(
-                  'flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
-                  scope === 'agent' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'
-                )}
-              >
-                <FolderOpen className="w-3.5 h-3.5" />
-                Agent
-              </button>
-              <button
-                onClick={() => {
-                  setScope('shared');
-                  setSelectedPath('');
-                }}
-                className={cn(
-                  'flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors',
-                  scope === 'shared' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'
-                )}
-              >
-                <Globe className="w-3.5 h-3.5" />
-                Shared
-              </button>
-            </div>
+        <aside className="w-[300px] shrink-0 border-r border-border bg-sidebar flex flex-col min-h-0">
+          <div className="px-4 py-4 border-b border-border flex flex-col gap-3">
+            <h3 className="font-semibold text-foreground text-sm">Your Files</h3>
+            <Button 
+              onClick={() => fileInputRef.current?.click()} 
+              disabled={isUploading}
+              className="w-full gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              {isUploading ? 'Uploading...' : 'Upload File'}
+            </Button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept=".pdf,.md,.txt" 
+              onChange={handleFileUpload} 
+            />
+            <p className="text-[10px] text-muted-foreground text-center">Supported: PDF, TXT, MD</p>
           </div>
 
-          <div className="px-3 py-3 border-b border-zinc-200 space-y-1">
-            {[
-              { icon: Eye, label: isCodeView ? 'Preview Mode' : 'Reading Mode' },
-              { icon: Code2, label: isCodeView ? 'Source Visible' : 'Source Hidden' },
-              { icon: RefreshCw, label: 'Refresh Files', action: handleRefresh },
-              { icon: Share2, label: 'Copy File Path', action: handleShare },
-            ].map((action) => (
-              <button
-                key={action.label}
-                onClick={action.action}
-                className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-[13px] text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition-colors"
-              >
-                <action.icon className="w-3.5 h-3.5" />
-                {action.label}
-              </button>
-            ))}
+          <div className="px-3 py-2 border-b border-border">
+            <button
+              onClick={handleRefresh}
+              className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh List
+            </button>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
-            {isLoadingTree ? (
-              <div className="px-3 py-2 text-[13px] text-zinc-500">Loading markdown files...</div>
+            {isLoadingFiles ? (
+              <div className="px-3 py-2 text-[13px] text-muted-foreground">Loading files...</div>
             ) : error ? (
               <div className="px-3 py-2 text-[13px] text-red-600">{error}</div>
+            ) : files.length === 0 ? (
+              <div className="px-3 py-4 text-[13px] text-muted-foreground text-center italic">No files uploaded yet.</div>
             ) : (
-              <div className="space-y-2">{renderTree(tree, selectedFile?.path || '', (node) => setSelectedPath(node.path))}</div>
+              <div className="space-y-1">
+                {files.map((file) => (
+                  <button
+                    key={file.path}
+                    onClick={() => setSelectedPath(file.path)}
+                    className={cn(
+                      'w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] transition-colors',
+                      selectedPath === file.path ? 'bg-primary/10 text-primary font-medium' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    )}
+                  >
+                    {getFileIcon(file.name)}
+                    <span className="truncate flex-1">{file.name}</span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 bg-white flex flex-col min-h-0">
-          <div className="h-14 shrink-0 border-b border-zinc-200 px-6 flex items-center justify-between">
-            <div className="text-[13px] text-zinc-500 overflow-hidden text-ellipsis whitespace-nowrap">
-              <span className="font-medium text-zinc-700">{scope === 'agent' ? 'Agent Files' : 'Shared Files'}</span>
-              {breadcrumb.length > 0 && <span className="mx-2 text-zinc-300">/</span>}
-              {breadcrumb.map((part, index) => (
-                <span key={`${part}-${index}`}>
-                  {index > 0 && <span className="mx-2 text-zinc-300">/</span>}
-                  <span className={cn(index === breadcrumb.length - 1 ? 'font-medium text-zinc-900' : '')}>{part}</span>
-                </span>
-              ))}
+        <section className="min-w-0 flex-1 bg-card flex flex-col min-h-0">
+          <div className="h-14 shrink-0 border-b border-border px-6 flex items-center justify-between">
+            <div className="text-[14px] font-medium text-foreground truncate max-w-[50%]">
+              {selectedFile?.name || 'Select a file'}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn('h-8 w-8 text-zinc-500 hover:text-zinc-900', !isCodeView && 'bg-zinc-100 text-zinc-900')}
-                onClick={() => setIsCodeView(false)}
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn('h-8 w-8 text-zinc-500 hover:text-zinc-900', isCodeView && 'bg-zinc-100 text-zinc-900')}
-                onClick={() => setIsCodeView(true)}
-              >
-                <Code2 className="w-4 h-4" />
-              </Button>
-              {!isEditing ? (
-                <Button variant="ghost" className="h-8 px-3 text-[13px] text-zinc-600 hover:text-zinc-900" onClick={handleEditStart}>
-                  <Pencil className="mr-2 h-3.5 w-3.5" />
-                  Edit
-                </Button>
-              ) : (
+              {isEditable && (
                 <>
-                  <Button variant="ghost" className="h-8 px-3 text-[13px] text-zinc-600 hover:text-zinc-900" onClick={handleEditCancel}>
-                    <X className="mr-2 h-3.5 w-3.5" />
-                    Cancel
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn('h-8 w-8 text-muted-foreground hover:text-foreground', !isCodeView && 'bg-muted text-foreground')}
+                    onClick={() => setIsCodeView(false)}
+                  >
+                    <Eye className="w-4 h-4" />
                   </Button>
-                  <Button className="h-8 px-3 text-[13px] bg-zinc-900 text-white hover:bg-zinc-800" onClick={handleSave} disabled={isSaving}>
-                    <Save className="mr-2 h-3.5 w-3.5" />
-                    {isSaving ? 'Saving' : 'Save'}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn('h-8 w-8 text-muted-foreground hover:text-foreground', isCodeView && 'bg-muted text-foreground')}
+                    onClick={() => setIsCodeView(true)}
+                  >
+                    <Code2 className="w-4 h-4" />
+                  </Button>
+                  {!isEditing ? (
+                    <Button variant="ghost" className="h-8 px-3 text-[13px] text-muted-foreground hover:text-foreground" onClick={handleEditStart}>
+                      <Pencil className="mr-2 h-3.5 w-3.5" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="h-8 px-3 text-[13px] text-muted-foreground hover:text-foreground" onClick={handleEditCancel}>
+                        <X className="mr-2 h-3.5 w-3.5" />
+                        Cancel
+                      </Button>
+                      <Button className="h-8 text-[13px]" onClick={handleSave} disabled={isSaving}>
+                        <Save className="mr-2 h-3.5 w-3.5" />
+                        {isSaving ? 'Saving' : 'Save'}
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleCopy}>
+                    <Copy className="w-4 h-4" />
                   </Button>
                 </>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900" onClick={handleCopy}>
-                <Copy className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900" onClick={handleShare}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleShare} disabled={!selectedFile}>
                 <Share2 className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-900" onClick={handleDownload}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handleDownload} disabled={!selectedFile}>
                 <Download className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto">
-            <div className="w-full px-10 py-8">
-              {isLoadingContent ? (
-                <div className="text-[14px] text-zinc-500">Loading markdown content...</div>
-              ) : error ? (
-                <div className="text-[14px] text-red-600">{error}</div>
-              ) : !fileContent ? (
-                <div className="text-[14px] text-zinc-500">No markdown file selected.</div>
-              ) : isEditing ? (
+            {isLoadingContent ? (
+               <div className="w-full px-10 py-8 text-[14px] text-muted-foreground flex items-center justify-center h-full">Loading file content...</div>
+            ) : error ? (
+               <div className="w-full px-10 py-8 text-[14px] text-red-600 flex items-center justify-center h-full">{error}</div>
+            ) : !selectedFile ? (
+               <div className="w-full px-10 py-8 text-[14px] text-muted-foreground flex items-center justify-center h-full">No file selected.</div>
+            ) : blobUrl && selectedFile.name.toLowerCase().endsWith('.pdf') ? (
+              <iframe 
+                src={blobUrl} 
+                className="w-full h-full border-none"
+                title={selectedFile.name}
+              />
+            ) : isEditing ? (
+              <div className="w-full px-10 py-8 h-full">
                 <textarea
                   value={draftContent}
                   onChange={(event) => setDraftContent(event.target.value)}
                   className={cn(
-                    'w-full resize-none rounded-xl border border-zinc-200 bg-white px-5 py-5 outline-none focus:border-zinc-300',
+                    'w-full h-full resize-none rounded-xl border border-input bg-background px-5 py-5 outline-none focus:border-ring',
                     isCodeView
-                      ? 'min-h-[720px] font-mono text-[13px] leading-6 text-zinc-800'
-                      : 'min-h-[720px] text-[15px] leading-8 text-zinc-800'
+                      ? 'font-mono text-[13px] leading-6 text-foreground'
+                      : 'text-[15px] leading-8 text-foreground'
                   )}
                   spellCheck={false}
                 />
-              ) : isCodeView ? (
-                <pre className="overflow-x-auto text-[13px] leading-6 text-zinc-700 whitespace-pre-wrap break-words font-mono">
-                  {fileContent.content}
-                </pre>
-              ) : (
-                <div className="max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {fileContent.content}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="w-full px-10 py-8">
+                {isCodeView || selectedFile.name.toLowerCase().endsWith('.txt') ? (
+                  <pre className="overflow-x-auto text-[13px] leading-6 text-muted-foreground whitespace-pre-wrap break-words font-mono">
+                    {fileContent?.content}
+                  </pre>
+                ) : (
+                  <div className="max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                      {fileContent?.content || ''}
+                    </ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>

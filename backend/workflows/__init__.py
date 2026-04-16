@@ -1,35 +1,41 @@
 """
-Workflow Engine — A complete workflow automation system.
-
-Build, execute, and monitor AI-powered workflows.
+Workflow Engine — Agentic execution framework.
 """
 
 from backend.workflows.types import (
-    Workflow, Block, BlockConfig, BlockType, Connection,
-    Trigger, TriggerType, Loop, ParallelGroup, ExecutionResult,
-    WorkflowStatus, BlockStatus, ParallelType, SchedulePreset,
-    BackgroundJob, JobStatus, APIKey, APIKeyType, User,
+    Workflow, Trigger, TriggerType, ExecutionResult,
+    WorkflowStatus, SchedulePreset, BackgroundJob, JobStatus,
+    APIKey, APIKeyType, User, WorkflowTask, WorkflowTaskStatus
 )
-from backend.workflows.store import WorkflowStore
-from backend.workflows.engine.executor import WorkflowExecutor
-from backend.workflows.engine.dag_builder import build_dag
-from backend.workflows.engine.variable_resolver import VariableResolver
-from backend.workflows.tools.registry import registry, ToolRegistry
-from backend.workflows.tools.base import BaseTool, ToolResult
-from backend.workflows.coworker import CoWorkerAgent, create_coworker_agent
 
-__version__ = "2.0.0"
+__version__ = "4.0.0"
 
 __all__ = [
-    "Workflow", "Block", "BlockConfig", "BlockType", "Connection",
-    "Trigger", "TriggerType", "Loop", "ParallelGroup", "ExecutionResult",
-    "WorkflowStatus", "BlockStatus", "ParallelType", "SchedulePreset",
-    "BackgroundJob", "JobStatus", "APIKey", "APIKeyType", "User",
+    "Workflow", "Trigger", "TriggerType", "ExecutionResult",
+    "WorkflowStatus", "SchedulePreset", "BackgroundJob", "JobStatus",
+    "APIKey", "APIKeyType", "User", "WorkflowTask", "WorkflowTaskStatus",
     "WorkflowStore",
     "WorkflowExecutor",
-    "build_dag",
-    "VariableResolver",
+    "CoWorkerAgent",
     "registry", "ToolRegistry",
     "BaseTool", "ToolResult",
-    "CoWorkerAgent", "create_coworker_agent",
 ]
+
+
+def __getattr__(name):
+    if name == "WorkflowStore":
+        from backend.store.workflow_store import WorkflowStore
+        return WorkflowStore
+    if name == "WorkflowExecutor":
+        from backend.workflows.engine.executor import WorkflowExecutor
+        return WorkflowExecutor
+    if name == "CoWorkerAgent":
+        from backend.workflows.engine.coworker import CoWorkerAgent
+        return CoWorkerAgent
+    if name in {"registry", "ToolRegistry"}:
+        from backend.tools.system_tools.registry import registry, ToolRegistry
+        return {"registry": registry, "ToolRegistry": ToolRegistry}[name]
+    if name in {"BaseTool", "ToolResult"}:
+        from backend.tools.system_tools.base import BaseTool, ToolResult
+        return {"BaseTool": BaseTool, "ToolResult": ToolResult}[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

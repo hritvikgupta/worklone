@@ -20,7 +20,7 @@ const MOCK_AGENTS = [
     id: 'agent-1',
     name: 'Mira',
     role: 'Growth Lead',
-    avatar: '/workforce/employee-1.png',
+    avatar: '/employees/women_2.png',
     status: 'working' as const,
     description: 'Owns roadmap definition, requirement quality, and execution cadence.',
     currentTask: 'issue-101',
@@ -31,7 +31,7 @@ const MOCK_AGENTS = [
     id: 'agent-2',
     name: 'Sam',
     role: 'Data Analyst',
-    avatar: '/workforce/employee-4.png',
+    avatar: '/employees/men_1.png',
     status: 'idle' as const,
     description: 'Turns messy operational and product data into decisions.',
     skills: ['SQL', 'Analytics', 'Dashboards'],
@@ -41,7 +41,7 @@ const MOCK_AGENTS = [
     id: 'agent-3',
     name: 'Leo',
     role: 'Backend Engineer',
-    avatar: '/workforce/employee-3.png',
+    avatar: '/employees/men_2.png',
     status: 'working' as const,
     description: 'Builds the backend systems that keep the operating environment reliable.',
     currentTask: 'issue-102',
@@ -52,7 +52,7 @@ const MOCK_AGENTS = [
     id: 'agent-4',
     name: 'Katy',
     role: 'Product Manager',
-    avatar: '/workforce/employee-5.png',
+    avatar: '/employees/women_1.png',
     status: 'idle' as const,
     description: 'Translates ambiguous requests into clear plans.',
     skills: ['Roadmapping', 'PRDs', 'Prioritization'],
@@ -86,9 +86,9 @@ const toolsUsed = ['BigQuery', 'dbt', 'Jupyter'];
 
 export function LandingPageDashboard() {
   return (
-    <div className="mx-auto max-w-[90%] overflow-hidden rounded-[28px] border border-black/8 bg-[#f7f7f5]">
+    <div className="mx-auto max-w-[90%] overflow-hidden rounded-[28px] border border-zinc-200 bg-white">
       <div className="grid min-h-[800px] lg:grid-cols-[240px_1fr]">
-        <aside className="border-r border-black/6 bg-sidebar">
+        <aside className="border-r border-zinc-200 bg-zinc-50">
           <div className="m-2 flex items-center gap-2 rounded-md p-4">
             <img
               src="/brand/worklone-mark-black.png"
@@ -124,7 +124,7 @@ export function LandingPageDashboard() {
         <div className="relative overflow-hidden bg-white">
           <div className="h-full overflow-y-auto p-8">
             <div className="mx-auto max-w-6xl space-y-8">
-              <div className="flex items-end justify-between border-b border-border/50 pb-3">
+              <div className="flex items-end justify-between border-b border-border pb-3">
                 <div>
                   <h2 className="text-2xl font-semibold tracking-tight">Employees</h2>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -141,12 +141,12 @@ export function LandingPageDashboard() {
           </div>
 
           <div className="absolute inset-y-4 right-4 z-10 w-80">
-            <div className="flex h-full rounded-xl bg-white/95 shadow-lg ring-1 ring-black/10">
+            <div className="flex h-full rounded-xl bg-white shadow-lg ring-1 ring-black/10">
               <div className="flex h-full flex-col">
-                <div className="border-b border-black/6 p-4">
+                <div className="border-b border-zinc-200 p-4">
                   <div className="flex items-center gap-3">
                     <img
-                      src="/workforce/employee-1.png"
+                      src="/employees/women_2.png"
                       alt="Mira"
                       className="h-9 w-9 rounded-lg object-cover"
                     />
@@ -158,13 +158,13 @@ export function LandingPageDashboard() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                  <div className="mb-4 rounded-lg bg-zinc-50 p-3">
-                    <div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">Current Task</div>
-                    <div className="mt-1 text-xs font-medium text-zinc-900">Audit acquisition funnel drop-offs</div>
+                  <div className="mb-4 rounded-lg bg-muted p-3">
+                    <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Current Task</div>
+                    <div className="mt-1 text-xs font-medium text-foreground">Audit acquisition funnel drop-offs</div>
                   </div>
 
                   <div className="mb-4">
-                    <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-zinc-500">Activity</div>
+                    <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Activity</div>
                     <div className="space-y-0">
                       {taskTimeline.map((item, index) => (
                         <div key={index} className="relative flex gap-3">
@@ -182,12 +182,12 @@ export function LandingPageDashboard() {
                               )}
                             </div>
                             {index < taskTimeline.length - 1 && (
-                              <div className="w-px bg-zinc-200" style={{ minHeight: '24px' }} />
+                              <div className="w-px bg-muted" style={{ minHeight: '24px' }} />
                             )}
                           </div>
                           <div className="flex-1 pb-4">
-                            <div className="text-[10px] text-zinc-400">{item.time}</div>
-                            <div className="mt-0.5 text-xs text-zinc-700">{item.message}</div>
+                            <div className="text-[10px] text-muted-foreground">{item.time}</div>
+                            <div className="mt-0.5 text-xs text-foreground">{item.message}</div>
                           </div>
                         </div>
                       ))}
@@ -195,7 +195,7 @@ export function LandingPageDashboard() {
                   </div>
 
                   <div className="mb-4">
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                       <Brain className="h-3 w-3" />
                       Skills used
                     </div>
@@ -209,7 +209,7 @@ export function LandingPageDashboard() {
                   </div>
 
                   <div className="mb-4">
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                       <Wrench className="h-3 w-3" />
                       Tools used
                     </div>
@@ -223,28 +223,28 @@ export function LandingPageDashboard() {
                   </div>
                 </div>
 
-                <div className="border-t border-black/6 p-4">
+                <div className="border-t border-foreground/6 p-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-zinc-500">
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
                         <Clock className="h-3.5 w-3.5" />
                         Session time
                       </span>
-                      <span className="font-medium text-zinc-900">18m 42s</span>
+                      <span className="font-medium text-foreground">18m 42s</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-zinc-500">
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
                         <Coins className="h-3.5 w-3.5" />
                         Tokens used
                       </span>
-                      <span className="font-medium text-zinc-900">24,812</span>
+                      <span className="font-medium text-foreground">24,812</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-zinc-500">
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
                         <ArrowRight className="h-3.5 w-3.5" />
                         Cost
                       </span>
-                      <span className="font-medium text-zinc-900">$0.04</span>
+                      <span className="font-medium text-foreground">$0.04</span>
                     </div>
                   </div>
                 </div>

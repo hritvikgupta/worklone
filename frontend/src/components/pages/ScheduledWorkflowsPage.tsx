@@ -1,13 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { CalendarClock, ChevronRight, Clock3, PlayCircle, Repeat2, X } from 'lucide-react';
+import { 
+  CalendarClock, 
+  ChevronRight, 
+  Clock3, 
+  PlayCircle, 
+  Repeat2, 
+  RotateCcw, 
+  Square, 
+  X, 
+  Play, 
+  Zap, 
+  MoreHorizontal,
+  Plus,
+  Loader2
+} from 'lucide-react';
+import { 
+  IconCloud, 
+  IconPhotoScan, 
+  IconArrowUp,
+  IconSparkles,
+  IconLayout,
+  IconBrain
+} from '@tabler/icons-react';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { ModelDropdown } from '@/components/ModelDropdown';
+import { ScheduleEditor } from '@/src/components/ScheduleEditor';
 import {
+  cancelPausedExecution,
   getWorkflow,
+  listPausedExecutions,
+  PausedExecution,
+  resumePausedExecution,
   listWorkflows,
+  generateWorkflow,
+  executeWorkflow,
+  updateWorkflow,
   WorkflowDetail,
   WorkflowExecution,
   WorkflowSummary,
@@ -28,7 +62,7 @@ function statusTone(status: string): string {
   if (status === 'active' || status === 'completed') return 'border-emerald-200 text-emerald-700 bg-emerald-50';
   if (status === 'running') return 'border-sky-200 text-sky-700 bg-sky-50';
   if (status === 'failed') return 'border-rose-200 text-rose-700 bg-rose-50';
-  if (status === 'paused' || status === 'cancelled') return 'border-zinc-300 text-zinc-600 bg-zinc-50';
+  if (status === 'paused' || status === 'cancelled') return 'border-border text-muted-foreground bg-muted';
   return 'border-amber-200 text-amber-700 bg-amber-50';
 }
 
@@ -38,7 +72,25 @@ export function ScheduledWorkflowsPage() {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowDetail | null>(null);
   const [executions, setExecutions] = useState<WorkflowExecution[]>([]);
+  const [pausedExecutions, setPausedExecutions] = useState<PausedExecution[]>([]);
+  const [resumeDrafts, setResumeDrafts] = useState<Record<string, string>>({});
+  const [resumeBusy, setResumeBusy] = useState<string | null>(null);
+  const [cancelBusy, setCancelBusy] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editSchedule, setEditSchedule] = useState('');
+  const [editTasks, setEditTasks] = useState<{ id: string; description: string; status: string; result?: string; error?: string }[]>([]);
+  const [editTimezone, setEditTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+
+  const selectedSummary = workflows.find((workflow) => workflow.id === selectedWorkflowId) || null;
+  
+  // Prompt input states
+  const [promptValue, setPromptValue] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("qwen/qwen3-max-thinking");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,33 +114,119 @@ export function ScheduledWorkflowsPage() {
     };
   }, []);
 
-  const selectedSummary = workflows.find((workflow) => workflow.id === selectedWorkflowId) || null;
 
-  const activeSchedules = workflows.filter((workflow) => workflow.status === 'active').length;
-  const nextRunValue = workflows
-    .map((workflow) => workflow.handoff_at)
-    .filter(Boolean)
-    .sort()[0] || null;
+  const handleGenerate = async () => {
+    if (!promptValue.trim()) return;
+    setIsGenerating(true);
+    try {
+      await generateWorkflow(promptValue, selectedModel);
+      setPromptValue('');
+      const data = await listWorkflows();
+      setWorkflows(data);
+    } catch (err) {
+      console.error('Failed to generate workflow:', err);
+      alert('Failed to generate workflow');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
-  const completedRuns = executions.filter((execution) => execution.status === 'completed').length;
-  const failedRuns = executions.filter((execution) => execution.status === 'failed').length;
-  const successRate = completedRuns + failedRuns > 0
-    ? `${((completedRuns / (completedRuns + failedRuns)) * 100).toFixed(1)}%`
-    : 'N/A';
+  const handleExecute = async (workflowId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Open the detail panel if not already open
+      if (selectedWorkflowId !== workflowId) {
+        await openWorkflow(workflowId);
+      }
+
+      // Stream execution — refresh detail on events
+      await executeWorkflow(workflowId, async (event) => {
+        if (
+          event.type === 'tool_result' ||
+          event.type === 'done' ||
+          event.type === 'final' ||
+          event.type === 'error' ||
+          event.type === 'thinking' ||
+          event.type === 'tool_start'
+        ) {
+          try {
+            const detail = await getWorkflow(workflowId);
+            setSelectedWorkflow(detail.workflow);
+            setExecutions(detail.executions);
+          } catch {}
+        }
+      });
+
+      // Final refresh after stream ends
+      const data = await listWorkflows();
+      setWorkflows(data);
+      try {
+        const detail = await getWorkflow(workflowId);
+        setSelectedWorkflow(detail.workflow);
+        setExecutions(detail.executions);
+      } catch {}
+    } catch (err) {
+      console.error('Failed to execute workflow:', err);
+      alert('Failed to execute workflow');
+    }
+  };
+
+  const handleToggleStatus = async (workflowId: string, currentStatus: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStatus = currentStatus === 'active' ? 'cancelled' : 'active';
+    try {
+      await updateWorkflow(workflowId, { status: newStatus });
+      const data = await listWorkflows();
+      setWorkflows(data);
+      if (selectedWorkflowId === workflowId) {
+        await refreshSelectedWorkflow();
+      }
+    } catch (err) {
+      console.error('Failed to toggle workflow status:', err);
+    }
+  };
 
   const openWorkflow = async (workflowId: string) => {
     setSelectedWorkflowId(workflowId);
     setDetailLoading(true);
+    setIsEditing(false);
     try {
       const data = await getWorkflow(workflowId);
       setSelectedWorkflow(data.workflow);
       setExecutions(data.executions);
+      const paused = await listPausedExecutions(workflowId);
+      setPausedExecutions(paused);
+      setEditDescription(data.workflow.description || '');
+      setEditSchedule(data.workflow.triggers?.[0]?.cron_expression || data.workflow.schedule || '');
+      setEditTimezone(data.workflow.triggers?.[0]?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+      setEditTasks(data.workflow.tasks?.map((t: any) => ({ id: t.id, description: t.description, status: t.status })) || []);
     } catch (err) {
       console.error('Failed to load workflow detail:', err);
       setSelectedWorkflow(null);
       setExecutions([]);
+      setPausedExecutions([]);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+
+  const handleSaveEdit = async () => {
+    if (!selectedWorkflowId) return;
+    try {
+      await updateWorkflow(selectedWorkflowId, {
+        description: editDescription,
+        schedule: editSchedule,
+        timezone: editTimezone,
+        tasks: editTasks,
+      });
+      setIsEditing(false);
+      await refreshSelectedWorkflow();
+      const data = await listWorkflows();
+      setWorkflows(data);
+    } catch (err) {
+      console.error('Failed to save workflow:', err);
+      alert('Failed to save workflow changes.');
     }
   };
 
@@ -96,96 +234,197 @@ export function ScheduledWorkflowsPage() {
     setSelectedWorkflowId(null);
     setSelectedWorkflow(null);
     setExecutions([]);
+    setPausedExecutions([]);
+    setResumeDrafts({});
     setDetailLoading(false);
   };
 
+  // Poll for live updates when workflow is open and has running tasks/executions
+  useEffect(() => {
+    if (!selectedWorkflowId) return;
+    const hasRunning =
+      selectedWorkflow?.status === 'running' ||
+      selectedWorkflow?.tasks?.some((t: any) => t.status === 'running') ||
+      executions.some((e) => e.status === 'running');
+    if (!hasRunning) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await getWorkflow(selectedWorkflowId);
+        setSelectedWorkflow(data.workflow);
+        setExecutions(data.executions);
+      } catch {}
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [selectedWorkflowId, selectedWorkflow?.status, executions]);
+
+  const refreshSelectedWorkflow = async () => {
+    if (!selectedWorkflowId) return;
+    const data = await getWorkflow(selectedWorkflowId);
+    setSelectedWorkflow(data.workflow);
+    setExecutions(data.executions);
+    const paused = await listPausedExecutions(selectedWorkflowId);
+    setPausedExecutions(paused);
+  };
+
+  const handleResume = async (pauseId: string) => {
+    try {
+      setResumeBusy(pauseId);
+      const raw = (resumeDrafts[pauseId] || '').trim();
+      const input = raw ? JSON.parse(raw) : {};
+      await resumePausedExecution(pauseId, input);
+      await refreshSelectedWorkflow();
+      setResumeDrafts((prev) => ({ ...prev, [pauseId]: '' }));
+    } catch (err) {
+      console.error('Failed to resume paused workflow:', err);
+      window.alert(err instanceof Error ? err.message : 'Failed to resume workflow');
+    } finally {
+      setResumeBusy(null);
+    }
+  };
+
+  const handleCancelPause = async (pauseId: string) => {
+    try {
+      setCancelBusy(pauseId);
+      await cancelPausedExecution(pauseId);
+      await refreshSelectedWorkflow();
+    } catch (err) {
+      console.error('Failed to cancel paused workflow:', err);
+      window.alert(err instanceof Error ? err.message : 'Failed to cancel paused workflow');
+    } finally {
+      setCancelBusy(null);
+    }
+  };
+
   return (
-    <div className="relative p-8">
-      <div className="w-full space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-        <div className="flex items-end justify-between border-b border-border/50 pb-4">
+    <div className="p-8 pb-40 h-full overflow-y-auto bg-background relative overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-300">
+        
+        {/* Header Section (Matching Dashboard/Agents) */}
+        <div className="flex items-end justify-between border-b border-border pb-3">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Workflows</h2>
-            <p className="text-muted-foreground mt-1 text-[14px] leading-6">
-              Live workflow records from the shared workflow engine. Owner means who handed the workflow over for execution.
-            </p>
-          </div>
-          <Button className="h-9 px-4 text-[13px] bg-zinc-900 text-white hover:bg-zinc-800" disabled>
-            <CalendarClock className="w-4 h-4 mr-2" />
-            New Workflow
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <div className="flex items-center gap-2 text-zinc-500 text-[14px] font-medium">
-              <Repeat2 className="w-4 h-4" />
-              Active Schedules
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-zinc-900">{activeSchedules}</div>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <div className="flex items-center gap-2 text-zinc-500 text-[14px] font-medium">
-              <Clock3 className="w-4 h-4" />
-              Latest Handoff
-            </div>
-            <div className="mt-2 text-lg font-semibold text-zinc-900">{formatDateTime(nextRunValue)}</div>
-          </div>
-          <div className="rounded-lg border border-zinc-200 bg-white p-5">
-            <div className="flex items-center gap-2 text-zinc-500 text-[14px] font-medium">
-              <PlayCircle className="w-4 h-4" />
-              Success Rate
-            </div>
-            <div className="mt-2 text-2xl font-semibold text-zinc-900">{successRate}</div>
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Workflows</h2>
+            <p className="text-muted-foreground mt-1 text-xs">Automated tasks that run on a schedule.</p>
           </div>
         </div>
 
-        <div className="space-y-3">
+        {/* Workflow List Section */}
+        <div className="space-y-4">
           {loading ? (
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 text-sm text-zinc-500">
-              Loading workflows...
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading workflows...</span>
             </div>
           ) : workflows.length === 0 ? (
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 text-sm text-zinc-500">
-              No workflows found.
+            <div className="rounded-xl border border-dashed border-border bg-muted/30 p-12 text-center">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground mb-4">
+                <Zap className="h-5 w-5" />
+              </div>
+              <h3 className="text-foreground text-sm font-semibold">No workflows found</h3>
+              <p className="text-muted-foreground text-xs mt-1">Describe an automation in the box below to get started.</p>
             </div>
           ) : (
-            workflows.map((workflow) => (
-              <button
-                key={workflow.id}
-                type="button"
-                onClick={() => openWorkflow(workflow.id)}
-                className="w-full rounded-lg border border-zinc-200 bg-white p-5 text-left transition-colors hover:border-zinc-300 hover:bg-zinc-50"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="text-[12px] font-semibold tracking-wide uppercase text-zinc-400">{workflow.id}</div>
-                    <h3 className="text-[18px] font-semibold text-zinc-900">{workflow.name}</h3>
-                    <p className="text-[14px] text-zinc-500 leading-6 max-w-3xl">{workflow.description || 'No description provided.'}</p>
+            <div className="flex flex-col gap-3">
+              {workflows.map((workflow, index) => (
+                <motion.div
+                  key={workflow.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => openWorkflow(workflow.id)}
+                  className={cn(
+                    "flex items-center justify-between rounded-lg border bg-card px-5 py-3.5 transition-all cursor-pointer group",
+                    selectedWorkflowId === workflow.id
+                      ? "border-primary bg-muted/40 shadow-sm"
+                      : "border-border hover:border-foreground/10 hover:bg-muted/20"
+                  )}
+                >
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className={cn(
+                      "h-1.5 w-1.5 rounded-full flex-shrink-0",
+                      workflow.status === 'active' ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.3)]" : "bg-zinc-300"
+                    )} />
+                    
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-[13.5px] font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                        {workflow.name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                        <span className="capitalize">{workflow.schedule}</span>
+                        <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/20" />
+                        <span>{((workflow.task_count || 0) * 20)} credits</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${statusTone(workflow.status)}`}>
-                      {formatStatus(workflow.status)}
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-zinc-400" />
+
+                  <div className="flex items-center gap-6 ml-4" onClick={(e) => e.stopPropagation()}>
+                   <div className="flex items-center gap-2.5">
+                     <button
+                       onClick={(e) => handleToggleStatus(workflow.id, workflow.status, e)}
+                       className={cn(
+                         "relative h-4.5 w-8 rounded-full transition-colors focus:outline-none",
+                         workflow.status === 'active' ? "bg-zinc-900" : "bg-zinc-200"
+                       )}
+                     >
+                       <div className={cn(
+                         "absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full bg-white transition-transform shadow-sm",
+                         workflow.status === 'active' ? "translate-x-3.5" : "translate-x-0"
+                       )} />
+                     </button>
+                     <Button variant="ghost" size="icon" onClick={(e) => handleExecute(workflow.id, e)} className="h-7 w-7 rounded-full text-muted-foreground hover:text-zinc-900 hover:bg-zinc-100">
+                       <Play className="h-3.5 w-3.5 fill-current" />
+                     </Button>
+                   </div>                    
+                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-zinc-100">
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-5 text-[14px] text-zinc-500">
-                  <div>
-                    <span className="font-medium text-zinc-700">Schedule:</span> {workflow.schedule}
-                  </div>
-                  <div>
-                    <span className="font-medium text-zinc-700">Owner:</span> {workflow.owner}
-                  </div>
-                  <div>
-                    <span className="font-medium text-zinc-700">Blocks:</span> {workflow.block_count}
-                  </div>
-                </div>
-              </button>
-            ))
+                </motion.div>
+              ))}
+            </div>
           )}
         </div>
       </div>
 
+      {/* Floating Prompt Input Bar */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-40">
+        <div className="flex flex-col rounded-[24px] border border-border bg-card shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all focus-within:border-foreground/15 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+          {/* Input Area */}
+          <div className="p-4 pb-0">
+            <Textarea
+              ref={textareaRef}
+              value={promptValue}
+              onChange={(e) => setPromptValue(e.target.value)}
+              placeholder="Describe an automation to create..."
+              className="min-h-[60px] max-h-[200px] w-full resize-none border-0 bg-transparent p-0 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus-visible:ring-0 shadow-none"
+            />
+          </div>
+
+          {/* Action Bar */}
+          <div className="flex items-center justify-between p-4 pt-2">
+            <div className="flex items-center gap-1">
+              <ModelDropdown 
+                value={selectedModel}
+                onChange={setSelectedModel}
+              />
+            </div>
+
+            <Button 
+              size="icon" 
+              onClick={handleGenerate}
+              className={cn(
+                "h-8 w-8 rounded-full transition-all duration-300",
+                promptValue.trim() && !isGenerating ? "bg-primary text-primary-foreground scale-100 shadow-md" : "bg-muted text-muted-foreground scale-95 opacity-60"
+              )}
+              disabled={!promptValue.trim() || isGenerating}
+            >
+              {isGenerating ? <Loader2 className="h-4.5 w-4.5 animate-spin" /> : <IconArrowUp className="h-4.5 w-4.5" />}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar Detail (Maintained existing logic) */}
       <AnimatePresence>
         {selectedWorkflowId && (
           <>
@@ -194,178 +433,246 @@ export function ScheduledWorkflowsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={closeWorkflow}
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px]"
+              className="fixed inset-0 z-50 bg-white/40 backdrop-blur-md"
             />
             <motion.aside
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="fixed right-0 top-0 z-50 h-full w-[92%] max-w-2xl overflow-hidden border-l border-zinc-200 bg-white shadow-2xl"
+              className="fixed right-0 top-0 z-[60] h-full w-[92%] max-w-2xl overflow-hidden border-l border-border bg-card shadow-2xl"
             >
               <div className="flex h-full flex-col">
-                <div className="flex items-start justify-between border-b border-zinc-200 px-6 py-5">
-                  <div>
-                    <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-zinc-400">
+                <div className="flex items-start justify-between border-b border-border px-6 py-5">
+                  <div className="flex-1">
+                    <div className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {selectedSummary?.id || selectedWorkflowId}
                     </div>
-                    <h3 className="mt-1 text-xl font-semibold text-zinc-950">
-                      {selectedWorkflow?.name || selectedSummary?.name || 'Workflow'}
-                    </h3>
-                    <p className="mt-1 text-sm text-zinc-500">
-                      Owner is the actor who handed this workflow over for execution.
-                    </p>
+                    <div className="flex items-center justify-between mt-1">
+                      <h3 className="text-xl font-semibold text-foreground">
+                        {selectedWorkflow?.name || selectedSummary?.name || 'Workflow'}
+                      </h3>
+                      {selectedWorkflow && (
+                        <div className="flex items-center gap-2 mr-2">
+                          {isEditing ? (
+                            <>
+                              <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>Cancel</Button>
+                              <Button size="sm" onClick={handleSaveEdit}>Save Changes</Button>
+                            </>
+                          ) : (
+                            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>Edit Workflow</Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={closeWorkflow}>
+                  <Button variant="ghost" size="icon" onClick={closeWorkflow} className="rounded-full flex-shrink-0">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6 py-5">
                   {detailLoading || !selectedWorkflow ? (
-                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">
-                      Loading workflow details...
+                    <div className="rounded-2xl border border-border bg-muted p-6 text-sm text-muted-foreground">
+                      Loading details...
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-8 pb-12">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Status</div>
-                          <div className="mt-2">
-                            <Badge variant="outline" className={statusTone(selectedWorkflow.status)}>
+                        <div className="rounded-xl border border-border bg-muted/50 p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</div>
+                            <button
+                              onClick={(e) => handleToggleStatus(selectedWorkflow.id, selectedWorkflow.status, e)}
+                              className={cn(
+                                "relative h-3.5 w-6 rounded-full transition-colors focus:outline-none",
+                                selectedWorkflow.status === 'active' ? "bg-zinc-900" : "bg-zinc-300"
+                              )}
+                            >
+                              <div className={cn(
+                                "absolute top-0.5 left-0.5 h-2.5 w-2.5 rounded-full bg-white transition-transform shadow-sm",
+                                selectedWorkflow.status === 'active' ? "translate-x-2.5" : "translate-x-0"
+                              )} />
+                            </button>
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-2">
+                            <div className={cn(
+                              "h-1.5 w-1.5 rounded-full",
+                              selectedWorkflow.status === 'active' ? "bg-emerald-500" : "bg-zinc-400"
+                            )} />
+                            <span className="text-xs font-semibold capitalize text-foreground">
                               {formatStatus(selectedWorkflow.status)}
-                            </Badge>
+                            </span>
                           </div>
                         </div>
-                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Owner</div>
-                          <div className="mt-2 text-sm font-medium text-zinc-900">{selectedWorkflow.owner}</div>
-                          <div className="mt-1 text-xs text-zinc-500">
-                            {selectedWorkflow.handoff_actor_type || selectedWorkflow.created_by_actor_type || 'unknown'}
-                            {selectedWorkflow.owner_id ? ` • ${selectedWorkflow.owner_id}` : ''}
+                        <div className="rounded-xl border border-border bg-muted/50 p-4">
+                          <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Owner</div>
+                          <div className="mt-1.5 text-xs font-semibold text-foreground truncate">
+                            {/^(user_|wf_|exec_|[A-Za-z0-9_-]{15,})$/.test(selectedWorkflow.owner) ? 'System' : selectedWorkflow.owner}
                           </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg border border-zinc-200 bg-white p-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Description</div>
-                        <p className="mt-2 text-sm leading-6 text-zinc-600">
-                          {selectedWorkflow.description || 'No description provided.'}
-                        </p>
-                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-zinc-600">
-                          <div>
-                            <span className="font-medium text-zinc-800">Schedule:</span> {selectedWorkflow.schedule}
-                          </div>
-                          <div>
-                            <span className="font-medium text-zinc-800">Handoff At:</span> {formatDateTime(selectedWorkflow.handoff_at)}
-                          </div>
-                          <div>
-                            <span className="font-medium text-zinc-800">Created By:</span> {selectedWorkflow.created_by_actor_name || 'Unknown'}
-                          </div>
-                          <div>
-                            <span className="font-medium text-zinc-800">Updated:</span> {formatDateTime(selectedWorkflow.updated_at)}
+                          <div className="text-[9px] font-medium text-muted-foreground uppercase tracking-tight mt-0.5">
+                            {selectedWorkflow.handoff_actor_type || selectedWorkflow.created_by_actor_type || 'User'}
                           </div>
                         </div>
                       </div>
 
-                      <div>
-                        <div className="mb-3 flex items-center justify-between">
-                          <h4 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Triggers</h4>
-                          <span className="text-xs text-zinc-500">{selectedWorkflow.triggers.length}</span>
-                        </div>
-                        <div className="space-y-3">
-                          {selectedWorkflow.triggers.length === 0 ? (
-                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">No triggers configured.</div>
-                          ) : selectedWorkflow.triggers.map((trigger) => (
-                            <div key={trigger.id} className="rounded-lg border border-zinc-200 bg-white p-4">
-                              <div className="flex items-center justify-between gap-3">
-                                <div>
-                                  <div className="text-sm font-medium text-zinc-900">{trigger.name || trigger.trigger_type}</div>
-                                  <div className="mt-1 text-xs text-zinc-500">
-                                    {trigger.trigger_type} • {trigger.cron_expression || trigger.schedule_preset || trigger.webhook_path || 'No extra config'}
-                                  </div>
+                      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Description</div>
+                        {isEditing ? (
+                          <Textarea
+                            className="mt-3"
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder="Workflow description..."
+                          />
+                        ) : (
+                          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                            {selectedWorkflow.description || 'No description provided.'}
+                          </p>
+                        )}
+                        <Separator className="my-5 bg-border" />
+
+                        {/* Schedule Section */}
+                        <div className="mb-5">
+                          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block mb-3">Schedule</span>
+                          {isEditing ? (
+                            <ScheduleEditor
+                              schedule={editSchedule}
+                              timezone={editTimezone}
+                              nextRunAt={selectedWorkflow.handoff_at}
+                              onChange={(newSchedule, newTimezone) => {
+                                setEditSchedule(newSchedule);
+                                setEditTimezone(newTimezone);
+                              }}
+                            />
+                          ) : (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="font-medium text-foreground">{selectedWorkflow.schedule}</span>
+                                {selectedWorkflow.triggers?.[0]?.timezone && (
+                                  <span className="text-[11px] text-muted-foreground">({selectedWorkflow.triggers[0].timezone})</span>
+                                )}
+                              </div>
+                              {selectedWorkflow.handoff_at && (
+                                <div className="rounded-lg bg-muted/50 px-3 py-2 text-[12px] text-muted-foreground">
+                                  <span className="font-medium">Next run:</span>{' '}
+                                  {formatDateTime(selectedWorkflow.handoff_at)}
                                 </div>
-                                <Badge variant="outline" className={trigger.enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-zinc-200 bg-zinc-50 text-zinc-500'}>
-                                  {trigger.enabled ? 'Enabled' : 'Disabled'}
-                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <Separator className="my-5 bg-border" />
+                        <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-[13px]">
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Created By</span>
+                            <span className="font-medium text-foreground">{selectedWorkflow.created_by_actor_name || 'Unknown'}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Handoff At</span>
+                            <span className="font-medium text-foreground">{formatDateTime(selectedWorkflow.handoff_at)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block mb-1">Last Updated</span>
+                            <span className="font-medium text-foreground">{formatDateTime(selectedWorkflow.updated_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Tasks Section - Professional Timeline */}
+                      <div className="pt-2">
+                        <div className="relative pl-6 ml-2 border-l border-zinc-200 space-y-10">
+                          {(!selectedWorkflow.tasks || selectedWorkflow.tasks.length === 0) && !isEditing ? (
+                             <div className="text-sm text-muted-foreground ml-2">No tasks defined.</div>
+                          ) : (isEditing ? editTasks : selectedWorkflow.tasks).map((task, index) => (
+                            <div key={task.id} className="relative">
+                              {/* Timeline Dot */}
+                              <div className={cn(
+                                "absolute -left-[30px] top-1 h-3 w-3 rounded-full border-2 border-background ring-1 ring-zinc-200",
+                                task.status === 'completed' || task.status === 'running' ? "bg-zinc-900" : "bg-zinc-200"
+                              )} />
+                              
+                              <div className="space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm font-medium text-foreground leading-tight flex-1">
+                                    {isEditing ? (
+                                      <Textarea 
+                                        className="w-full text-sm min-h-[60px]"
+                                        value={task.description}
+                                        onChange={(e) => {
+                                          const newTasks = [...editTasks];
+                                          newTasks[index] = { ...newTasks[index], description: e.target.value };
+                                          setEditTasks(newTasks);
+                                        }}
+                                      />
+                                    ) : (
+                                      task.description
+                                    )}
+                                  </div>
+                                  {!isEditing && (
+                                    <span className={cn(
+                                      "text-[10px] font-bold uppercase tracking-wider ml-4 px-1.5 py-0.5 rounded",
+                                      task.status === 'completed' ? "text-zinc-500" : 
+                                      task.status === 'running' ? "text-zinc-900 animate-pulse" : 
+                                      "text-zinc-300"
+                                    )}>
+                                      {task.status}
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {task.error && !isEditing && (
+                                  <div className="pl-4 border-l border-rose-200 py-0.5 text-[12px] text-rose-600 whitespace-pre-wrap">
+                                    {task.error}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           ))}
                         </div>
+                        {isEditing && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-4 w-full border-dashed"
+                            onClick={() => setEditTasks([...editTasks, { id: `new_${Date.now()}`, description: "", status: "pending" }])}
+                          >
+                            <Plus className="w-4 h-4 mr-2" /> Add Task
+                          </Button>
+                        )}
                       </div>
 
+                      {/* Execution History */}
                       <div>
-                        <div className="mb-3 flex items-center justify-between">
-                          <h4 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Blocks</h4>
-                          <span className="text-xs text-zinc-500">{selectedWorkflow.blocks.length}</span>
+                        <div className="mb-4 flex items-center justify-between">
+                          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Execution History</h4>
                         </div>
-                        <div className="space-y-3">
-                          {selectedWorkflow.blocks.length === 0 ? (
-                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">No blocks configured.</div>
-                          ) : selectedWorkflow.blocks.map((block) => (
-                            <div key={block.id} className="rounded-lg border border-zinc-200 bg-white p-4">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-sm font-medium text-zinc-900">{block.name}</div>
-                                  <div className="mt-1 text-xs text-zinc-500">
-                                    {block.block_type}
-                                    {block.tool_name ? ` • ${block.tool_name}` : ''}
-                                    {block.url ? ` • ${block.method} ${block.url}` : ''}
-                                  </div>
-                                  {block.description ? (
-                                    <p className="mt-2 text-sm leading-6 text-zinc-600">{block.description}</p>
-                                  ) : null}
-                                </div>
-                                <Badge variant="outline" className={statusTone(block.status)}>
-                                  {formatStatus(block.status)}
-                                </Badge>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="mb-3 flex items-center justify-between">
-                          <h4 className="text-sm font-semibold uppercase tracking-[0.16em] text-zinc-400">Execution History</h4>
-                          <span className="text-xs text-zinc-500">{executions.length}</span>
-                        </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {executions.length === 0 ? (
-                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">No executions recorded yet.</div>
+                            <div className="rounded-xl border border-border bg-muted/30 p-4 text-xs text-muted-foreground text-center font-medium">No history yet.</div>
                           ) : executions.map((execution) => (
-                            <div key={execution.id} className="rounded-lg border border-zinc-200 bg-white p-4">
-                              <div className="flex items-start justify-between gap-3">
-                                <div>
-                                  <div className="text-sm font-medium text-zinc-900">{execution.id}</div>
-                                  <div className="mt-1 text-xs text-zinc-500">
-                                    {execution.trigger_type || 'manual'} • started {formatDateTime(execution.started_at)}
+                            <div key={execution.id} className="rounded-xl border border-border bg-card p-3 shadow-sm hover:shadow-md transition-shadow">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-[12px] font-medium text-foreground flex items-center gap-2">
+                                    <span className="capitalize">{execution.trigger_type || 'manual'}</span>
+                                    <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                    <span className="text-muted-foreground font-normal">{formatDateTime(execution.started_at)}</span>
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                                    Duration: {execution.execution_time ? `${execution.execution_time.toFixed(1)}s` : '—'}
                                   </div>
                                 </div>
-                                <Badge variant="outline" className={statusTone(execution.status)}>
+                                <Badge variant="outline" className={cn("rounded-full border-0 px-2 py-0.5 text-[9px] font-bold uppercase", statusTone(execution.status))}>
                                   {formatStatus(execution.status)}
                                 </Badge>
                               </div>
-                              <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-zinc-600">
-                                <div>
-                                  <span className="font-medium text-zinc-800">Completed:</span> {formatDateTime(execution.completed_at)}
-                                </div>
-                                <div>
-                                  <span className="font-medium text-zinc-800">Duration:</span> {execution.execution_time ? `${execution.execution_time.toFixed(2)}s` : 'N/A'}
-                                </div>
-                              </div>
-                              {execution.error ? (
-                                <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                              {execution.error && (
+                                <div className="mt-2 rounded-lg bg-rose-50/50 p-2 text-rose-600 text-[10px] font-medium leading-tight border border-rose-100">
                                   {execution.error}
                                 </div>
-                              ) : null}
-                              <Separator className="my-3" />
-                              <div>
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-400">Block Results</div>
-                                <pre className="mt-2 overflow-x-auto rounded-lg bg-zinc-950 p-3 text-xs leading-5 text-zinc-100">
-                                  {JSON.stringify(execution.block_results, null, 2)}
-                                </pre>
-                              </div>
+                              )}
                             </div>
                           ))}
                         </div>

@@ -13,18 +13,23 @@ backend/
 │   └── chat.py           # Chat endpoints
 ├── services/              # Business logic
 │   └── katy_service.py   # Katy agent service
+├── store/                 # Centralized persistence layer and shared DB config
+│   ├── auth_store.py     # Auth, sessions, integrations, chat storage
+│   ├── employee_store.py # Employee storage
+│   ├── workflow_store.py # Workflow storage
+│   └── database.py       # Shared DB path + connection helpers
 ├── product_manager/       # Katy PM Agent
 │   ├── katy.py           # Main agent implementation
-│   ├── pm_tools.py       # PM-specific tools
 │   ├── types.py          # Type definitions
-│   └── tools/            # External integrations
-│       ├── jira_tool.py
-│       ├── notion_tool.py
-│       ├── analytics_tool.py
-│       └── research_tool.py
+│   └── README.md
+├── tools/                 # Centralized shared tools for employee, PM, and workflows
+│   ├── system_tools/     # Base tool types, registry, file/http/shell/memory
+│   ├── integration_tools/# Slack, Gmail, Jira, Notion, Analytics, Research, GitHub
+│   ├── run_tools/        # LLM and function execution tools
+│   ├── workflow_tools/   # Workflow creation and approval tools
+│   └── specialized_tools/# PM, engineering, analyst, designer, ops, sales, recruiter
 ├── workflows/             # Workflow engine
 │   ├── engine/           # Execution engine
-│   ├── tools/            # Workflow tools
 │   └── ...
 ├── models/                # Pydantic models
 └── config/                # Configuration
@@ -166,10 +171,10 @@ Stream Katy's response using Server-Sent Events (SSE).
 
 ### Adding New Tools
 
-1. Create tool class in `backend/product_manager/tools/`
+1. Create tool class in `backend/tools/` under the appropriate tool category
 2. Inherit from `BaseTool`
 3. Implement the `execute` method
-4. Register in Katy agent
+4. Register or import it where needed
 
 ## Troubleshooting
 

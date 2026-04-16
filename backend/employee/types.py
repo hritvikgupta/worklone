@@ -58,9 +58,47 @@ class ActivityType(str, Enum):
     STATUS_UPDATED = "status_updated"
     TOOL_USED = "tool_used"
     WORKFLOW_CREATED = "workflow_created"
+    WORKFLOW_PAUSED = "workflow_paused"
+    WORKFLOW_RESUMED = "workflow_resumed"
+    WORKFLOW_FAILED = "workflow_failed"
+    WORKFLOW_COMPLETED = "workflow_completed"
     EMPLOYEE_CREATED = "employee_created"
     EMPLOYEE_UPDATED = "employee_updated"
     EMPLOYEE_DELETED = "employee_deleted"
+    COWORKER_MESSAGE_SENT = "coworker_message_sent"
+    COWORKER_MESSAGE_RECEIVED = "coworker_message_received"
+
+
+class MessageStatus(str, Enum):
+    PENDING = "pending"
+    READ = "read"
+    REPLIED = "replied"
+
+
+class SenderType(str, Enum):
+    HUMAN = "human"
+    EMPLOYEE = "employee"
+
+
+class TeamTopology(str, Enum):
+    SEQUENTIAL = "sequential"
+    GRAPH = "graph"
+    BROADCAST = "broadcast"
+
+
+class TeamRunStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class TeamMemberTaskStatus(str, Enum):
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    BLOCKED = "blocked"
 
 
 # ─── Data Models ───
@@ -80,6 +118,7 @@ class Employee:
     is_active: bool = True
     temperature: float = 0.7
     max_tokens: int = 4096
+    memory: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 
@@ -108,6 +147,23 @@ class EmployeeSkill:
 
 
 @dataclass
+class PublicSkill:
+    """A reusable public workplace skill stored in the shared library."""
+    id: str
+    slug: str
+    title: str
+    description: str = ""
+    category: str = "general"
+    employee_role: str = ""
+    suggested_tools: list[str] = field(default_factory=list)
+    skill_markdown: str = ""
+    notes: str = ""
+    source_model: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
 class EmployeeTask:
     """A task assigned to an employee."""
     id: str
@@ -133,6 +189,102 @@ class EmployeeActivity:
     task_id: str = ""
     metadata: dict = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
+
+
+# ─── Team & Inter-Employee Messaging ───
+
+@dataclass
+class TeamMessage:
+    """A message in a team conversation — human or employee."""
+    id: str
+    conversation_id: str
+    sender_type: SenderType
+    sender_id: str
+    sender_name: str
+    content: str
+    recipient_type: SenderType
+    recipient_id: str
+    recipient_name: str = ""
+    status: MessageStatus = MessageStatus.PENDING
+    reply_to: str = ""
+    owner_id: str = ""
+    metadata: dict = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class Team:
+    """A team of employees that can collaborate."""
+    id: str
+    name: str
+    goal: str = ""
+    owner_id: str = ""
+    topology: TeamTopology = TeamTopology.GRAPH
+    project_type: str = ""
+    deadline: str = ""
+    sequence_order: list[str] = field(default_factory=list)
+    broadcaster_id: str = ""
+    attached_files: list[str] = field(default_factory=list)
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class TeamMember:
+    """An employee's membership in a team."""
+    id: str
+    team_id: str
+    employee_id: str
+    employee_name: str = ""
+    role_in_team: str = ""
+    default_task: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class TeamEdge:
+    """A directed connection between two team members (who can talk to whom)."""
+    id: str
+    team_id: str
+    from_employee_id: str
+    to_employee_id: str
+    trigger_condition: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class TeamRun:
+    """A single execution of a team working toward a goal.
+
+    Each run gets its own conversation_id so multiple runs of the same
+    team don't mix messages. Multiple runs can be active at once.
+    """
+    id: str
+    team_id: str
+    owner_id: str
+    conversation_id: str
+    goal: str = ""
+    status: TeamRunStatus = TeamRunStatus.PENDING
+    metadata: dict = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    completed_at: Optional[datetime] = None
+
+
+@dataclass
+class TeamRunMember:
+    """A member's participation in a specific team run with their assigned task."""
+    id: str
+    run_id: str
+    team_id: str
+    employee_id: str
+    employee_name: str = ""
+    employee_role: str = ""
+    assigned_task: str = ""
+    task_status: TeamMemberTaskStatus = TeamMemberTaskStatus.ASSIGNED
+    result: str = ""
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
 
 
 class Priority(Enum):

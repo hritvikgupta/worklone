@@ -15,6 +15,13 @@ export interface ChatRequest {
   session_id?: string;
 }
 
+export interface EmployeeChatRequest {
+  message: string;
+  conversation_history?: Array<{role: string; content: string}>;
+  model?: string;
+  session_id?: string;
+}
+
 export interface ChatResponse {
   response: string;
   success: boolean;
@@ -22,14 +29,65 @@ export interface ChatResponse {
 }
 
 export interface ChatStreamEvent {
-  type: 'thinking' | 'tool_start' | 'tool_result' | 'final' | 'error';
+  type:
+    | 'thinking'
+    | 'tool_start'
+    | 'tool_result'
+    | 'plan_created'
+    | 'final'
+    | 'error'
+    | 'confirmation_required'
+    | 'task_started'
+    | 'content_token';
   cycle?: number;
   content?: string;
+  token?: string;
   output?: string;
   message?: string;
   tool?: string;
   input?: Record<string, unknown>;
   success?: boolean;
+  data?: unknown;
+  // confirmation_required fields
+  ask_type?: 'approval' | 'choice' | 'input' | string;
+  options?: string[];
+  plan?: {
+    mode?: 'multi_step' | 'background' | 'direct' | string;
+    reason?: string;
+    context_summary?: string;
+    status?: string;
+    tasks?: Array<{
+      task_id?: string;
+      order?: number;
+      title?: string;
+      description?: string;
+      status?: string;
+      priority?: string;
+    }>;
+  };
+  // plan_created fields
+  mode?: 'multi_step' | 'background' | 'direct' | string;
+  reason?: string;
+  context_summary?: string;
+  tasks?: Array<{
+    task_id?: string;
+    order?: number;
+    title?: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+  }>;
+  // task_started fields
+  task_id?: string;
+  task_title?: string;
+  instructions?: string;
+}
+
+export interface EmployeeChatResumePayload {
+  session_id?: string;
+  approved?: boolean;
+  message?: string;
+  input?: Record<string, unknown>;
 }
 
 export interface ChatSession {
@@ -66,32 +124,56 @@ export interface MarkdownFileContent {
   content: string;
 }
 
-export interface VercelSkillListItem {
+export interface PublicSkillListItem {
   id: string;
-  name: string;
-  source: string;
-  owner: string;
-  installs_label: string;
-  installs_count: number;
+  slug: string;
+  title: string;
+  description: string;
+  category: string;
+  employee_role: string;
+  suggested_tools: string[];
+  source_model: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface VercelSkillDetail {
-  id: string;
-  owner: string;
-  source: string;
-  name: string;
-  install_command: string;
-  summary_html: string;
-  skill_html: string;
-  repository: string;
-  weekly_installs: string;
-  github_stars: string;
-  first_seen: string;
-  trust: {
-    gen_agent: string;
-    socket: string;
-    snyk: string;
-  };
+export interface PublicSkillDetail extends PublicSkillListItem {
+  skill_markdown: string;
+  notes: string;
+}
+
+function parseSseBufferChunk(buffer: string): {
+  events: ChatStreamEvent[];
+  remaining: string;
+  done: boolean;
+} {
+  const events: ChatStreamEvent[] = [];
+  const lines = buffer.split('\n');
+  const remaining = lines.pop() || '';
+
+  for (const line of lines) {
+    if (!line.startsWith('data: ')) continue;
+
+    const data = line.slice(6);
+    if (data === '[DONE]') {
+      return { events, remaining: '', done: true };
+    }
+    if (data.startsWith('[ERROR]')) {
+      throw new Error(data.slice(8).trim());
+    }
+    try {
+      const parsed = JSON.parse(data) as ChatStreamEvent;
+      if (parsed && typeof parsed.type === 'string') {
+        events.push(parsed);
+        continue;
+      }
+    } catch {
+      // Backward compatibility for plain-text chunks.
+    }
+    events.push({ type: 'thinking', content: data });
+  }
+
+  return { events, remaining, done: false };
 }
 
 function authHeaders(): Record<string, string> {
@@ -131,6 +213,29 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
   }
 }
 
+export async function sendEmployeeChatMessage(employeeId: string, request: EmployeeChatRequest): Promise<ChatResponse> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/employees/${employeeId}/chat`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    if (response.status === 401) {
+      throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error sending employee chat message:', error);
+    throw error;
+  }
+}
+
 /**
  * Stream Katy's response using Server-Sent Events
  */
@@ -159,41 +264,107 @@ export async function* streamChatEvents(request: ChatRequest): AsyncGenerator<Ch
 
     while (true) {
       const { done, value } = await reader.read();
-      
+
       if (done) {
-        break;
+        buffer += decoder.decode();
+      } else {
+        buffer += decoder.decode(value, { stream: true });
       }
 
-      buffer += decoder.decode(value, { stream: true });
-      
-      // Process SSE format
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Keep incomplete line in buffer
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') {
-            return;
+      const parsedChunk = parseSseBufferChunk(buffer);
+      buffer = parsedChunk.remaining;
+      for (const event of parsedChunk.events) {
+        yield event;
+      }
+      if (parsedChunk.done || done) {
+        if (buffer.trim()) {
+          const trailingChunk = parseSseBufferChunk(`${buffer}\n`);
+          for (const event of trailingChunk.events) {
+            yield event;
           }
-          if (data.startsWith('[ERROR]')) {
-            throw new Error(data.slice(8).trim());
-          }
-          try {
-            const parsed = JSON.parse(data) as ChatStreamEvent;
-            if (parsed && typeof parsed.type === 'string') {
-              yield parsed;
-              continue;
-            }
-          } catch {
-            // Backward compatibility for any plain-text chunks.
-          }
-          yield { type: 'thinking', content: data };
         }
+        return;
       }
     }
   } catch (error) {
     console.error('Error streaming chat message:', error);
+    throw error;
+  }
+}
+
+export async function resumeEmployeeChat(
+  employeeId: string,
+  payload: EmployeeChatResumePayload
+): Promise<{ success: boolean }> {
+  const response = await fetch(
+    `${BACKEND_URL}/api/employees/${employeeId}/chat/resume`,
+    {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(payload),
+    }
+  );
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to resume employee chat (${response.status})`);
+  }
+  return response.json();
+}
+
+export async function* streamEmployeeChatEvents(
+  employeeId: string,
+  request: EmployeeChatRequest
+): AsyncGenerator<ChatStreamEvent, void, unknown> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/employees/${employeeId}/chat/stream`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    if (response.status === 401) {
+      throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+    }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is not readable');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        buffer += decoder.decode();
+      } else {
+        buffer += decoder.decode(value, { stream: true });
+      }
+
+      const parsedChunk = parseSseBufferChunk(buffer);
+      buffer = parsedChunk.remaining;
+      for (const event of parsedChunk.events) {
+        yield event;
+      }
+      if (parsedChunk.done || done) {
+        if (buffer.trim()) {
+          const trailingChunk = parseSseBufferChunk(`${buffer}\n`);
+          for (const event of trailingChunk.events) {
+            yield event;
+          }
+        }
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Error streaming employee chat message:', error);
     throw error;
   }
 }
@@ -226,6 +397,60 @@ export async function createChatSession(title = 'New Chat', model?: string): Pro
   }
   const data = await response.json();
   return data.session;
+}
+
+export async function createEmployeeChatSession(
+  employeeId: string,
+  title = 'New Chat',
+  model?: string
+): Promise<ChatSession> {
+  const response = await fetch(`${BACKEND_URL}/api/employees/${employeeId}/chat/sessions`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ title, model }),
+  });
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to create employee session (${response.status})`);
+  }
+  const data = await response.json();
+  return data.session;
+}
+
+export async function listEmployeeChatSessions(employeeId: string): Promise<ChatSession[]> {
+  const response = await fetch(`${BACKEND_URL}/api/employees/${employeeId}/chat/sessions`, {
+    headers: authHeaders(),
+  });
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to list employee sessions (${response.status})`);
+  }
+  const data = await response.json();
+  return data.sessions || [];
+}
+
+export async function getEmployeeChatSessionMessages(
+  employeeId: string,
+  sessionId: string
+): Promise<ChatSessionMessage[]> {
+  const response = await fetch(
+    `${BACKEND_URL}/api/employees/${employeeId}/chat/sessions/${sessionId}/messages`,
+    {
+      headers: authHeaders(),
+    }
+  );
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load employee session messages (${response.status})`);
+  }
+  const data = await response.json();
+  return data.messages || [];
 }
 
 export async function getChatSessionMessages(sessionId: string): Promise<ChatSessionMessage[]> {
@@ -270,9 +495,65 @@ export async function getMarkdownContent(
     throw new Error(CHAT_AUTH_EXPIRED_ERROR);
   }
   if (!response.ok) {
-    throw new Error(`Failed to load markdown file (${response.status})`);
+    throw new Error(`Failed to load file (${response.status})`);
   }
   return response.json();
+}
+
+export async function uploadFile(
+  scope: 'agent' | 'shared',
+  file: File
+): Promise<MarkdownFileContent> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${BACKEND_URL}/api/files/upload?scope=${scope}`, {
+    method: 'POST',
+    headers, // Don't set Content-Type, let browser set it with boundary
+    body: formData,
+  });
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to upload file (${response.status})`);
+  }
+  return response.json();
+}
+
+export function getRawFileUrl(scope: string, path: string): string {
+  const url = new URL(`${BACKEND_URL}/api/files/raw`);
+  url.searchParams.append('scope', scope);
+  url.searchParams.append('path', path);
+  
+  // We need to pass the token in the URL for iframe/object tags since we can't send headers
+  // A better approach is to fetch it via JS and create an object URL, 
+  // but for a quick iframe integration, this is a common workaround if the backend supports it,
+  // OR we can just fetch it as blob and create object URL in the component.
+  // We will do the blob approach in the component to avoid token in URL.
+  return url.toString();
+}
+
+export async function fetchRawFileBlob(scope: string, path: string): Promise<Blob> {
+  const response = await fetch(
+    `${BACKEND_URL}/api/files/raw?scope=${scope}&path=${encodeURIComponent(path)}`,
+    {
+      headers: authHeaders(),
+    }
+  );
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to load raw file (${response.status})`);
+  }
+  return response.blob();
 }
 
 export async function updateMarkdownContent(
@@ -294,29 +575,51 @@ export async function updateMarkdownContent(
   return response.json();
 }
 
-export async function listVercelSkills(): Promise<VercelSkillListItem[]> {
-  const response = await fetch(`${BACKEND_URL}/api/skills/vercel`, {
+export async function listPublicSkills(): Promise<PublicSkillListItem[]> {
+  const response = await fetch(`${BACKEND_URL}/api/skills/public`, {
     headers: authHeaders(),
   });
   if (response.status === 401) {
     throw new Error(CHAT_AUTH_EXPIRED_ERROR);
   }
   if (!response.ok) {
-    throw new Error(`Failed to load Vercel skills (${response.status})`);
+    throw new Error(`Failed to load public skills (${response.status})`);
   }
   const data = await response.json();
   return data.skills || [];
 }
 
-export async function getVercelSkillDetail(source: string, skillName: string): Promise<VercelSkillDetail> {
-  const response = await fetch(`${BACKEND_URL}/api/skills/vercel/${encodeURIComponent(source)}/${encodeURIComponent(skillName)}`, {
+export async function getPublicSkillDetail(slug: string): Promise<PublicSkillDetail> {
+  const response = await fetch(`${BACKEND_URL}/api/skills/public/${encodeURIComponent(slug)}`, {
     headers: authHeaders(),
   });
   if (response.status === 401) {
     throw new Error(CHAT_AUTH_EXPIRED_ERROR);
   }
   if (!response.ok) {
-    throw new Error(`Failed to load skill detail (${response.status})`);
+    throw new Error(`Failed to load public skill detail (${response.status})`);
+  }
+  const data = await response.json();
+  return data.skill;
+}
+
+export interface CreatePublicSkillRequest {
+  title: string;
+  description: string;
+  employee_role?: string;
+}
+
+export async function createPublicSkill(request: CreatePublicSkillRequest): Promise<PublicSkillListItem> {
+  const response = await fetch(`${BACKEND_URL}/api/skills/public`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify(request),
+  });
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to create public skill (${response.status})`);
   }
   const data = await response.json();
   return data.skill;

@@ -3,9 +3,10 @@ Auth Router - Authentication endpoints
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Header
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 from backend.services.auth_service import AuthService
+from backend.lib.auth.session import get_current_user
 
 router = APIRouter()
 auth_service = AuthService()
@@ -33,16 +34,6 @@ class AuthResponse(BaseModel):
 class UserResponse(BaseModel):
     success: bool
     user: Optional[dict] = None
-
-
-def get_current_user(authorization: str = Header(None)):
-    """Dependency to get current user from token"""
-    if not authorization:
-        return None
-
-    token = authorization.replace("Bearer ", "")
-    user = auth_service.get_current_user(token)
-    return user
 
 
 @router.post("/register", response_model=AuthResponse)

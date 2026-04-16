@@ -5,16 +5,14 @@ An AI-powered Product Manager agent using the **ReAct** (Reasoning + Acting) pat
 ## Architecture
 
 ```
-backend_product_manager/
+backend/product_manager/
 ├── katy.py              # Main ReAct agent implementation
 ├── types.py             # PM-specific data models
-├── pm_tools.py          # High-level PM tools
-├── tools/
-│   ├── jira_tool.py     # Project management (backlog, sprints)
-│   ├── notion_tool.py   # Documentation (PRDs, roadmaps)
-│   ├── analytics_tool.py # Metrics and data analysis
-│   └── research_tool.py  # Market research, competitive analysis
 └── README.md
+
+backend/tools/
+├── specialized_tools/pm_tools.py   # High-level PM tools
+└── integration_tools/              # Jira, Notion, Analytics, Research, GitHub
 ```
 
 ## Core Capabilities

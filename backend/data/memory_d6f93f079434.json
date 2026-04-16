@@ -1,0 +1,50 @@
+[
+  {
+    "id": "note_7ba05e4c0c93",
+    "title": "Landing page not working",
+    "content": "Issue: Landing page not working\nStatus: Open\nPriority: High\nAssignee: To be assigned\nDescription: The landing page is currently not functioning. Need to investigate and fix the issue.",
+    "tags": [
+      "bug",
+      "landing-page",
+      "high-priority"
+    ],
+    "created_at": "2026-04-12T19:09:44.438585",
+    "updated_at": "2026-04-12T19:09:44.438590"
+  },
+  {
+    "id": "note_a3732cf2b749",
+    "title": "Backend .env keys to remove",
+    "content": "Issue: Backend .env keys to remove\nStatus: Open\nPriority: High\nAssignee: To be assigned\nDescription: Identify and remove sensitive .env keys from the backend configuration to enhance security.",
+    "tags": [
+      "security",
+      "backend",
+      "high-priority"
+    ],
+    "created_at": "2026-04-12T19:09:44.439840",
+    "updated_at": "2026-04-12T19:09:44.439846"
+  },
+  {
+    "id": "note_460f2a522d99",
+    "title": "Landing Page Not Working Issue",
+    "content": "Issue: Landing page not working\nStatus: Identified\nPriority: High\nAssigned to: To be determined\nDescription: The landing page is currently not functioning properly. Need to investigate the root cause and fix the issue.\nCreated: 2026-04-12",
+    "tags": [
+      "issue",
+      "landing-page",
+      "bug"
+    ],
+    "created_at": "2026-04-12T19:25:19.679702",
+    "updated_at": "2026-04-12T19:25:19.679708"
+  },
+  {
+    "id": "note_7c43d0c42466",
+    "title": "Backend .env Keys to Remove Issue",
+    "content": "Issue: Backend .env keys to remove\nStatus: Identified\nPriority: High\nAssigned to: To be determined\nDescription: There are sensitive .env keys in the backend that need to be removed for security reasons.\nCreated: 2026-04-12",
+    "tags": [
+      "issue",
+      "backend",
+      "security"
+    ],
+    "created_at": "2026-04-12T19:25:19.680376",
+    "updated_at": "2026-04-12T19:25:19.680380"
+  }
+]

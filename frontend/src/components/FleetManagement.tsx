@@ -58,7 +58,7 @@ export function FleetManagement() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-zinc-900">Agent Fleet</h1>
+          <h1 className="text-xl font-semibold text-foreground">Agent Fleet</h1>
           <button className="text-sm font-medium text-emerald-600 hover:text-emerald-500 transition-colors flex items-center gap-1">
             <Plus className="w-4 h-4" /> Deploy New Agent
           </button>
@@ -67,22 +67,22 @@ export function FleetManagement() {
         {/* Agent Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {agents.map(agent => (
-            <div key={agent.id} className="bg-white border border-zinc-100 rounded-xl p-5 relative overflow-hidden group shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div key={agent.id} className="bg-card border border-border rounded-xl p-5 relative overflow-hidden group shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
               {/* Status Indicator Line */}
               <div className={cn(
                 "absolute top-0 left-0 w-1 h-full",
                 agent.status === 'running' ? "bg-emerald-500" :
-                agent.status === 'failed' ? "bg-red-500" : "bg-zinc-300"
+                agent.status === 'failed' ? "bg-red-500" : "bg-muted"
               )} />
 
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-zinc-50 rounded-lg">
-                    <agent.icon className="w-5 h-5 text-zinc-700" />
+                  <div className="p-2 bg-muted rounded-lg">
+                    <agent.icon className="w-5 h-5 text-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-zinc-900">{agent.name}</h3>
-                    <p className="text-xs text-zinc-500">{agent.role}</p>
+                    <h3 className="font-medium text-foreground">{agent.name}</h3>
+                    <p className="text-xs text-muted-foreground">{agent.role}</p>
                   </div>
                 </div>
                 <StatusBadge status={agent.status} />
@@ -92,13 +92,13 @@ export function FleetManagement() {
                 {/* Budget Bar */}
                 <div>
                   <div className="flex justify-between text-xs mb-1.5">
-                    <span className="text-zinc-500">Daily Budget</span>
+                    <span className="text-muted-foreground">Daily Budget</span>
                     <span className={cn(
                       "font-medium",
-                      (agent.spend / agent.budget) > 0.9 ? "text-red-600" : "text-zinc-700"
+                      (agent.spend / agent.budget) > 0.9 ? "text-red-600" : "text-foreground"
                     )}>${agent.spend.toFixed(2)} / ${agent.budget.toFixed(2)}</span>
                   </div>
-                  <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                     <div
                       className={cn(
                         "h-full rounded-full transition-all duration-500",
@@ -109,12 +109,12 @@ export function FleetManagement() {
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-zinc-100 flex justify-between items-center">
+                <div className="pt-2 border-t border-border flex justify-between items-center">
                   <div className="flex space-x-2">
-                    <button className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded transition-colors">
+                    <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors">
                       {agent.status === 'running' ? <Clock className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                     </button>
-                    <button className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded transition-colors">
+                    <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors">
                       <Settings className="w-4 h-4" />
                     </button>
                   </div>
@@ -124,7 +124,7 @@ export function FleetManagement() {
                       "flex items-center space-x-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md transition-colors",
                       tuningAgent === agent.id
                         ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        : "bg-zinc-50 text-zinc-600 hover:bg-zinc-100 border border-zinc-200"
+                        : "bg-muted text-muted-foreground hover:bg-muted border border-border"
                     )}
                   >
                     <Sliders className="w-3.5 h-3.5" />
@@ -142,7 +142,7 @@ export function FleetManagement() {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="pt-4 mt-4 border-t border-zinc-100 space-y-4">
+                    <div className="pt-4 mt-4 border-t border-border space-y-4">
                       <TraitSlider
                         label="Aggression"
                         value={agent.traits.aggression}
@@ -176,7 +176,7 @@ export function FleetManagement() {
 function StatusBadge({ status }: { status: AgentStatus }) {
   const config = {
     running: { icon: Activity, text: 'Running', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    idle: { icon: Clock, text: 'Idle', classes: 'bg-zinc-50 text-zinc-500 border-zinc-200' },
+    idle: { icon: Clock, text: 'Idle', classes: 'bg-muted text-muted-foreground border-border' },
     failed: { icon: XCircle, text: 'Failed', classes: 'bg-red-50 text-red-600 border-red-200' },
   };
   const { icon: Icon, text, classes } = config[status];
@@ -193,17 +193,17 @@ function TraitSlider({ label, value, onChange, description }: { label: string, v
   return (
     <div>
       <div className="flex justify-between items-center mb-1">
-        <label className="text-xs font-medium text-zinc-700">{label}</label>
-        <span className="text-xs font-mono text-zinc-500">{value}%</span>
+        <label className="text-xs font-medium text-foreground">{label}</label>
+        <span className="text-xs font-mono text-muted-foreground">{value}%</span>
       </div>
       <input
         type="range"
         min="0" max="100"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-1.5 bg-zinc-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-emerald-500"
       />
-      <p className="text-[10px] text-zinc-400 mt-1.5">{description}</p>
+      <p className="text-[10px] text-muted-foreground mt-1.5">{description}</p>
     </div>
   );
 }

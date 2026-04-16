@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from './contexts/AuthContext';
@@ -15,6 +15,7 @@ import { ChatView } from './components/ChatView';
 import { Integrations } from './components/Integrations';
 import { DashboardPage } from './components/pages/DashboardPage';
 import { CurrentSprintPage } from './components/pages/CurrentSprintPage';
+import { TeamsPage } from './components/pages/TeamsPage';
 import { ScheduledWorkflowsPage } from './components/pages/ScheduledWorkflowsPage';
 import { AgentFilesPage } from './components/pages/AgentFilesPage';
 import { AgentsPage } from './components/pages/AgentsPage';
@@ -26,8 +27,17 @@ function AuthenticatedShell() {
 
   const showKatyToggle = location.pathname !== '/chat';
 
+  useEffect(() => {
+    const theme = localStorage.getItem('theme');
+    if (theme === 'light') {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
   return (
-    <div className="flex h-screen bg-[#f7f7f5] font-sans text-zinc-900 antialiased overflow-hidden">
+    <div className="flex h-screen bg-background text-foreground antialiased overflow-hidden">
       <Sidebar />
 
       <div className="flex-1 flex overflow-hidden relative">
@@ -46,8 +56,8 @@ function AuthenticatedShell() {
             mass: 0.8,
           }}
           className={cn(
-            'flex-1 overflow-y-auto bg-white relative z-20 transition-shadow duration-300 shadow-none',
-            isAIOpen && 'shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-zinc-200/50'
+            'flex-1 overflow-hidden bg-card relative z-20 transition-shadow duration-300 shadow-none',
+            isAIOpen && 'shadow-lg border border-border'
           )}
         >
           {showKatyToggle && (
@@ -55,13 +65,13 @@ function AuthenticatedShell() {
               <Button
                 onClick={() => setIsAIOpen((open) => !open)}
                 className={cn(
-                  'h-11 rounded-full px-5 text-sm font-semibold transition-all shadow-sm border',
+                  'h-11 rounded-full px-5 text-sm font-semibold transition-all shadow-sm',
                   isAIOpen
-                    ? 'bg-white text-zinc-900 border-zinc-200 hover:bg-zinc-50'
-                    : 'bg-zinc-900 text-white border-transparent hover:bg-zinc-800'
+                    ? 'bg-card text-foreground border-border hover:bg-muted'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 )}
               >
-                Katy
+                Talk
               </Button>
             </div>
           )}
@@ -69,8 +79,9 @@ function AuthenticatedShell() {
           <Routes>
             <Route path="/" element={<Navigate to="/chat" replace />} />
             <Route path="/chat" element={<ChatView />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
+            {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
             <Route path="/current-sprint" element={<CurrentSprintPage />} />
+            <Route path="/teams" element={<TeamsPage />} />
             <Route path="/scheduled-workflows" element={<Navigate to="/workflows" replace />} />
             <Route path="/workflows" element={<ScheduledWorkflowsPage />} />
             <Route path="/agent-files" element={<AgentFilesPage />} />
@@ -81,21 +92,20 @@ function AuthenticatedShell() {
           </Routes>
         </motion.main>
 
-        <AnimatePresence>
-          {isAIOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 384, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="shrink-0 h-full overflow-hidden z-10"
-            >
-              <div className="w-96 h-full p-4 pl-0">
-                <AIAssistant onClose={() => setIsAIOpen(false)} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {showKatyToggle && (
+          <motion.div
+            animate={{ width: isAIOpen ? 384 : 0, opacity: isAIOpen ? 1 : 0 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className={cn(
+              "shrink-0 h-full overflow-hidden z-10",
+              !isAIOpen && "pointer-events-none"
+            )}
+          >
+            <div className="w-96 h-full p-4 pl-0">
+              <AIAssistant onClose={() => setIsAIOpen(false)} />
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
@@ -106,12 +116,12 @@ export default function App() {
 
   if (isLoading) {
     return (
-        <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <div className="w-8 h-8 rounded-full bg-white/90" />
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+              <div className="w-8 h-8 rounded-full bg-primary-foreground/90" />
             </div>
-            <p className="text-zinc-500">Loading...</p>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
       </div>
     );

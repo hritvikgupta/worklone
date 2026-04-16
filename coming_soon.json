@@ -1,0 +1,662 @@
+[
+  {
+    "id": "a2a",
+    "name": "A2A"
+  },
+  {
+    "id": "agentmail",
+    "name": "Agentmail"
+  },
+  {
+    "id": "ahrefs",
+    "name": "Ahrefs"
+  },
+  {
+    "id": "airtable",
+    "name": "Airtable"
+  },
+  {
+    "id": "airweave",
+    "name": "Airweave"
+  },
+  {
+    "id": "algolia",
+    "name": "Algolia"
+  },
+  {
+    "id": "amplitude",
+    "name": "Amplitude"
+  },
+  {
+    "id": "apify",
+    "name": "Apify"
+  },
+  {
+    "id": "apollo",
+    "name": "Apollo"
+  },
+  {
+    "id": "arxiv",
+    "name": "Arxiv"
+  },
+  {
+    "id": "asana",
+    "name": "Asana"
+  },
+  {
+    "id": "ashby",
+    "name": "Ashby"
+  },
+  {
+    "id": "attio",
+    "name": "Attio"
+  },
+  {
+    "id": "box",
+    "name": "Box"
+  },
+  {
+    "id": "box_sign",
+    "name": "Box Sign"
+  },
+  {
+    "id": "brandfetch",
+    "name": "Brandfetch"
+  },
+  {
+    "id": "browser_use",
+    "name": "Browser Use"
+  },
+  {
+    "id": "calcom",
+    "name": "Calcom"
+  },
+  {
+    "id": "calendly",
+    "name": "Calendly"
+  },
+  {
+    "id": "clay",
+    "name": "Clay"
+  },
+  {
+    "id": "clerk",
+    "name": "Clerk"
+  },
+  {
+    "id": "cloudflare",
+    "name": "Cloudflare"
+  },
+  {
+    "id": "cloudformation",
+    "name": "Cloudformation"
+  },
+  {
+    "id": "cloudwatch",
+    "name": "Cloudwatch"
+  },
+  {
+    "id": "confluence",
+    "name": "Confluence"
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor"
+  },
+  {
+    "id": "databricks",
+    "name": "Databricks"
+  },
+  {
+    "id": "datadog",
+    "name": "Datadog"
+  },
+  {
+    "id": "devin",
+    "name": "Devin"
+  },
+  {
+    "id": "discord",
+    "name": "Discord"
+  },
+  {
+    "id": "docusign",
+    "name": "Docusign"
+  },
+  {
+    "id": "dropbox",
+    "name": "Dropbox"
+  },
+  {
+    "id": "dspy",
+    "name": "Dspy"
+  },
+  {
+    "id": "dub",
+    "name": "Dub"
+  },
+  {
+    "id": "duckduckgo",
+    "name": "Duckduckgo"
+  },
+  {
+    "id": "dynamodb",
+    "name": "Dynamodb"
+  },
+  {
+    "id": "elasticsearch",
+    "name": "Elasticsearch"
+  },
+  {
+    "id": "elevenlabs",
+    "name": "Elevenlabs"
+  },
+  {
+    "id": "enrich",
+    "name": "Enrich"
+  },
+  {
+    "id": "evernote",
+    "name": "Evernote"
+  },
+  {
+    "id": "exa",
+    "name": "Exa"
+  },
+  {
+    "id": "extend",
+    "name": "Extend"
+  },
+  {
+    "id": "fathom",
+    "name": "Fathom"
+  },
+  {
+    "id": "file",
+    "name": "File"
+  },
+  {
+    "id": "firecrawl",
+    "name": "Firecrawl"
+  },
+  {
+    "id": "fireflies",
+    "name": "Fireflies"
+  },
+  {
+    "id": "function",
+    "name": "Function"
+  },
+  {
+    "id": "gamma",
+    "name": "Gamma"
+  },
+  {
+    "id": "gitlab",
+    "name": "GitLab"
+  },
+  {
+    "id": "gong",
+    "name": "Gong"
+  },
+  {
+    "id": "grafana",
+    "name": "Grafana"
+  },
+  {
+    "id": "grain",
+    "name": "Grain"
+  },
+  {
+    "id": "granola",
+    "name": "Granola"
+  },
+  {
+    "id": "greenhouse",
+    "name": "Greenhouse"
+  },
+  {
+    "id": "greptile",
+    "name": "Greptile"
+  },
+  {
+    "id": "guardrails",
+    "name": "Guardrails"
+  },
+  {
+    "id": "hex",
+    "name": "Hex"
+  },
+  {
+    "id": "http",
+    "name": "Http"
+  },
+  {
+    "id": "huggingface",
+    "name": "Huggingface"
+  },
+  {
+    "id": "hunter",
+    "name": "Hunter"
+  },
+  {
+    "id": "incidentio",
+    "name": "Incidentio"
+  },
+  {
+    "id": "infisical",
+    "name": "Infisical"
+  },
+  {
+    "id": "intercom",
+    "name": "Intercom"
+  },
+  {
+    "id": "jina",
+    "name": "Jina"
+  },
+  {
+    "id": "jsm",
+    "name": "Jsm"
+  },
+  {
+    "id": "kalshi",
+    "name": "Kalshi"
+  },
+  {
+    "id": "ketch",
+    "name": "Ketch"
+  },
+  {
+    "id": "knowledge",
+    "name": "Knowledge"
+  },
+  {
+    "id": "langsmith",
+    "name": "Langsmith"
+  },
+  {
+    "id": "launchdarkly",
+    "name": "Launchdarkly"
+  },
+  {
+    "id": "lemlist",
+    "name": "Lemlist"
+  },
+  {
+    "id": "linkedin",
+    "name": "Linkedin"
+  },
+  {
+    "id": "linkup",
+    "name": "Linkup"
+  },
+  {
+    "id": "llm",
+    "name": "Llm"
+  },
+  {
+    "id": "loops",
+    "name": "Loops"
+  },
+  {
+    "id": "luma",
+    "name": "Luma"
+  },
+  {
+    "id": "mailchimp",
+    "name": "Mailchimp"
+  },
+  {
+    "id": "mailgun",
+    "name": "Mailgun"
+  },
+  {
+    "id": "mem0",
+    "name": "Mem0"
+  },
+  {
+    "id": "memory",
+    "name": "Memory"
+  },
+  {
+    "id": "microsoft_ad",
+    "name": "Microsoft Ad"
+  },
+  {
+    "id": "microsoft_dataverse",
+    "name": "Microsoft Dataverse"
+  },
+  {
+    "id": "microsoft_excel",
+    "name": "Microsoft Excel"
+  },
+  {
+    "id": "microsoft_planner",
+    "name": "Microsoft Planner"
+  },
+  {
+    "id": "microsoft_teams",
+    "name": "Microsoft Teams"
+  },
+  {
+    "id": "mistral",
+    "name": "Mistral"
+  },
+  {
+    "id": "mongodb",
+    "name": "Mongodb"
+  },
+  {
+    "id": "mysql",
+    "name": "Mysql"
+  },
+  {
+    "id": "neo4j",
+    "name": "Neo4J"
+  },
+  {
+    "id": "obsidian",
+    "name": "Obsidian"
+  },
+  {
+    "id": "okta",
+    "name": "Okta"
+  },
+  {
+    "id": "onedrive",
+    "name": "Onedrive"
+  },
+  {
+    "id": "onepassword",
+    "name": "Onepassword"
+  },
+  {
+    "id": "openai",
+    "name": "Openai"
+  },
+  {
+    "id": "outlook",
+    "name": "Outlook"
+  },
+  {
+    "id": "pagerduty",
+    "name": "Pagerduty"
+  },
+  {
+    "id": "parallel",
+    "name": "Parallel"
+  },
+  {
+    "id": "perplexity",
+    "name": "Perplexity"
+  },
+  {
+    "id": "pinecone",
+    "name": "Pinecone"
+  },
+  {
+    "id": "pipedrive",
+    "name": "Pipedrive"
+  },
+  {
+    "id": "polymarket",
+    "name": "Polymarket"
+  },
+  {
+    "id": "postgresql",
+    "name": "Postgresql"
+  },
+  {
+    "id": "posthog",
+    "name": "Posthog"
+  },
+  {
+    "id": "profound",
+    "name": "Profound"
+  },
+  {
+    "id": "pulse",
+    "name": "Pulse"
+  },
+  {
+    "id": "qdrant",
+    "name": "Qdrant"
+  },
+  {
+    "id": "quiver",
+    "name": "Quiver"
+  },
+  {
+    "id": "rds",
+    "name": "Rds"
+  },
+  {
+    "id": "reddit",
+    "name": "Reddit"
+  },
+  {
+    "id": "redis",
+    "name": "Redis"
+  },
+  {
+    "id": "reducto",
+    "name": "Reducto"
+  },
+  {
+    "id": "resend",
+    "name": "Resend"
+  },
+  {
+    "id": "response",
+    "name": "Response"
+  },
+  {
+    "id": "revenuecat",
+    "name": "Revenuecat"
+  },
+  {
+    "id": "rippling",
+    "name": "Rippling"
+  },
+  {
+    "id": "rootly",
+    "name": "Rootly"
+  },
+  {
+    "id": "s3",
+    "name": "S3"
+  },
+  {
+    "id": "search",
+    "name": "Search"
+  },
+  {
+    "id": "secrets_manager",
+    "name": "Secrets Manager"
+  },
+  {
+    "id": "sendgrid",
+    "name": "Sendgrid"
+  },
+  {
+    "id": "sentry",
+    "name": "Sentry"
+  },
+  {
+    "id": "serper",
+    "name": "Serper"
+  },
+  {
+    "id": "servicenow",
+    "name": "Servicenow"
+  },
+  {
+    "id": "sftp",
+    "name": "Sftp"
+  },
+  {
+    "id": "shared",
+    "name": "Shared"
+  },
+  {
+    "id": "sharepoint",
+    "name": "Sharepoint"
+  },
+  {
+    "id": "shopify",
+    "name": "Shopify"
+  },
+  {
+    "id": "similarweb",
+    "name": "Similarweb"
+  },
+  {
+    "id": "sixtyfour",
+    "name": "Sixtyfour"
+  },
+  {
+    "id": "sms",
+    "name": "Sms"
+  },
+  {
+    "id": "smtp",
+    "name": "Smtp"
+  },
+  {
+    "id": "spotify",
+    "name": "Spotify"
+  },
+  {
+    "id": "sqs",
+    "name": "Sqs"
+  },
+  {
+    "id": "ssh",
+    "name": "Ssh"
+  },
+  {
+    "id": "stagehand",
+    "name": "Stagehand"
+  },
+  {
+    "id": "stt",
+    "name": "Stt"
+  },
+  {
+    "id": "supabase",
+    "name": "Supabase"
+  },
+  {
+    "id": "table",
+    "name": "Table"
+  },
+  {
+    "id": "tailscale",
+    "name": "Tailscale"
+  },
+  {
+    "id": "tavily",
+    "name": "Tavily"
+  },
+  {
+    "id": "telegram",
+    "name": "Telegram"
+  },
+  {
+    "id": "textract",
+    "name": "Textract"
+  },
+  {
+    "id": "thinking",
+    "name": "Thinking"
+  },
+  {
+    "id": "tinybird",
+    "name": "Tinybird"
+  },
+  {
+    "id": "trello",
+    "name": "Trello"
+  },
+  {
+    "id": "tts",
+    "name": "Tts"
+  },
+  {
+    "id": "twilio",
+    "name": "Twilio"
+  },
+  {
+    "id": "twilio_voice",
+    "name": "Twilio Voice"
+  },
+  {
+    "id": "typeform",
+    "name": "Typeform"
+  },
+  {
+    "id": "upstash",
+    "name": "Upstash"
+  },
+  {
+    "id": "vercel",
+    "name": "Vercel"
+  },
+  {
+    "id": "video",
+    "name": "Video"
+  },
+  {
+    "id": "vision",
+    "name": "Vision"
+  },
+  {
+    "id": "wealthbox",
+    "name": "Wealthbox"
+  },
+  {
+    "id": "webflow",
+    "name": "Webflow"
+  },
+  {
+    "id": "whatsapp",
+    "name": "Whatsapp"
+  },
+  {
+    "id": "wikipedia",
+    "name": "Wikipedia"
+  },
+  {
+    "id": "wordpress",
+    "name": "Wordpress"
+  },
+  {
+    "id": "workday",
+    "name": "Workday"
+  },
+  {
+    "id": "workflow",
+    "name": "Workflow"
+  },
+  {
+    "id": "x",
+    "name": "X"
+  },
+  {
+    "id": "youtube",
+    "name": "Youtube"
+  },
+  {
+    "id": "zendesk",
+    "name": "Zendesk"
+  },
+  {
+    "id": "zep",
+    "name": "Zep"
+  },
+  {
+    "id": "zoom",
+    "name": "Zoom"
+  }
+]

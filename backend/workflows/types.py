@@ -25,6 +25,7 @@ class BlockType(str, Enum):
     WAIT = "wait"
     VARIABLE = "variable"
     TRIGGER = "trigger"
+    HUMAN_APPROVAL = "human_approval"
     END = "end"
 
 
@@ -187,6 +188,21 @@ class Trigger:
     api_key: str = ""  # For API triggers
 
 
+class WorkflowTaskStatus(str, Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+
+@dataclass
+class WorkflowTask:
+    id: str
+    description: str
+    status: WorkflowTaskStatus = WorkflowTaskStatus.PENDING
+    result: str = ""
+    error: str = ""
+
 @dataclass
 class Workflow:
     """A complete workflow definition."""
@@ -203,10 +219,7 @@ class Workflow:
     handoff_actor_id: str = ""
     handoff_actor_name: str = ""
     handoff_at: Optional[datetime] = None
-    blocks: list[Block] = field(default_factory=list)
-    connections: list[Connection] = field(default_factory=list)
-    loops: dict[str, Loop] = field(default_factory=dict)
-    parallels: dict[str, ParallelGroup] = field(default_factory=dict)
+    tasks: list[WorkflowTask] = field(default_factory=list)
     triggers: list[Trigger] = field(default_factory=list)
     variables: dict = field(default_factory=dict)
     is_published: bool = False  # Only published workflows can be triggered

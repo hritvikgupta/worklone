@@ -1,42 +1,35 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Send, Sparkles, User, Paperclip, Mic, Maximize2, Eraser, FileText, MessageSquare, MessageSquarePlus, Wrench, CheckCircle2, AlertCircle, Brain, Github, ListChecks, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { FullMessenger } from '@/components/ui/chat/layouts';
+import type { ChatMessageData, ChatUser } from '@/components/ui/chat/types';
+import type { SidebarConversation } from '@/components/ui/chat/layouts';
+import { Plus, History, ChevronDown, ListChecks, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  streamChatEvents,
-  CHAT_AUTH_EXPIRED_ERROR,
-  createChatSession,
-  getChatSessionMessages,
-  listChatSessions,
-  type ChatSession,
-} from '@/lib/api';
-import { ModelDropdown, AVAILABLE_MODELS } from '@/components/ModelDropdown';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { useAuth } from '../contexts/AuthContext';
+import {
+  CHAT_AUTH_EXPIRED_ERROR,
+  createEmployeeChatSession,
+  getEmployeeChatSessionMessages,
+  listEmployeeChatSessions,
+  streamEmployeeChatEvents,
+  ChatSession,
+} from '@/lib/api';
+import { listEmployees, EmployeeDetail } from '@/src/api/employees';
+import { useAuth } from '@/src/contexts/AuthContext';
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  thinking?: string;
-  activities?: ActivityItem[];
-}
-
-interface ActivityItem {
-  id: string;
-  type: 'thinking' | 'tool';
-  label: string;
-  meta?: string;
-  status: 'running' | 'done' | 'error';
-  detail?: string;
-}
-
-function normalizeMarkdown(text: string): string {
-  return text
-    .replace(/\r\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+function humanizeToken(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function stripMarkdown(text: string): string {
@@ -51,14 +44,6 @@ function stripMarkdown(text: string): string {
 function truncateLabel(text: string, maxLength = 92): string {
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1).trimEnd()}…`;
-}
-
-function humanizeToken(value: string): string {
-  return value
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function summarizeThinkingLabel(text: string): string {
@@ -92,186 +77,233 @@ function summarizeToolMeta(input?: Record<string, unknown>): string | undefined 
   return parts.length > 0 ? truncateLabel(parts.join(' · '), 72) : undefined;
 }
 
-function buildFallbackActivity(thinking?: string): ActivityItem[] {
-  if (!thinking) return [];
-  return [
-    {
-      id: 'thinking-fallback',
-      type: 'thinking',
-      label: summarizeThinkingLabel(thinking),
-      status: 'done',
-    },
-  ];
-}
-
-function buildPendingActivity(): ActivityItem[] {
-  return [
-    {
-      id: 'pending-intake',
-      type: 'thinking',
-      label: 'Mapping the request and choosing the first move',
-      status: 'running',
-    },
-    {
-      id: 'pending-context',
-      type: 'tool',
-      label: 'Preparing the next lookup',
-      meta: 'Warmup',
-      status: 'running',
-    },
-  ];
-}
-
 export function ChatView() {
-  const { logout } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [sessionsLoading, setSessionsLoading] = useState(false);
-  const [input, setInput] = useState('');
-  const [hasStarted, setHasStarted] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
-  const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].value);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { logout, user } = useAuth();
+  
+  const currentUser: ChatUser = {
+    id: user?.id || 'user-1',
+    name: user?.name || 'Current User',
+    avatar: user?.avatar_url || `https://i.pravatar.cc/150?u=${user?.id || 'current'}`,
+  };
+
+  const [employees, setEmployees] = useState<EmployeeDetail[]>([]);
+  const [activeEmployeeId, setActiveEmployeeId] = useState<string>('');
+  const [sessions, setSessions] = useState<Record<string, ChatSession[]>>({});
+  const [activeSessionId, setActiveSessionId] = useState<Record<string, string>>({});
+  const [messages, setMessages] = useState<Record<string, ChatMessageData[]>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [activePlans, setActivePlans] = useState<Record<string, ChatMessageData['plan']>>({});
+  const [isPlanCollapsed, setIsPlanCollapsed] = useState(false);
+  
+  const isStreamingRef = useRef(false);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, isThinking]);
-
-  const handleAuthExpired = () => {
-    logout();
-  };
-
-  const loadSessions = async () => {
-    setSessionsLoading(true);
-    try {
-      const data = await listChatSessions();
-      setSessions(data);
-    } catch (error) {
-      if (error instanceof Error && error.message === CHAT_AUTH_EXPIRED_ERROR) {
-        handleAuthExpired();
+    async function fetchEmployees() {
+      try {
+        const data = await listEmployees();
+        setEmployees(data);
+        if (data.length > 0 && !activeEmployeeId) {
+          setActiveEmployeeId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
       }
-    } finally {
-      setSessionsLoading(false);
     }
-  };
+    fetchEmployees();
+  }, []);
 
   useEffect(() => {
-    if (hasStarted) {
-      loadSessions();
-    }
-  }, [hasStarted]);
+    if (!activeEmployeeId) return;
 
-  const startNewChat = async () => {
-    try {
-      const session = await createChatSession('New Chat', selectedModel);
-      setActiveSessionId(session.id);
-      setMessages([]);
-      setHasStarted(true);
-      await loadSessions();
-    } catch (error) {
-      if (error instanceof Error && error.message === CHAT_AUTH_EXPIRED_ERROR) {
-        handleAuthExpired();
+    async function fetchSessions() {
+      try {
+        const sessionList = await listEmployeeChatSessions(activeEmployeeId);
+        setSessions(prev => ({ ...prev, [activeEmployeeId]: sessionList }));
+        
+        if (!activeSessionId[activeEmployeeId] && sessionList.length > 0) {
+          const firstSessionId = sessionList[0].id;
+          setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: firstSessionId }));
+          void fetchMessages(activeEmployeeId, firstSessionId);
+        } else if (sessionList.length === 0) {
+          setMessages(prev => ({ ...prev, [activeEmployeeId]: [] }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
       }
+    }
+    
+    fetchSessions();
+  }, [activeEmployeeId]);
+
+  const fetchMessages = async (employeeId: string, sessionId: string) => {
+    try {
+      const history = await getEmployeeChatSessionMessages(employeeId, sessionId);
+      const mappedMessages: ChatMessageData[] = history.map((msg, idx) => ({
+        id: `msg-${idx}-${Date.now()}`,
+        senderId: msg.role === 'user' ? currentUser.id : employeeId,
+        senderName: msg.role === 'user' ? currentUser.name : (employees.find(e => e.id === employeeId)?.name || 'Agent'),
+        text: msg.content,
+        timestamp: new Date(msg.created_at),
+        status: 'read',
+      }));
+      setMessages(prev => ({ ...prev, [employeeId]: mappedMessages }));
+      setActivePlans(prev => ({ ...prev, [employeeId]: undefined })); // Reset plan on session load
+    } catch (error) {
+      console.error('Failed to fetch messages:', error);
     }
   };
 
-  const openSession = async (sessionId: string) => {
-    try {
-      const history = await getChatSessionMessages(sessionId);
-      setActiveSessionId(sessionId);
-      setMessages(
-        history.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          thinking: msg.thinking || undefined,
-        }))
-      );
-      setHasStarted(true);
-    } catch (error) {
-      if (error instanceof Error && error.message === CHAT_AUTH_EXPIRED_ERROR) {
-        handleAuthExpired();
-      }
+  const handleSelectConversation = (id: string) => {
+    setActiveEmployeeId(id);
+    if (activeSessionId[id]) {
+      void fetchMessages(id, activeSessionId[id]);
     }
   };
 
-  const handleSend = async () => {
-    const messageToSend = input.trim();
-    if (!messageToSend) return;
+  const handleStartNewSession = async () => {
+    if (!activeEmployeeId) return;
+    const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+    if (!activeEmployee) return;
 
-    let sessionId = activeSessionId;
+    try {
+      const newSession = await createEmployeeChatSession(activeEmployeeId, 'New Chat', activeEmployee.model);
+      setSessions(prev => ({
+        ...prev,
+        [activeEmployeeId]: [newSession, ...(prev[activeEmployeeId] || [])]
+      }));
+      setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: newSession.id }));
+      setMessages(prev => ({ ...prev, [activeEmployeeId]: [] }));
+      setActivePlans(prev => ({ ...prev, [activeEmployeeId]: undefined }));
+    } catch (error) {
+      console.error('Failed to create new session:', error);
+    }
+  };
+
+  const handleSwitchSession = (sessionId: string) => {
+    setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: sessionId }));
+    void fetchMessages(activeEmployeeId, sessionId);
+  };
+
+  const handleSend = async (text: string) => {
+    if (!activeEmployeeId) return;
+    const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+    if (!activeEmployee) return;
+
+    let sessionId = activeSessionId[activeEmployeeId];
+    
     if (!sessionId) {
       try {
-        const session = await createChatSession('New Chat', selectedModel);
-        sessionId = session.id;
-        setActiveSessionId(session.id);
+        const newSession = await createEmployeeChatSession(activeEmployeeId, 'New Chat', activeEmployee.model);
+        sessionId = newSession.id;
+        setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: sessionId }));
+        setSessions(prev => ({
+          ...prev,
+          [activeEmployeeId]: [newSession, ...(prev[activeEmployeeId] || [])]
+        }));
       } catch (error) {
-        if (error instanceof Error && error.message === CHAT_AUTH_EXPIRED_ERROR) {
-          handleAuthExpired();
-          return;
-        }
+        console.error('Failed to create session on send:', error);
         return;
       }
     }
 
-    const userMsg: Message = { role: 'user', content: messageToSend };
-    setMessages(prev => [
+    const userMessage: ChatMessageData = {
+      id: `user-${Date.now()}`,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      text,
+      timestamp: new Date(),
+      status: 'sending',
+    };
+
+    setMessages(prev => ({
       ...prev,
-      userMsg,
-      {
-        role: 'assistant',
-        content: '',
-        thinking: undefined,
-        activities: buildPendingActivity(),
-      },
-    ]);
-    const assistantIndex = messages.length + 1;
-    setInput('');
-    setHasStarted(true);
-    setIsThinking(true);
+      [activeEmployeeId]: [...(prev[activeEmployeeId] || []), userMessage]
+    }));
+
+    setIsLoading(true);
+    isStreamingRef.current = true;
+
+    const assistantMessageId = `assistant-${Date.now()}`;
+    const assistantMessage: ChatMessageData = {
+      id: assistantMessageId,
+      senderId: activeEmployeeId,
+      senderName: activeEmployee.name,
+      text: '',
+      timestamp: new Date(),
+      status: 'sending',
+      activities: [],
+    };
+
+    setMessages(prev => ({
+      ...prev,
+      [activeEmployeeId]: [...(prev[activeEmployeeId] || []), assistantMessage]
+    }));
 
     try {
-      // Convert message history to API format
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
+      const history = (messages[activeEmployeeId] || []).map(m => ({
+        role: m.senderId === currentUser.id ? 'user' : 'assistant',
+        content: m.text || ''
       }));
 
-      let thinkingBuffer = '';
       let answerBuffer = '';
-      let activities: ActivityItem[] = [];
-
-      const updateAssistantMessage = (nextContent: string, nextThinking?: string, nextActivities?: ActivityItem[]) => {
-        setMessages((prev) =>
-          prev.map((msg, idx) =>
-            idx === assistantIndex
-              ? {
-                  ...msg,
-                  content: nextContent,
-                  thinking: nextThinking,
-                  activities: nextActivities ?? msg.activities,
-                }
-              : msg
-          )
-        );
-      };
-
-      for await (const event of streamChatEvents({
-        message: messageToSend,
-        conversation_history: conversationHistory,
-        model: selectedModel,
+      let thinkingBuffer = '';
+      let activities: NonNullable<ChatMessageData['activities']> = [];
+      
+      const stream = streamEmployeeChatEvents(activeEmployeeId, {
+        message: text,
+        conversation_history: history,
+        model: activeEmployee.model,
         session_id: sessionId,
-      })) {
+      });
+
+      for await (const event of stream) {
+        if (event.type === 'content_token') {
+          const token = event.token || '';
+          if (token) {
+            answerBuffer += token;
+          }
+          setMessages(prev => {
+            const convoMessages = prev[activeEmployeeId] || [];
+            return {
+              ...prev,
+              [activeEmployeeId]: convoMessages.map(m =>
+                m.id === assistantMessageId ? {
+                  ...m,
+                  text: answerBuffer,
+                  status: 'sending',
+                } : m
+              )
+            };
+          });
+          continue;
+        }
+
+        if (event.type === 'plan_created') {
+          const planData = {
+            mode: event.mode || 'multi_step',
+            reason: event.reason || '',
+            message: event.message || '',
+            status: 'proposed' as const,
+            tasks: (event.tasks || []).map((task: any, i: number) => ({
+              task_id: String(task.task_id || `task-${i + 1}`),
+              order: task.order || i + 1,
+              title: task.title || `Step ${i + 1}`,
+              description: task.description || '',
+              status: task.status || 'todo',
+              priority: task.priority || 'medium',
+            })),
+          };
+          setActivePlans(prev => ({ ...prev, [activeEmployeeId]: planData }));
+          continue;
+        }
+
         if (event.type === 'thinking') {
           const thought = event.content || '';
           if (thought) {
             thinkingBuffer += `${thought}\n\n`;
-            activities = activities.map((activity) =>
-              activity.type === 'thinking' && activity.status === 'running'
-                ? { ...activity, status: 'done' }
-                : activity
+            answerBuffer = '';
+            activities = activities.map(a =>
+              a.type === 'thinking' && a.status === 'running' ? { ...a, status: 'done' } : a
             );
             activities = [
               ...activities,
@@ -283,17 +315,8 @@ export function ChatView() {
               },
             ];
           }
-          updateAssistantMessage(
-            normalizeMarkdown(answerBuffer),
-            normalizeMarkdown(thinkingBuffer) || undefined,
-            [...activities]
-          );
-          continue;
-        }
-
-        if (event.type === 'tool_start') {
-          thinkingBuffer += `Using **${event.tool || 'tool'}**...\n\n`;
-          activities = activities.map((a) =>
+        } else if (event.type === 'tool_start') {
+          activities = activities.map(a =>
             a.type === 'thinking' && a.status === 'running' ? { ...a, status: 'done' } : a
           );
           activities = [
@@ -306,21 +329,49 @@ export function ChatView() {
               status: 'running',
             },
           ];
-          updateAssistantMessage(
-            normalizeMarkdown(answerBuffer),
-            normalizeMarkdown(thinkingBuffer) || undefined,
-            [...activities]
-          );
-          continue;
-        }
-
-        if (event.type === 'tool_result') {
-          if (event.success === false) {
-            thinkingBuffer += `**${event.tool || 'Tool'}** returned an error. Katy is adjusting and continuing.\n\n`;
-          } else {
-            thinkingBuffer += `Completed **${event.tool || 'tool'}**.\n\n`;
+        } else if (event.type === 'tool_result') {
+          if (event.tool === 'manage_tasks') {
+            const action = typeof event.input?.action === 'string' ? event.input.action : '';
+            const data = event.data as Record<string, any>;
+            if (action === 'create_plan' && Array.isArray(data?.tasks)) {
+               setActivePlans(prev => ({
+                 ...prev,
+                 [activeEmployeeId]: {
+                   mode: prev[activeEmployeeId]?.mode || 'multi_step',
+                   reason: prev[activeEmployeeId]?.reason || '',
+                   message: prev[activeEmployeeId]?.message || '',
+                   status: prev[activeEmployeeId]?.status || 'proposed',
+                   tasks: data.tasks.map((task: any, i: number) => ({
+                     task_id: String(task.task_id || `task-${i + 1}`),
+                     order: task.order || i + 1,
+                     title: task.title || `Step ${i + 1}`,
+                     description: task.description || '',
+                     status: task.status || 'todo',
+                     priority: task.priority || 'medium',
+                   })),
+                 }
+               }));
+            }
+            if (data?.task_id && data.status) {
+              setActivePlans(prev => {
+                const plan = prev[activeEmployeeId];
+                if (!plan) return prev;
+                const nextTasks = plan.tasks.map(t => 
+                  t.task_id === data.task_id ? { ...t, status: String(data.status) } : t
+                );
+                return {
+                  ...prev,
+                  [activeEmployeeId]: {
+                    ...plan,
+                    status: nextTasks.every(t => t.status === 'done') ? 'completed' : plan.status,
+                    tasks: nextTasks
+                  }
+                };
+              });
+            }
           }
-          const idx = [...activities].reverse().findIndex((a) => a.type === 'tool' && a.label === (event.tool || 'tool') && a.status === 'running');
+          
+          const idx = [...activities].reverse().findIndex(a => a.type === 'tool' && a.label === humanizeToken(event.tool || 'tool') && a.status === 'running');
           if (idx >= 0) {
             const realIdx = activities.length - 1 - idx;
             activities[realIdx] = {
@@ -329,409 +380,225 @@ export function ChatView() {
               detail: event.success === false ? (event.message || event.output || 'Tool failed') : undefined,
             };
           }
-          updateAssistantMessage(
-            normalizeMarkdown(answerBuffer),
-            normalizeMarkdown(thinkingBuffer) || undefined,
-            [...activities]
-          );
-          continue;
+        } else if (event.type === 'task_started') {
+          const taskId = event.task_id || '';
+          setActivePlans(prev => {
+             const plan = prev[activeEmployeeId];
+             if (!plan) return prev;
+             return {
+               ...prev,
+               [activeEmployeeId]: {
+                 ...plan,
+                 status: 'running',
+                 tasks: plan.tasks.map(t => t.task_id === taskId ? { ...t, status: 'in_progress' } : t)
+               }
+             };
+          });
+          activities = [
+            ...activities,
+            {
+              id: `bg-task-${taskId}-${Date.now()}`,
+              type: 'tool',
+              label: `Background task: ${truncateLabel(event.task_title || taskId, 60)}`,
+              meta: 'Async',
+              status: 'running',
+            },
+          ];
+        } else if (event.type === 'final') {
+          activities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
+          answerBuffer = event.content || answerBuffer;
+        } else if (event.type === 'error') {
+          activities = activities.map(a => a.status === 'running' ? { ...a, status: 'error', detail: event.message } : a);
+          answerBuffer += `\nError: ${event.message}`;
         }
 
-        if (event.type === 'final') {
-          activities = activities.map((a) =>
-            a.status === 'running' ? { ...a, status: 'done' } : a
-          );
-          answerBuffer = event.content || '';
-          updateAssistantMessage(
-            normalizeMarkdown(answerBuffer),
-            normalizeMarkdown(thinkingBuffer) || undefined,
-            [...activities]
-          );
-          continue;
-        }
-
-        if (event.type === 'error') {
-          const errText = event.message || 'Unknown streaming error';
-          activities = activities.map((a) =>
-            a.status === 'running' ? { ...a, status: 'error', detail: errText } : a
-          );
-          updateAssistantMessage(
-            `Error: ${errText}`,
-            normalizeMarkdown(thinkingBuffer) || undefined,
-            [...activities]
-          );
-          break;
-        }
-      }
-
-      const finalContent = normalizeMarkdown(answerBuffer);
-      const finalThinking = normalizeMarkdown(thinkingBuffer);
-      updateAssistantMessage(finalContent, finalThinking || undefined, [...activities]);
-
-      if (!finalContent) {
-        updateAssistantMessage(
-          "I completed the run but did not receive a final response message. Please try again.",
-          finalThinking || undefined
-        );
+        // Update UI state
+        setMessages(prev => {
+          const convoMessages = prev[activeEmployeeId] || [];
+          return {
+            ...prev,
+            [activeEmployeeId]: convoMessages.map(m => 
+              m.id === assistantMessageId ? { 
+                ...m, 
+                text: answerBuffer,
+                thinking: thinkingBuffer || undefined,
+                activities: [...activities] 
+              } : m
+            )
+          };
+        });
       }
     } catch (error) {
       console.error('Chat error:', error);
       if (error instanceof Error && error.message === CHAT_AUTH_EXPIRED_ERROR) {
-        handleAuthExpired();
-        return;
+        logout();
       }
-      setMessages((prev) =>
-        prev.map((msg, idx) =>
-          idx === assistantIndex
-            ? {
-                ...msg,
-                content: "Sorry, I encountered an error. Please ensure the backend server is running.",
-                thinking: msg.thinking || undefined,
-              }
-            : msg
-        )
-      );
     } finally {
-      setIsThinking(false);
-      await loadSessions();
+      setIsLoading(false);
+      isStreamingRef.current = false;
+      
+      setMessages(prev => {
+        const convoMessages = prev[activeEmployeeId] || [];
+        return {
+          ...prev,
+          [activeEmployeeId]: convoMessages.map(m => {
+            if (m.id === userMessage.id) return { ...m, status: 'read' };
+            if (m.id === assistantMessageId) return { ...m, status: 'read' };
+            return m;
+          })
+        };
+      });
     }
   };
 
-  return (
-    <div className="h-full flex flex-col bg-white relative overflow-hidden">
-      {/* Background Pattern */}
-      {!hasStarted && (
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        </div>
-      )}
+  const conversations: SidebarConversation[] = employees.map(e => ({
+    id: e.id,
+    title: e.name,
+    lastMessage: e.role,
+    presence: 'online',
+  }));
 
-      <AnimatePresence mode="wait">
-        {!hasStarted ? (
-          <motion.div 
-            key="initial"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex-1 flex flex-col items-center justify-center p-6 max-w-2xl mx-auto w-full"
+  const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+  const currentSessions = sessions[activeEmployeeId] || [];
+  const currentSessionId = activeSessionId[activeEmployeeId];
+
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-2.5 text-[12px] font-medium text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
           >
-            <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-8 shadow-xl">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-[#37352f] mb-4 tracking-tight">How can I help you, Katy?</h1>
-            <p className="text-zinc-500 text-center mb-12 leading-relaxed">
-              I'm your AI product partner. Ask me to draft a PRD, prioritize your backlog, 
-              or brainstorm new features for your roadmap.
-            </p>
-            
-            <div className="w-full relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-zinc-200 to-zinc-100 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-              <div className="relative bg-white border border-zinc-200 rounded-xl p-4 shadow-sm">
-                <textarea
-                  placeholder="Ask anything..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  className="w-full bg-transparent border-none focus:ring-0 outline-none focus:outline-none shadow-none resize-none text-sm min-h-[44px] py-1 text-[#37352f] placeholder:text-zinc-400"
-                />
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-50">
-                  <div className="flex items-center gap-2">
-                    <ModelDropdown value={selectedModel} onChange={setSelectedModel} />
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900">
-                      <Paperclip className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900">
-                      <Mic className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider">
-                      {input.length} characters
-                    </span>
-                    <Button 
-                      onClick={handleSend}
-                      disabled={!input.trim()}
-                      className="bg-zinc-900 text-white hover:bg-zinc-800 h-9 px-4 rounded-lg flex items-center gap-2 transition-all active:scale-95"
-                    >
-                      <span className="text-xs font-bold">Send</span>
-                      <Send className="w-3 h-3" />
-                    </Button>
-                  </div>
+            <History className="h-3.5 w-3.5" />
+            <span>Sessions</span>
+            <ChevronDown className="h-3 w-3 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>
+            {activeEmployee ? `${activeEmployee.name}'s Sessions` : 'Sessions'}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleStartNewSession}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Session
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {currentSessions.length === 0 ? (
+            <DropdownMenuItem disabled>No sessions yet</DropdownMenuItem>
+          ) : (
+            currentSessions.map((s) => (
+              <DropdownMenuItem
+                key={s.id}
+                onClick={() => handleSwitchSession(s.id)}
+                className="flex items-center justify-between"
+              >
+                <span className="truncate">{s.title || 'Untitled Session'}</span>
+                {currentSessionId === s.id && (
+                  <span className="text-[10px] font-bold text-[var(--chat-accent)] uppercase">Active</span>
+                )}
+              </DropdownMenuItem>
+            ))
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <button
+        onClick={handleStartNewSession}
+        className="flex size-8 items-center justify-center rounded-lg bg-[var(--chat-accent)] text-white transition-transform active:scale-95"
+        title="New Session"
+      >
+        <Plus className="size-4" />
+      </button>
+    </div>
+  );
+
+  const selectedPlan = activePlans[activeEmployeeId];
+
+  const planPanel = selectedPlan ? (
+    <div className="shrink-0 border-t border-[var(--chat-border)] bg-[var(--chat-bg-main)]">
+      <div className="mx-auto max-w-3xl px-4 py-2">
+        <div className="rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] overflow-hidden shadow-sm">
+          <div className={cn(
+            "flex items-center justify-between gap-3 px-3 py-2.5",
+            !isPlanCollapsed && "border-b border-[var(--chat-border)]"
+          )}>
+            <div className="flex min-w-0 items-center gap-2.5">
+              <ListChecks className="h-4 w-4 shrink-0 text-[var(--chat-text-secondary)]" />
+              <div className="min-w-0">
+                <div className="truncate text-[13px] font-medium leading-4 text-[var(--chat-text-primary)]">
+                  {selectedPlan.tasks.filter((task) => task.status === 'done').length} of {selectedPlan.tasks.length} tasks completed
+                </div>
+                <div className="truncate text-[11px] leading-4 text-[var(--chat-text-tertiary)] mt-0.5">
+                  {selectedPlan.message || selectedPlan.reason || 'Agent-generated execution plan'}
                 </div>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 mt-8 w-full">
-              {[
-                { label: 'List my repos...', icon: Github, text: 'List my 5 most recently updated GitHub repositories' },
-                { label: 'Prioritize features...', icon: ListChecks, text: 'Help me prioritize my backlog using RICE framework' },
-                { label: 'Draft a PRD...', icon: FileText, text: 'Draft a PRD for a new dark mode feature' },
-                { label: 'Define metrics...', icon: TrendingUp, text: 'What success metrics should I track for my MVP?' },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => setInput(item.text)}
-                  className="flex items-center gap-3 p-3 rounded-xl border border-zinc-100 bg-zinc-50/50 hover:bg-white hover:border-zinc-200 hover:shadow-sm transition-all text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-white border border-zinc-100 flex items-center justify-center group-hover:border-zinc-200">
-                    <item.icon className="w-4 h-4 text-zinc-500" />
-                  </div>
-                  <span className="text-xs font-medium text-zinc-600 group-hover:text-zinc-900">{item.label}</span>
-                </button>
-              ))}
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="rounded-full border border-[var(--chat-border)] px-2 py-0.5 text-[11px] text-[var(--chat-text-secondary)]">
+                {selectedPlan.status === 'approved' ? 'Approved' : selectedPlan.status === 'running' ? 'Running' : selectedPlan.status === 'completed' ? 'Completed' : 'Needs approval'}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPlanCollapsed(!isPlanCollapsed)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"
+                aria-label={isPlanCollapsed ? 'Expand task plan' : 'Collapse task plan'}
+              >
+                <ChevronDown className={cn("h-4 w-4 transition-transform", !isPlanCollapsed && "rotate-180")} />
+              </button>
             </div>
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="chat"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex-1 flex min-h-0"
-          >
-            {hasStarted && (
-              <aside className="w-72 border-r border-zinc-100 bg-zinc-50/40 flex flex-col">
-                <div className="p-4 border-b border-zinc-100">
-                  <Button
-                    onClick={startNewChat}
-                    className="w-full bg-zinc-900 text-white hover:bg-zinc-800 h-9 text-xs font-bold"
-                  >
-                    <MessageSquarePlus className="w-3.5 h-3.5 mr-1.5" />
-                    New Chat
-                  </Button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                  {sessionsLoading ? (
-                    <div className="text-xs text-zinc-400 px-2 py-3">Loading chats...</div>
-                  ) : sessions.length === 0 ? (
-                    <div className="text-xs text-zinc-400 px-2 py-3">No chats yet.</div>
+          </div>
+
+          {!isPlanCollapsed && (
+          <div className="max-h-52 space-y-2 overflow-y-auto px-3 py-2.5">
+            {selectedPlan.tasks.map((task, index) => (
+              <div key={task.task_id} className="flex items-start gap-2.5">
+                <div className="pt-0.5">
+                  {task.status === 'done' ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                  ) : task.status === 'in_progress' ? (
+                    <span className="mt-0.5 block h-3 w-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                  ) : task.status === 'blocked' || task.status === 'cancelled' ? (
+                    <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
                   ) : (
-                    sessions.map((session) => (
-                      <button
-                        key={session.id}
-                        onClick={() => openSession(session.id)}
-                        className={cn(
-                          "w-full text-left rounded-lg px-3 py-2 border transition-colors",
-                          activeSessionId === session.id
-                            ? "bg-white border-zinc-300"
-                            : "bg-transparent border-transparent hover:bg-white hover:border-zinc-200"
-                        )}
-                      >
-                        <div className="text-xs font-semibold text-zinc-800 truncate">
-                          {session.title || 'New Chat'}
-                        </div>
-                        <div className="text-[11px] text-zinc-500 truncate mt-0.5">
-                          {session.last_message || 'No messages yet'}
-                        </div>
-                      </button>
-                    ))
+                    <span className="mt-1 block h-3 w-3 rounded-full border border-[var(--chat-text-tertiary)]" />
                   )}
                 </div>
-              </aside>
-            )}
-
-            <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto" ref={scrollRef}>
-                <div className="max-w-3xl mx-auto w-full py-12 px-6 space-y-8">
-                  {messages.map((msg, i) => (
-                    <div key={i} className="space-y-4">
-                      <div className={cn(
-                        "flex gap-4",
-                        msg.role === 'user' ? "flex-row-reverse" : ""
-                      )}>
-                        <div className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
-                          msg.role === 'assistant' ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-500"
-                        )}>
-                          {msg.role === 'assistant' ? <Sparkles className="w-4 h-4" /> : <User className="w-4 h-4" />}
-                        </div>
-                        <div className="flex flex-col gap-1 max-w-[85%]">
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-1">
-                            {msg.role === 'assistant' ? 'Katy' : 'You'}
-                          </span>
-                          
-                          {msg.role === 'assistant' && (msg.activities?.length || msg.thinking) && (
-                            <div className="mb-3 space-y-1.5">
-                              {(msg.activities && msg.activities.length > 0 ? msg.activities : buildFallbackActivity(msg.thinking)).map((activity) => (
-                                <div key={activity.id} className="space-y-1">
-                                  <div className="flex items-center justify-between gap-4 text-[12.5px] leading-5">
-                                    <div className="flex min-w-0 items-center gap-2.5 text-zinc-500">
-                                      {activity.type === 'thinking' ? (
-                                        <Brain className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-                                      ) : (
-                                        <Wrench className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-                                      )}
-                                      <span className="truncate text-zinc-500">{activity.label}</span>
-                                      {activity.meta && (
-                                        <span className="shrink-0 rounded-full bg-zinc-50 px-2 py-0.5 font-mono text-[11px] text-zinc-400">
-                                          {activity.meta}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="shrink-0 text-[12px]">
-                                      {activity.status === 'done' && (
-                                        <span className="inline-flex items-center gap-1 text-emerald-600">
-                                          <CheckCircle2 className="w-3.5 h-3.5" />
-                                          Done
-                                        </span>
-                                      )}
-                                      {activity.status === 'running' && (
-                                        <span className="inline-flex items-center gap-1 text-zinc-400">
-                                          <span className="flex items-center gap-0.5">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 animate-pulse" />
-                                            <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 animate-pulse [animation-delay:120ms]" />
-                                            <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 animate-pulse [animation-delay:240ms]" />
-                                          </span>
-                                          Live
-                                        </span>
-                                      )}
-                                      {activity.status === 'error' && (
-                                        <span className="inline-flex items-center gap-1 text-amber-600">
-                                          <AlertCircle className="w-3.5 h-3.5" />
-                                          Error
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {activity.status === 'error' && activity.detail && (
-                                    <div className="pl-6 text-[12px] leading-5 text-amber-700/90">
-                                      {truncateLabel(stripMarkdown(activity.detail), 180)}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className={cn(
-                            "text-sm leading-relaxed",
-                            msg.role === 'user' ? "text-[#37352f]" : "text-[#37352f]"
-                          )}>
-                            {msg.role === 'assistant' ? (
-                              <div className="max-w-none text-[14px] leading-6 text-zinc-700 space-y-3 [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_li]:my-0.5 [&_pre]:my-3 [&_blockquote]:my-3">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={{
-                                    p: ({ children }) => <p className="whitespace-pre-wrap leading-6">{children}</p>,
-                                    ul: ({ children }) => <ul className="list-disc pl-6 space-y-1">{children}</ul>,
-                                    ol: ({ children }) => <ol className="list-decimal pl-6 space-y-1">{children}</ol>,
-                                    li: ({ children }) => <li className="leading-6">{children}</li>,
-                                    table: ({ children }) => (
-                                      <div className="my-4 overflow-x-auto rounded-lg border border-zinc-200">
-                                        <table className="min-w-full border-collapse text-[13px]">{children}</table>
-                                      </div>
-                                    ),
-                                    thead: ({ children }) => <thead className="bg-zinc-50">{children}</thead>,
-                                    th: ({ children }) => (
-                                      <th className="border-b border-zinc-200 px-3 py-2 text-left font-medium text-zinc-700">
-                                        {children}
-                                      </th>
-                                    ),
-                                    td: ({ children }) => <td className="border-b border-zinc-100 px-3 py-2 align-top">{children}</td>,
-                                    code: ({ inline, children }) =>
-                                      inline ? (
-                                        <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-[12px] font-mono">{children}</code>
-                                      ) : (
-                                        <code className="block overflow-x-auto rounded-lg bg-zinc-950 p-3 text-[12px] font-mono text-zinc-100">
-                                          {children}
-                                        </code>
-                                      ),
-                                    blockquote: ({ children }) => (
-                                      <blockquote className="border-l-4 border-zinc-300 pl-4 italic text-zinc-600">
-                                        {children}
-                                      </blockquote>
-                                    ),
-                                  }}
-                                >
-                                  {normalizeMarkdown(msg.content)}
-                                </ReactMarkdown>
-                              </div>
-                            ) : (
-                              msg.content
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                </div>
-              </div>
-
-              <div className="p-6 bg-white border-t border-zinc-100">
-              <div className="max-w-3xl mx-auto w-full">
-                <div className="relative bg-white border border-zinc-200 rounded-xl p-4 shadow-sm focus-within:border-zinc-400 transition-colors">
-                  <textarea
-                    placeholder="Ask Katy anything..."
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    className="w-full bg-transparent border-none focus:ring-0 outline-none focus:outline-none shadow-none resize-none text-sm min-h-[44px] py-1 text-[#37352f] placeholder:text-zinc-400"
-                  />
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-50">
-                    <div className="flex items-center gap-1">
-                      <ModelDropdown value={selectedModel} onChange={setSelectedModel} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900">
-                        <Paperclip className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-zinc-900">
-                        <Mic className="w-4 h-4" />
-                      </Button>
-                      <div className="h-4 w-[1px] bg-zinc-100 mx-1" />
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-[10px] font-bold text-zinc-400 hover:text-zinc-900 uppercase tracking-wider flex items-center gap-1.5">
-                        <Eraser className="w-3 h-3" />
-                        Clean history
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-50 text-[10px] font-medium text-zinc-400">
-                        <span className="px-1 py-0.5 rounded bg-white border border-zinc-200">Shift + ↵</span>
-                        <span>for newline</span>
-                      </div>
-                      <Button 
-                        onClick={handleSend}
-                        disabled={!input.trim() || isThinking}
-                        size="icon"
-                        className="bg-zinc-900 text-white hover:bg-zinc-800 h-8 w-8 rounded-lg transition-all active:scale-95"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
+                <div className="min-w-0 flex-1">
+                  <div className={cn("text-[12px] leading-5", task.status === 'done' ? "text-[var(--chat-text-tertiary)] line-through" : "text-[var(--chat-text-secondary)]")}>
+                    {index + 1}. {task.title}
                   </div>
+                  {task.description && (
+                    <div className="mt-0.5 text-[11px] leading-[18px] text-[var(--chat-text-tertiary)]">
+                      {task.description}
+                    </div>
+                  )}
                 </div>
+              </div>
+            ))}
+          </div>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
 
-                {/* Quick Suggestions Pills */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {[
-                    { label: 'List my repos...', text: 'List my 5 most recently updated GitHub repositories' },
-                    { label: 'Prioritize features...', text: 'Help me prioritize my backlog using RICE framework' },
-                    { label: 'Draft a PRD...', text: 'Draft a PRD for a new dark mode feature' },
-                    { label: 'Define metrics...', text: 'What success metrics should I track for my MVP?' },
-                  ].map((suggestion) => (
-                    <button
-                      key={suggestion.label}
-                      onClick={() => setInput(suggestion.text)}
-                      className="px-3 py-1.5 rounded-full border border-zinc-200 bg-white text-xs text-zinc-500 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-700 transition-all shadow-sm"
-                    >
-                      {suggestion.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  return (
+    <div className="flex-1 h-full w-full overflow-hidden flex">
+      <FullMessenger
+        currentUser={currentUser}
+        conversations={conversations}
+        activeConversationId={activeEmployeeId}
+        onSelectConversation={handleSelectConversation}
+        messages={messages[activeEmployeeId] || []}
+        onSend={handleSend}
+        title="Employees"
+        theme="lunar"
+        className="w-full h-full"
+        headerActions={headerActions}
+        beforeComposer={planPanel}
+      />
     </div>
   );
 }

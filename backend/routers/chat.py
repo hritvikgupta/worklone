@@ -7,8 +7,8 @@ from pydantic import BaseModel
 from typing import Optional, List
 import json
 from backend.services.katy_service import KatyService
-from backend.routers.auth import get_current_user
-from backend.models.auth_db import AuthDB
+from backend.lib.auth.session import get_current_user
+from backend.store.auth_store import AuthDB
 
 router = APIRouter()
 db = AuthDB()
@@ -107,10 +107,10 @@ async def chat_stream(request: ChatRequest, user=Depends(get_current_user)):
 
 @router.get("/sessions")
 async def list_chat_sessions(user=Depends(get_current_user)):
-    """List chat sessions for current user."""
+    """List Katy chat sessions for current user (excludes employee sessions)."""
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    sessions = db.list_chat_sessions(user_id=user["id"], limit=100)
+    sessions = db.list_chat_sessions(user_id=user["id"], limit=100, employee_id=None)
     return {"success": True, "sessions": sessions}
 
 

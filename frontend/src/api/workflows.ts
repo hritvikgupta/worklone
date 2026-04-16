@@ -1,5 +1,16 @@
 const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem('auth_token');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export interface WorkflowSummary {
   id: string;
   name: string;
@@ -19,7 +30,7 @@ export interface WorkflowSummary {
   created_by_actor_id: string;
   created_by_actor_name: string;
   trigger_count: number;
-  block_count: number;
+  task_count: number;
 }
 
 export interface WorkflowTrigger {
@@ -37,34 +48,12 @@ export interface WorkflowTrigger {
   failed_count: number;
 }
 
-export interface WorkflowBlock {
+export interface WorkflowTask {
   id: string;
-  name: string;
-  block_type: string;
   description: string;
-  tool_name: string;
-  model: string;
-  system_prompt: string;
-  code: string;
-  url: string;
-  method: string;
-  condition: string;
-  params: Record<string, unknown>;
-  config: Record<string, unknown>;
   status: string;
+  result: string;
   error: string;
-  execution_time: number;
-  inputs: Record<string, unknown>;
-  outputs: Record<string, unknown>;
-}
-
-export interface WorkflowConnection {
-  id: string;
-  from_block_id: string;
-  to_block_id: string;
-  condition: string;
-  from_handle: string;
-  to_handle: string;
 }
 
 export interface WorkflowExecution {
@@ -78,7 +67,6 @@ export interface WorkflowExecution {
   error: string;
   started_at: string;
   completed_at: string | null;
-  block_results: Record<string, unknown>;
   execution_time: number;
 }
 
@@ -86,13 +74,12 @@ export interface WorkflowDetail extends WorkflowSummary {
   variables: Record<string, unknown>;
   is_published: boolean;
   triggers: WorkflowTrigger[];
-  blocks: WorkflowBlock[];
-  connections: WorkflowConnection[];
+  tasks: WorkflowTask[];
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { ...authHeaders(), ...options?.headers },
     ...options,
   });
   if (!res.ok) {
@@ -100,6 +87,94 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error(`API error ${res.status}: ${text}`);
   }
   return res.json();
+}
+
+export async function generateWorkflow(prompt: string, model?: string): Promise<{ success: boolean; workflow_id: string }> {
+  return request<{ success: boolean; workflow_id: string }>('/api/workflows/generate', {
+    method: 'POST',
+    body: JSON.stringify({ 
+      prompt, 
+      model: model || "qwen/qwen3-max-thinking",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      current_time: new Date().toISOString()
+    }),
+  });
+}
+
+/**
+ * Execute a workflow manually — returns an SSE stream.
+ * The caller provides an onEvent callback to receive live events.
+ * Returns when the stream finishes.
+ */
+export async function executeWorkflow(
+  workflowId: string,
+  onEvent?: (event: Record<string, unknown>) => void,
+): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_BASE}/api/workflows/${workflowId}/execute`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API error ${res.status}: ${text}`);
+  }
+  if (!res.body) return { success: true };
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let success = true;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const data = line.slice(6).trim();
+      if (data === '[DONE]') break;
+      try {
+        const event = JSON.parse(data);
+        if (event.type === 'error') success = false;
+        if (onEvent) onEvent(event);
+      } catch {}
+    }
+  }
+
+  return { success };
+}
+
+export async function updateWorkflow(workflowId: string, updates: { name?: string; description?: string; schedule?: string; timezone?: string; tasks?: Partial<WorkflowTask>[] }): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`/api/workflows/${workflowId}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  });
+}
+
+export interface PausedExecution {
+  id: string;
+  workflow_id: string;
+  execution_id: string;
+  owner_id: string;
+  execution_snapshot: Record<string, unknown>;
+  pause_points: Array<{
+    block_id?: string;
+    block_name?: string;
+    prompt?: string;
+    input_fields?: string[];
+    timeout_minutes?: number;
+    timestamp?: number;
+  }>;
+  total_pause_count: number;
+  resumed_count: number;
+  status: string;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export async function listWorkflows(): Promise<WorkflowSummary[]> {
@@ -115,4 +190,30 @@ export async function getWorkflow(workflowId: string): Promise<{ workflow: Workf
     workflow: data.workflow,
     executions: data.executions || [],
   };
+}
+
+export async function listPausedExecutions(workflowId: string): Promise<PausedExecution[]> {
+  const data = await request<{ success: boolean; paused: PausedExecution[] }>(`/api/workflows/${workflowId}/paused`);
+  return data.paused || [];
+}
+
+export async function resumePausedExecution(pauseId: string, input: Record<string, unknown>): Promise<{ execution_id: string; status: string; output: Record<string, unknown> }> {
+  const data = await request<{ success: boolean; execution_id: string; status: string; output: Record<string, unknown> }>(
+    `/api/workflows/paused/${pauseId}/resume`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ input }),
+    }
+  );
+  return {
+    execution_id: data.execution_id,
+    status: data.status,
+    output: data.output,
+  };
+}
+
+export async function cancelPausedExecution(pauseId: string): Promise<void> {
+  await request<{ success: boolean }>(`/api/workflows/paused/${pauseId}/cancel`, {
+    method: 'POST',
+  });
 }

@@ -50,11 +50,11 @@ export function Approvals() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-zinc-900 flex items-center gap-2">
+          <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-amber-500" />
             Action Queue
           </h1>
-          <span className="text-xs font-medium bg-zinc-100 text-zinc-700 px-2 py-1 rounded-full">
+          <span className="text-xs font-medium bg-muted text-foreground px-2 py-1 rounded-full">
             {approvals.length} Pending
           </span>
         </div>
@@ -65,10 +65,10 @@ export function Approvals() {
             {approvals.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="bg-zinc-50/50 border border-zinc-200 border-dashed rounded-xl p-8 text-center"
+                className="bg-muted/50 border border-border border-border rounded-xl p-8 text-center"
               >
                 <CheckCircle2 className="w-8 h-8 text-emerald-500/50 mx-auto mb-3" />
-                <p className="text-sm text-zinc-500">All caught up! No pending actions.</p>
+                <p className="text-sm text-muted-foreground">All caught up! No pending actions.</p>
               </motion.div>
             ) : (
               approvals.map(approval => (
@@ -77,20 +77,20 @@ export function Approvals() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-white border border-zinc-100 rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  className="bg-card border border-border rounded-xl p-4 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-medium text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded">
+                      <span className="text-xs font-medium text-foreground bg-muted px-2 py-0.5 rounded">
                         {approval.agentName}
                       </span>
-                      <span className="text-xs text-zinc-400">{approval.time}</span>
+                      <span className="text-xs text-muted-foreground">{approval.time}</span>
                     </div>
                     <RiskBadge risk={approval.risk} />
                   </div>
 
-                  <h4 className="text-sm font-medium text-zinc-900 mb-1">{approval.action}</h4>
-                  <p className="text-xs text-zinc-500 mb-4 leading-relaxed">{approval.context}</p>
+                  <h4 className="text-sm font-medium text-foreground mb-1">{approval.action}</h4>
+                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{approval.context}</p>
 
                   <div className="flex space-x-2">
                     <button

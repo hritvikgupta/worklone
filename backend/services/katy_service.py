@@ -9,7 +9,7 @@ from typing import List, Optional, AsyncGenerator, Dict, Any
 from dotenv import load_dotenv
 
 from backend.product_manager.katy import KatyPMAgent
-from backend.models.auth_db import AuthDB
+from backend.store.auth_store import AuthDB
 
 load_dotenv()
 

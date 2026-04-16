@@ -6,7 +6,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 from dotenv import load_dotenv
 
 from backend.employee.react_agent import ContextMessage, GenericEmployeeAgent
-from backend.models.auth_db import AuthDB
+from backend.store.auth_store import AuthDB
 
 load_dotenv()
 
@@ -21,6 +21,11 @@ class EmployeeService:
 
     def _agent_key(self, employee_id: str, user_id: str, session_id: Optional[str]) -> str:
         return f"{employee_id}:{user_id}:{session_id or 'default'}"
+
+    def get_cached_agent(self, employee_id: str, user_id: str, session_id: Optional[str] = None) -> Optional[GenericEmployeeAgent]:
+        """Get an existing cached agent (for resume). Returns None if not found."""
+        key = self._agent_key(employee_id, user_id, session_id)
+        return self.agents.get(key)
 
     def _get_agent(
         self,
@@ -42,6 +47,21 @@ class EmployeeService:
             if model:
                 self.user_models[key] = model
         return self.agents[key]
+
+    def _ensure_session_has_employee(self, session_id: str, employee_id: str, user_id: str) -> None:
+        """Ensure the session is linked to the correct employee. If the session
+        was created without an employee_id (legacy), patch it now."""
+        session = self.db.get_chat_session(session_id=session_id, user_id=user_id)
+        if session and not session.get("employee_id"):
+            conn = self.db._get_conn()
+            try:
+                conn.execute(
+                    "UPDATE chat_sessions SET employee_id = ? WHERE id = ? AND user_id = ?",
+                    (employee_id, session_id, user_id),
+                )
+                conn.commit()
+            finally:
+                conn.close()
 
     def _restore_history_if_needed(
         self,
@@ -99,6 +119,8 @@ class EmployeeService:
         self._update_session_title_if_default(session_id, message)
 
         if session_id:
+            self._ensure_session_has_employee(session_id, employee_id, user_id)
+        if session_id:
             self.db.save_message(session_id=session_id, role="user", content=message, model=model)
 
         full_response = ""
@@ -131,6 +153,8 @@ class EmployeeService:
         self._update_session_title_if_default(session_id, message)
 
         if session_id:
+            self._ensure_session_has_employee(session_id, employee_id, user_id)
+        if session_id:
             self.db.save_message(session_id=session_id, role="user", content=message, model=model)
 
         final_response = ""
@@ -145,7 +169,7 @@ class EmployeeService:
                 continue
 
             sanitized_event = dict(event)
-            for key in ("content", "output", "message"):
+            for key in ("content", "output", "message", "token"):
                 value = sanitized_event.get(key)
                 if isinstance(value, str):
                     sanitized_event[key] = re.sub(r'\x1b\[[0-9;]*m', '', value)

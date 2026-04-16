@@ -88,10 +88,10 @@ export function IntegrationCallback() {
   }, [search]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50">
-      <div className="bg-white p-8 rounded-xl shadow-lg border border-zinc-100 text-center space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted">
+      <div className="bg-card p-8 rounded-xl shadow-lg border border-border text-center space-y-4">
         {status === 'loading' && (
-          <Loader2 className="w-10 h-10 animate-spin mx-auto text-zinc-900" />
+          <Loader2 className="w-10 h-10 animate-spin mx-auto text-foreground" />
         )}
         {status === 'success' && (
           <CheckCircle className="w-10 h-10 mx-auto text-green-500" />
@@ -99,10 +99,10 @@ export function IntegrationCallback() {
         {status === 'error' && (
           <XCircle className="w-10 h-10 mx-auto text-red-500" />
         )}
-        <h2 className="text-lg font-bold text-zinc-900">
+        <h2 className="text-lg font-bold text-foreground">
           {status === 'loading' ? 'Connecting...' : status === 'success' ? 'Connected!' : 'Error'}
         </h2>
-        <p className="text-sm text-zinc-500">{message}</p>
+        <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     </div>
   );

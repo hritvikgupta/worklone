@@ -6,7 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { MOCK_AGENTS } from '@/src/constants';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { listEmployees, EmployeeDetail } from '@/src/api/employees';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   MoreHorizontal, 
@@ -33,7 +36,13 @@ import {
   Trash2,
   Palette,
   Search,
-  Edit2
+  Edit2,
+  Save,
+  Play,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  XCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -71,6 +80,8 @@ interface IssueBoardProps {
   issues: Issue[];
   setIssues: (issues: Issue[]) => void;
   onAddIssue: (status: string) => void;
+  onUpdateIssueDetails?: (issueId: string, details: { title: string; description: string; requirements: string; agentId?: string }) => void;
+  onRunTask?: (issueId: string) => Promise<void> | void;
 }
 
 const DEFAULT_COLUMNS: { id: string; label: string; icon: any; color?: string }[] = [
@@ -110,46 +121,53 @@ function IssueCard({ issue, getAgent, getPriorityColor, onClick, isOverlay, disp
     <Card 
       onClick={onClick}
       className={cn(
-        "shadow-sm border border-border/60 hover:border-primary/30 transition-all cursor-grab active:cursor-grabbing group rounded-lg overflow-hidden bg-white",
-        isOverlay && "shadow-xl border-primary/20 bg-background rotate-2 scale-105"
+        "shadow-none border-zinc-200/60 hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing group rounded-lg overflow-hidden bg-white",
+        isOverlay && "shadow-lg border-zinc-300 bg-white rotate-1 scale-[1.02] z-50"
       )}
     >
-      <CardContent className="p-4 space-y-2">
+      <CardContent className="p-3.5 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-mono text-muted-foreground/70 uppercase tracking-tight">
+          <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
             {issue.id}
           </span>
+          {displaySettings.showPriority && (
+            <div className={cn(
+              "px-1.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-widest",
+              issue.priority === 'high' ? "bg-zinc-900 text-white" : 
+              issue.priority === 'medium' ? "bg-zinc-100 text-zinc-600 border border-zinc-200" : 
+              "bg-zinc-50 text-zinc-400 border border-zinc-100"
+            )}>
+              {issue.priority}
+            </div>
+          )}
         </div>
         
-        <h4 className="text-[13px] font-bold leading-tight text-foreground/90 group-hover:text-primary transition-colors">
+        <h4 className="text-[13px] font-semibold leading-snug text-zinc-900 group-hover:text-black transition-colors">
           {issue.title}
         </h4>
         
         {displaySettings.showDescription && (
-          <p className="text-[12px] text-muted-foreground/80 line-clamp-2 leading-relaxed">
+          <p className="text-[11.5px] text-zinc-500 line-clamp-2 leading-relaxed font-medium">
             {issue.description}
           </p>
         )}
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-2">
             {displaySettings.showAgent && issue.agentId && (
-              <Avatar className="h-5 w-5 rounded-full border border-border/50">
-                <AvatarImage src={getAgent(issue.agentId)?.avatar} />
-                <AvatarFallback className="text-[8px] bg-secondary">{getAgent(issue.agentId)?.name[0]}</AvatarFallback>
-              </Avatar>
-            )}
-            {displaySettings.showPriority && (
-              <div className={cn(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                issue.priority === 'high' ? "bg-rose-100 text-rose-700" : 
-                issue.priority === 'medium' ? "bg-amber-100 text-amber-700" : 
-                "bg-blue-100 text-blue-700"
-              )}>
-                <Signal className="w-2.5 h-2.5" />
-                {issue.priority}
+              <div className="flex items-center gap-1.5">
+                <Avatar className="h-5 w-5 rounded-full border border-zinc-100">
+                  <AvatarImage src={getAgent(issue.agentId)?.avatar_url} />
+                  <AvatarFallback className="text-[8px] bg-zinc-50 text-zinc-400">{getAgent(issue.agentId)?.name[0]}</AvatarFallback>
+                </Avatar>
+                <span className="text-[10px] font-medium text-zinc-400 italic">
+                  {getAgent(issue.agentId)?.name}
+                </span>
               </div>
             )}
+          </div>
+          <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <MoreHorizontal className="w-3.5 h-3.5 text-zinc-300" />
           </div>
         </div>
       </CardContent>
@@ -221,14 +239,19 @@ function DroppableColumn({
   };
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-80 flex flex-col gap-4 bg-secondary/10 rounded-xl p-2 min-h-[500px]">
+    <div ref={setNodeRef} className="flex-shrink-0 w-[280px] flex flex-col gap-3 bg-zinc-50/50 rounded-lg p-2.5 h-full border border-zinc-100 shadow-sm overflow-hidden">
       <div className={cn(
-        "flex items-center justify-between px-3 py-2 rounded-lg",
-        column.color || "bg-transparent"
+        "flex items-center justify-between px-2 py-1.5 rounded-md",
+        column.color ? column.color.replace('bg-', 'bg-zinc-900').replace('text-white', 'text-white') : "bg-transparent"
       )}>
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {column.icon && <column.icon className={cn("w-4 h-4", !column.color && "text-muted-foreground/50")} />}
-          {!column.icon && <Circle className={cn("w-4 h-4", !column.color && "text-muted-foreground/50")} />}
+          <div className={cn(
+            "w-1.5 h-1.5 rounded-full",
+            column.id === 'in-progress' ? "bg-amber-400" :
+            column.id === 'done' ? "bg-emerald-500" :
+            column.id === 'review' ? "bg-blue-500" :
+            "bg-zinc-300"
+          )} />
           
           {isEditing ? (
             <Input
@@ -237,28 +260,25 @@ function DroppableColumn({
               onChange={(e) => setNewLabel(e.target.value)}
               onBlur={handleRename}
               onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-              className="h-6 text-[13px] font-bold bg-white/20 border-none focus-visible:ring-1 focus-visible:ring-white/50 px-1"
+              className="h-6 text-[12px] font-bold bg-white border-zinc-200 px-1.5"
             />
           ) : (
             <h3 
-              className="font-bold text-[13px] tracking-tight truncate cursor-pointer hover:opacity-80"
+              className="font-bold text-[12px] tracking-tight uppercase text-zinc-900 truncate cursor-pointer hover:opacity-80"
               onClick={() => setIsEditing(true)}
             >
               {column.label}
             </h3>
           )}
           
-          <span className={cn(
-            "text-[11px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
-            column.color ? "bg-white/20" : "bg-secondary text-muted-foreground"
-          )}>
+          <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100/80 px-1.5 py-0.5 rounded-sm shrink-0">
             {columnIssues.length}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <DropdownMenu>
-            <DropdownMenuTrigger className="p-1 hover:bg-black/5 rounded transition-colors">
-              <MoreHorizontal className="w-4 h-4" />
+            <DropdownMenuTrigger className="p-1 hover:bg-zinc-100 rounded-md transition-colors">
+              <MoreHorizontal className="w-3.5 h-3.5 text-zinc-400" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuGroup>
@@ -269,14 +289,14 @@ function DroppableColumn({
                   Rename Column
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] font-semibold text-muted-foreground uppercase py-1">Change Color</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-[10px] font-semibold text-zinc-500 uppercase py-1">Change Color</DropdownMenuLabel>
                 <div className="grid grid-cols-4 gap-1 p-2">
                   {COLUMN_COLORS.map((color) => (
                     <button
                       key={color.name}
                       onClick={() => onChangeColumnColor(column.id, color.value)}
                       className={cn(
-                        "w-6 h-6 rounded-full border border-border",
+                        "w-6 h-6 rounded-full border border-zinc-200",
                         color.value || "bg-white"
                       )}
                       title={color.name}
@@ -285,7 +305,7 @@ function DroppableColumn({
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive"
+                  className="text-rose-600 focus:text-rose-600 focus:bg-rose-50"
                   onClick={() => onDeleteColumn(column.id)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -296,15 +316,15 @@ function DroppableColumn({
           </DropdownMenu>
           <button 
             onClick={() => onAddIssue(column.id)}
-            className="p-1 hover:bg-black/5 rounded transition-colors"
+            className="p-1 hover:bg-zinc-100 rounded-md transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5 text-zinc-400" />
           </button>
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-3 pr-2 min-h-[150px] pb-4">
+      <div className="flex-1 overflow-y-auto min-h-0 pr-1.5 custom-scrollbar">
+        <div className="space-y-2.5 min-h-[150px] pb-4">
           <SortableContext
             items={columnIssues.map(i => i.id)}
             strategy={verticalListSortingStrategy}
@@ -322,22 +342,158 @@ function DroppableColumn({
           </SortableContext>
           <button 
             onClick={() => onAddIssue(column.id)}
-            className="w-full py-1.5 flex items-center gap-2 px-2 text-[11px] text-muted-foreground hover:bg-secondary/50 rounded-md transition-colors group"
+            className="w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-200 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 hover:bg-zinc-50 rounded-md transition-all group"
           >
-            <Plus className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-            New
+            <Plus className="w-3 h-3" />
+            Add Task
           </button>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
 
-export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
+export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails, onRunTask }: IssueBoardProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [commentText, setCommentText] = useState('');
+  const [panelTab, setPanelTab] = useState('Details');
+  const [employees, setEmployees] = useState<EmployeeDetail[]>([]);
+  const [expandedRuns, setExpandedRuns] = useState<Record<string, boolean>>({});
+
+  const toggleRun = (runId: string) => {
+    setExpandedRuns((prev) => ({ ...prev, [runId]: !prev[runId] }));
+  };
+
+  const runStatusStyles = (status: string) => {
+    switch (status) {
+      case 'done':
+        return { dot: 'bg-green-500', badge: 'bg-green-500/15 text-green-700 border-green-500/30', label: 'Completed' };
+      case 'failed':
+        return { dot: 'bg-red-500', badge: 'bg-red-500/15 text-red-700 border-red-500/30', label: 'Failed' };
+      case 'running':
+      default:
+        return { dot: 'bg-yellow-500 animate-pulse', badge: 'bg-yellow-500/15 text-yellow-700 border-yellow-500/30', label: 'Running' };
+    }
+  };
+
+  const stepStatusStyles = (status: string) => {
+    switch (status) {
+      case 'done':
+        return { icon: <CheckCircle2 className="w-4 h-4 text-green-600" />, text: 'text-foreground line-through decoration-green-600/60' };
+      case 'in_progress':
+        return { icon: <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />, text: 'text-foreground font-medium' };
+      case 'blocked':
+      case 'cancelled':
+      case 'failed':
+        return { icon: <XCircle className="w-4 h-4 text-red-600" />, text: 'text-muted-foreground line-through' };
+      case 'todo':
+      default:
+        return { icon: <Circle className="w-4 h-4 text-muted-foreground" />, text: 'text-muted-foreground' };
+    }
+  };
+
+  // Fetch employees
+  React.useEffect(() => {
+    let mounted = true;
+    listEmployees()
+      .then((data) => {
+        if (mounted) setEmployees(data);
+      })
+      .catch((e) => console.error("Failed to load employees:", e));
+    return () => { mounted = false; };
+  }, []);
+
+  // Editable state
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editRequirements, setEditRequirements] = useState('');
+  const [editAgentId, setEditAgentId] = useState<string | undefined>('');
+  // Baseline snapshot of the last saved values — used to compute the dirty flag.
+  const [savedSnapshot, setSavedSnapshot] = useState<{ title: string; description: string; requirements: string; agentId?: string } | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  // When the user opens a different issue, initialize edit fields + baseline snapshot.
+  const selectedIssueId = selectedIssue?.id;
+  React.useEffect(() => {
+    if (!selectedIssueId) {
+      setSavedSnapshot(null);
+      return;
+    }
+    const fresh = issues.find((i) => i.id === selectedIssueId) || selectedIssue;
+    if (!fresh) return;
+    setEditTitle(fresh.title || '');
+    setEditDescription(fresh.description || '');
+    setEditRequirements(fresh.requirements || '');
+    setEditAgentId(fresh.agentId);
+    setSavedSnapshot({
+      title: fresh.title || '',
+      description: fresh.description || '',
+      requirements: fresh.requirements || '',
+      agentId: fresh.agentId,
+    });
+    // Intentionally only re-runs when the selected id changes — we don't want
+    // background polling to clobber the user's in-progress edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedIssueId]);
+
+  // When the issues list refreshes (polling), keep selectedIssue pointing at
+  // the fresh object so the Activity log re-renders with new comments, but do
+  // NOT touch the edit field state.
+  React.useEffect(() => {
+    if (!selectedIssueId) return;
+    const fresh = issues.find((i) => i.id === selectedIssueId);
+    if (fresh && fresh !== selectedIssue) {
+      setSelectedIssue(fresh);
+    }
+  }, [issues, selectedIssueId]);
+
+  const isDirty = !!selectedIssue && !!savedSnapshot && (
+    editTitle !== savedSnapshot.title ||
+    editDescription !== savedSnapshot.description ||
+    editRequirements !== savedSnapshot.requirements ||
+    (editAgentId || '') !== (savedSnapshot.agentId || '')
+  );
+
+  const canRun = !!selectedIssue && !!editAgentId && !isDirty && !isRunning;
+
+  const handleSaveDetails = () => {
+    if (!selectedIssue) return;
+
+    // Optimistic update — keep the panel open so the user can click Run next.
+    const updatedIssue = { ...selectedIssue, title: editTitle, description: editDescription, requirements: editRequirements, agentId: editAgentId };
+    setIssues(issues.map(i => i.id === selectedIssue.id ? updatedIssue : i));
+    setSelectedIssue(updatedIssue);
+    setSavedSnapshot({
+      title: editTitle,
+      description: editDescription,
+      requirements: editRequirements,
+      agentId: editAgentId,
+    });
+
+    if (onUpdateIssueDetails) {
+      onUpdateIssueDetails(selectedIssue.id, {
+        title: editTitle,
+        description: editDescription,
+        requirements: editRequirements,
+        agentId: editAgentId
+      });
+    }
+  };
+
+  const handleRunTask = async () => {
+    if (!selectedIssue || !canRun || !onRunTask) return;
+    setIsRunning(true);
+    setPanelTab('Activity');
+    try {
+      await onRunTask(selectedIssue.id);
+    } catch (e) {
+      console.error('Failed to run task:', e);
+    } finally {
+      setIsRunning(false);
+    }
+  };
   
   const [columns, setColumns] = useState(DEFAULT_COLUMNS);
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
@@ -409,7 +565,7 @@ export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
     })
   );
 
-  const getAgent = (id?: string) => MOCK_AGENTS.find(a => a.id === id);
+  const getAgent = (id?: string) => employees.find(a => a.id === id);
 
   const getPriorityColor = (priority: Issue['priority']) => {
     switch (priority) {
@@ -473,13 +629,13 @@ export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
   const activeIssue = activeId ? issues.find(i => i.id === activeId) : null;
 
   return (
-    <div className="relative group/board h-full flex flex-col gap-6">
+    <div className="relative group/board h-full flex flex-col gap-6 min-h-0">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
             size="sm" 
-            className="h-8 gap-2 text-xs font-bold border-border/60 shadow-sm"
+            className="h-8 gap-2 text-xs font-bold border-border shadow-sm"
             onClick={handleAddColumn}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -533,12 +689,12 @@ export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
                     {!filterAgent && <CheckCircle2 className="w-3 h-3" />}
                   </div>
                 </DropdownMenuItem>
-                {MOCK_AGENTS.map(agent => (
+                {employees.map(agent => (
                   <DropdownMenuItem key={agent.id} onClick={() => setFilterAgent(agent.id)}>
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-4 w-4">
-                          <AvatarImage src={agent.avatar} />
+                          <AvatarImage src={agent.avatar_url} />
                           <AvatarFallback className="text-[6px]">{agent.name[0]}</AvatarFallback>
                         </Avatar>
                         <span>{agent.name}</span>
@@ -602,13 +758,13 @@ export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
         <div className="flex gap-1 opacity-0 group-hover/board:opacity-100 transition-opacity">
           <button 
             onClick={() => scroll('left')}
-            className="p-1.5 bg-background border border-border/50 rounded-md hover:bg-secondary transition-colors shadow-sm"
+            className="p-1.5 bg-background border border-border rounded-md hover:bg-secondary transition-colors shadow-sm"
           >
             <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
           <button 
             onClick={() => scroll('right')}
-            className="p-1.5 bg-background border border-border/50 rounded-md hover:bg-secondary transition-colors shadow-sm"
+            className="p-1.5 bg-background border border-border rounded-md hover:bg-secondary transition-colors shadow-sm"
           >
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
           </button>
@@ -623,7 +779,7 @@ export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
       >
         <div 
           ref={scrollContainerRef}
-          className="flex gap-6 h-full overflow-x-auto pb-4 scrollbar-hide no-scrollbar"
+          className="flex gap-3 h-full overflow-x-auto pb-4 scrollbar-hide no-scrollbar"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {columns.map((column) => (
@@ -666,170 +822,327 @@ export function IssueBoard({ issues, setIssues, onAddIssue }: IssueBoardProps) {
 
       <AnimatePresence>
         {selectedIssue && (
-          <>
+          <div className="fixed inset-0 z-50 flex justify-end p-4 sm:p-6 lg:p-8 pointer-events-none">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               onClick={() => setSelectedIssue(null)}
-              className="fixed inset-0 bg-background/40 backdrop-blur-[2px] z-40"
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm pointer-events-auto"
+              style={{
+                backgroundImage: 'radial-gradient(circle, var(--border) 1px, transparent 1px)',
+                backgroundSize: '24px 24px'
+              }}
             />
             <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 h-full w-full max-w-xl bg-background border-l border-border shadow-2xl z-50 flex flex-col"
+              initial={{ opacity: 0, x: 50, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.98 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-lg h-full bg-background rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden pointer-events-auto"
             >
-              <div className="flex items-center justify-between p-4 border-b border-border/50">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-muted-foreground">{selectedIssue.id}</span>
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{selectedIssue.status}</Badge>
+              {/* Header / Tabs Area */}
+              <div className="flex items-center justify-between p-4 border-b border-border bg-background shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center bg-muted/50 p-1 rounded-full border border-border/50">
+                    {['Details', 'Activity'].map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setPanelTab(tab)}
+                        className={cn(
+                          "px-4 py-1.5 text-sm font-medium rounded-full transition-all",
+                          panelTab === tab 
+                            ? "bg-background text-foreground shadow-sm" 
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
                   <Button 
                     variant="ghost" 
-                    size="sm" 
-                    className="h-8 w-8 p-0"
+                    size="icon" 
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      if (confirm("Delete this task?")) {
+                        // TODO: handle delete
+                        setSelectedIssue(null);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                     onClick={() => setSelectedIssue(null)}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
 
-              <ScrollArea className="flex-1">
-                <div className="p-8 space-y-8">
-                  <div className="space-y-4">
-                    <h2 className="text-2xl font-semibold tracking-tight leading-tight">
-                      {selectedIssue.title}
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedIssue.tags.map(tag => (
-                        <Badge key={tag} variant="secondary" className="text-[10px] font-medium">#{tag}</Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6 py-6 border-y border-border/50">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        <Bot className="w-3 h-3" />
-                        Agent
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6 rounded-sm">
-                          <AvatarImage src={getAgent(selectedIssue.agentId)?.avatar} />
-                          <AvatarFallback className="rounded-sm text-[10px]">{getAgent(selectedIssue.agentId)?.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium">{getAgent(selectedIssue.agentId)?.name || 'Unassigned'}</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                        <User className="w-3 h-3" />
-                        Assignee
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6 rounded-sm">
-                          <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=hritvik" />
-                          <AvatarFallback className="rounded-sm text-[10px]">H</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium">Hritvik</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        Task Description
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {selectedIssue.description}
-                      </p>
-                    </div>
-
-                    {selectedIssue.fileChanges && selectedIssue.fileChanges.length > 0 && (
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden bg-muted/20 min-w-0 w-full custom-scrollbar">
+                <div className="w-full">
+                  {panelTab === "Details" && (
+                    <div className="p-6 space-y-6">
                       <div className="space-y-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <FileCode className="w-4 h-4 text-muted-foreground" />
-                          File Changes
-                        </h3>
-                        <div className="space-y-1.5">
-                          {selectedIssue.fileChanges.map(file => (
-                            <div key={file} className="flex items-center gap-2 text-xs text-foreground/80 bg-secondary/30 px-2 py-1 rounded border border-border/50 font-mono">
-                              <FileCode className="w-3 h-3 opacity-50" />
-                              {file}
-                            </div>
-                          ))}
+                        <Label className="text-sm font-medium text-muted-foreground">Task Title</Label>
+                        <Input 
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="bg-background border-border shadow-sm h-11 text-base font-semibold"
+                          placeholder="Task Title"
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                        <Textarea 
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          className="bg-background border-border shadow-sm resize-none min-h-[100px]"
+                          placeholder="Add a detailed description..."
+                        />
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium text-muted-foreground">Requirements</Label>
+                        <Textarea 
+                          value={editRequirements}
+                          onChange={(e) => setEditRequirements(e.target.value)}
+                          className="bg-background border-border shadow-sm resize-none min-h-[100px]"
+                          placeholder="Add acceptance criteria and requirements..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <Bot className="h-3 w-3" /> Agent Lead
+                          </Label>
+                          <Select 
+                            value={editAgentId || "unassigned"} 
+                            onValueChange={(val) => setEditAgentId(val === "unassigned" ? undefined : val)}
+                          >
+                            <SelectTrigger className="w-full bg-background border-border shadow-sm h-[42px]">
+                              <SelectValue placeholder="Select Agent">
+                                <div className="flex items-center gap-2.5">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage src={getAgent(editAgentId)?.avatar_url} />
+                                    <AvatarFallback className="bg-muted text-[10px] text-muted-foreground">{getAgent(editAgentId)?.name?.[0] || '?'}</AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm font-medium text-foreground">{getAgent(editAgentId)?.name || 'Unassigned'}</span>
+                                </div>
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unassigned">
+                                <div className="flex items-center gap-2.5">
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarFallback className="bg-muted text-[10px] text-muted-foreground">?</AvatarFallback>
+                                  </Avatar>
+                                  <span className="text-sm font-medium text-foreground">Unassigned</span>
+                                </div>
+                              </SelectItem>
+                              {employees.map(agent => (
+                                <SelectItem key={agent.id} value={agent.id}>
+                                  <div className="flex items-center gap-2.5">
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={agent.avatar_url} />
+                                      <AvatarFallback className="bg-muted text-[10px] text-muted-foreground">{agent.name[0]}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium text-foreground">{agent.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <User className="h-3 w-3" /> User Assigned
+                          </Label>
+                          <div className="flex items-center gap-2.5 bg-background p-3 rounded-lg border border-border shadow-sm">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=hritvik" />
+                              <AvatarFallback className="bg-muted text-[10px] text-muted-foreground">H</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium text-foreground">Hritvik</span>
+                          </div>
                         </div>
                       </div>
-                    )}
-                  </div>
 
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                      <History className="w-4 h-4 text-muted-foreground" />
-                      Agent Process
-                    </h3>
-                    <div className="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-border/50">
-                      {[...(selectedIssue.comments || [])].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((item) => (
-                        <div key={item.id} className="flex gap-4 relative">
-                          <div className={cn(
-                            "w-6 h-6 rounded-full flex-shrink-0 z-10 flex items-center justify-center border border-background shadow-sm",
-                            item.type === 'agent' ? "bg-primary text-primary-foreground" : "bg-secondary"
-                          )}>
-                            {item.type === 'agent' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
-                          </div>
-                          <div className="space-y-1 flex-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold">{item.authorName}</span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <div className={cn(
-                              "text-sm p-3 rounded-lg border",
-                              item.type === 'agent' ? "bg-secondary/20 border-border/50" : "bg-background border-border"
-                            )}>
-                              {item.content}
-                            </div>
+                      {selectedIssue.fileChanges && selectedIssue.fileChanges.length > 0 && (
+                        <div className="space-y-3">
+                          <Label className="text-sm font-medium text-muted-foreground">Artifacts</Label>
+                          <div className="grid grid-cols-1 gap-2">
+                            {selectedIssue.fileChanges.map(file => (
+                              <div key={file} className="flex items-center gap-3 text-xs text-foreground bg-background px-3 py-2 rounded-lg border border-border font-mono shadow-sm">
+                                <FileCode className="w-4 h-4 text-muted-foreground" />
+                                {file}
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      ))}
+                      )}
                     </div>
-                  </div>
-                </div>
-              </ScrollArea>
+                  )}
 
-              <div className="p-4 border-t border-border/50 bg-secondary/10">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
-                    placeholder="Add a comment for the agent..."
-                    className="flex-1 h-9 bg-background border border-border rounded-md px-3 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                  <Button size="sm" onClick={handleAddComment}>
-                    <Send className="w-3.5 h-3.5" />
-                  </Button>
+                  {panelTab === "Activity" && (
+                    <div className="p-4 sm:p-5 w-full min-w-0">
+                      <div className="space-y-4">
+                        {(!selectedIssue.runs || selectedIssue.runs.length === 0) ? (
+                          <div className="flex flex-col items-center justify-center py-12 text-center space-y-2 bg-background border border-dashed border-border/60 rounded-xl w-full">
+                            <History className="h-8 w-8 text-muted-foreground/50" />
+                            <p className="text-sm font-medium text-foreground">No Runs Yet</p>
+                            <p className="text-xs text-muted-foreground">Each time you run this task, a new run card will appear here.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedIssue.runs.map((run, idx) => {
+                              const rs = runStatusStyles(run.status);
+                              const isLatest = idx === 0;
+                              const isExpanded = expandedRuns[run.id] ?? isLatest;
+                              const doneCount = run.steps.filter((s) => s.status === 'done').length;
+                              return (
+                                <div
+                                  key={run.id}
+                                  className="rounded-xl border border-border bg-background shadow-sm overflow-hidden"
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleRun(run.id)}
+                                    className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40 transition-colors text-left"
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      <span className={cn("w-2.5 h-2.5 rounded-full shrink-0", rs.dot)} />
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="text-sm font-semibold text-foreground truncate">
+                                            Run {run.id.replace(/^sprun_/, '')}
+                                          </span>
+                                          <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", rs.badge)}>
+                                            {rs.label}
+                                          </span>
+                                          {run.employeeName && (
+                                            <span className="text-[11px] text-muted-foreground truncate">· {run.employeeName}</span>
+                                          )}
+                                        </div>
+                                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                                          {new Date(run.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                          {run.steps.length > 0 && ` · ${doneCount}/${run.steps.length} steps`}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {isExpanded ? (
+                                      <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    ) : (
+                                      <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    )}
+                                  </button>
+                                  {isExpanded && (
+                                    <div className="px-4 pb-4 pt-1 space-y-2 border-t border-border/60 bg-muted/20">
+                                      {run.steps.length === 0 ? (
+                                        <div className="text-xs text-muted-foreground italic py-3">
+                                          Agent is planning the work…
+                                        </div>
+                                      ) : (
+                                        <ul className="space-y-1.5 pt-2">
+                                          {run.steps.map((step) => {
+                                            const ss = stepStatusStyles(step.status);
+                                            return (
+                                              <li
+                                                key={step.id}
+                                                className="flex items-center gap-3 px-3 py-2 rounded-lg bg-background border border-border/50"
+                                              >
+                                                <span className="shrink-0">{ss.icon}</span>
+                                                <span className={cn("text-sm flex-1 break-words", ss.text)}>
+                                                  {step.title || step.id}
+                                                </span>
+                                              </li>
+                                            );
+                                          })}
+                                        </ul>
+                                      )}
+                                      {run.summary && run.status === 'done' && (
+                                        <div className="mt-3 text-xs leading-relaxed text-foreground bg-background border border-border/50 rounded-lg p-3 whitespace-pre-wrap break-words">
+                                          {run.summary}
+                                        </div>
+                                      )}
+                                      {run.error && run.status === 'failed' && (
+                                        <div className="mt-3 text-xs leading-relaxed text-red-700 bg-red-500/10 border border-red-500/30 rounded-lg p-3 whitespace-pre-wrap break-words">
+                                          {run.error}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t border-border bg-background flex items-center justify-end gap-3 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)] shrink-0">
+                <Button variant="outline" onClick={() => setSelectedIssue(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveDetails}
+                  className="gap-2 px-6"
+                >
+                  <Save className="w-4 h-4" /> Save Details
+                </Button>
+                <Button
+                  onClick={handleRunTask}
+                  disabled={!canRun}
+                  className="gap-2 px-6"
+                  title={
+                    !editAgentId
+                      ? 'Assign an employee first'
+                      : isDirty
+                        ? 'Save your changes before running'
+                        : isRunning
+                          ? 'Task is already running'
+                          : 'Run this task with the assigned employee'
+                  }
+                >
+                  <Play className="w-4 h-4" /> {isRunning ? 'Running…' : 'Run'}
+                </Button>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
       
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar {
           display: none;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e4e4e7;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #d4d4d8;
         }
       `}} />
     </div>

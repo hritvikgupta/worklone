@@ -16,14 +16,14 @@ export function MemoryGraph() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-zinc-900 flex items-center gap-2">
-            <MessageSquare className="w-5 h-5 text-zinc-500" />
+          <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-muted-foreground" />
             Cross-Agent Memory Stream
           </h1>
         </div>
 
         {/* Memory Cards */}
-        <div className="bg-white border border-zinc-100 rounded-xl p-1 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <div className="bg-card border border-border rounded-xl p-1 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="max-h-[600px] overflow-y-auto p-4 space-y-4">
             {MEMORY_STREAM.map(msg => (
               <div key={msg.id} className="flex space-x-3">
@@ -36,14 +36,14 @@ export function MemoryGraph() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-baseline space-x-2">
-                    <span className="text-sm font-medium text-zinc-900">{msg.from}</span>
-                    <span className="text-xs text-zinc-400">→</span>
-                    <span className="text-sm font-medium text-zinc-500">{msg.to}</span>
-                    <span className="text-xs text-zinc-400 font-mono ml-auto">{msg.time}</span>
+                    <span className="text-sm font-medium text-foreground">{msg.from}</span>
+                    <span className="text-xs text-muted-foreground">→</span>
+                    <span className="text-sm font-medium text-muted-foreground">{msg.to}</span>
+                    <span className="text-xs text-muted-foreground font-mono ml-auto">{msg.time}</span>
                   </div>
                   <p className={cn(
                     "text-sm mt-1 leading-relaxed",
-                    msg.isError ? "text-red-600" : "text-zinc-600"
+                    msg.isError ? "text-red-600" : "text-muted-foreground"
                   )}>
                     {msg.message}
                   </p>

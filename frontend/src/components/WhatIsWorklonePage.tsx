@@ -338,7 +338,7 @@ export function WhatIsWorklonePage() {
           <div className="mx-auto max-w-5xl">
             <div className="overflow-hidden bg-zinc-200">
               <img
-                src="/landing-hero.png"
+                src="/landinghero.png"
                 alt="Worklone editorial visual"
                 className="h-[220px] w-full scale-[1.04] object-cover object-center grayscale contrast-125 brightness-90 sm:h-[300px]"
               />

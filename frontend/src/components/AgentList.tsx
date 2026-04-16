@@ -37,14 +37,14 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
             transition={{ delay: index * 0.05 }}
             onClick={() => onAgentClick(agent)}
             className={cn(
-              "flex items-start gap-4 rounded-xl border bg-white p-3 transition-all cursor-pointer group",
+              "flex items-start gap-4 rounded-xl border bg-card p-3 transition-all cursor-pointer group",
               selectedAgentId === agent.id
-                ? "border-zinc-950 bg-zinc-50 shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
-                : "border-black/10 shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:border-black/15 hover:bg-zinc-50 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+                ? "border-primary bg-muted shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+                : "border-border shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:border-foreground/15 hover:bg-muted hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
             )}
           >
             <div className="relative flex-shrink-0">
-              <Avatar className="h-10 w-10 rounded-lg border border-border/50">
+              <Avatar className="h-10 w-10 rounded-lg border border-border">
                 <AvatarImage src={agent.avatar} alt={agent.name} />
                 <AvatarFallback className="rounded-lg">{agent.name[0]}</AvatarFallback>
               </Avatar>
@@ -65,7 +65,7 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
                     </p>
                   )}
                 </div>
-                <Badge variant="secondary" className="shrink-0 text-[10px] font-normal bg-secondary/80 text-muted-foreground">
+                <Badge variant="secondary" className="shrink-0 text-[10px] font-normal">
                   powered by {agent.model}
                 </Badge>
               </div>
@@ -83,7 +83,7 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
               </div>
               <div className="flex flex-wrap gap-1.5 pt-1">
                 {agent.skills.slice(0, 2).map(skill => (
-                  <span key={skill} className="text-[10px] text-muted-foreground/70 bg-secondary/30 px-1.5 py-0.5 rounded">
+                  <span key={skill} className="text-[10px] text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
                     {skill}
                   </span>
                 ))}

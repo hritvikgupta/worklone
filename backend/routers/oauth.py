@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from typing import Optional, List
 from backend.services.auth_service import AuthService, OAUTH_PROVIDERS
-from backend.routers.auth import get_current_user
+from backend.lib.auth.session import get_current_user
 
 router = APIRouter()
 auth_service = AuthService()
@@ -46,11 +46,14 @@ async def authorize_integration(
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    auth_url = auth_service.get_oauth_url(provider, frontend_url, user_id=user["id"])
-    if not auth_url:
-        raise HTTPException(status_code=500, detail="Failed to generate auth URL")
+    auth_result = auth_service.get_oauth_url(provider, frontend_url, user_id=user["id"])
+    if not auth_result.get("success"):
+        raise HTTPException(
+            status_code=400,
+            detail=auth_result.get("error") or "Failed to generate auth URL",
+        )
 
-    return {"success": True, "auth_url": auth_url}
+    return {"success": True, "auth_url": auth_result.get("auth_url")}
 
 
 @router.get("/callback")

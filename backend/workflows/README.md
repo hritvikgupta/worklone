@@ -11,16 +11,6 @@ workflows/
 ├── logger.py                   # Centralized logging
 ├── store.py                    # SQLite persistence layer
 ├── coworker.py                 # The Co-Worker ReAct Agent
-├── coworker_tools.py           # Workflow management tools (create, add_block, connect, execute, monitor)
-│
-├── tools/                      # Integration tools
-│   ├── base.py                 # BaseTool interface + ToolResult
-│   ├── registry.py             # Tool registry
-│   ├── http_tool.py            # Generic HTTP requests
-│   ├── llm_tool.py             # LLM calls via OpenRouter
-│   ├── function_tool.py        # Execute Python code
-│   ├── slack_tool.py           # Slack messaging
-│   └── gmail_tool.py           # Gmail read/send
 │
 ├── engine/                     # Execution engine
 │   ├── dag_builder.py          # Converts workflow → DAG
@@ -38,6 +28,12 @@ workflows/
 └── __init__.py                 # Public API
 
 workflows_server.py             # FastAPI server (REST + WebSocket)
+
+backend/tools/
+├── system_tools/               # BaseTool interface, registry, HTTP
+├── run_tools/                  # LLM and function execution
+├── integration_tools/          # Slack and Gmail integrations
+└── workflow_tools/             # Workflow management tools
 test_workflows.py               # End-to-end tests
 ```
 
@@ -56,7 +52,7 @@ A ReAct agent (like your CEO agent) that has tools to:
 Plus integration tools: `slack_send`, `gmail`, `http_request`, `call_llm`, `run_function`
 
 ### 2. Workflow Storage
-- SQLite database (`workflows.db`)
+- Shared SQLite database (`workflows.db` by default)
 - Tables: workflows, blocks, connections, triggers, executions
 - No PostgreSQL, no Redis, no external dependencies
 
@@ -194,7 +190,7 @@ registry.register(MyCustomTool())
 | `OPENROUTER_API_KEY` | LLM calls (OpenAI, Anthropic, etc.) |
 | `SLACK_BOT_TOKEN` | Slack integration |
 | `GMAIL_ACCESS_TOKEN` | Gmail integration |
-| `WORKFLOW_DB` | Path to SQLite database (default: `workflows.db`) |
+| `APP_DB` | Shared SQLite database path for auth, employee, and workflow data |
 
 ## What's Next — Add More Tools
 
