@@ -178,7 +178,7 @@ class CoWorkerAgent:
     def __init__(
         self,
         owner_id: str,
-        model: str = "moonshotai/kimi-k2.5",
+        model: str = "google/gemma-4-31b-it",
     ):
         self.owner_id = owner_id
         self.user_id = owner_id  # owner IS the user — needed for OAuth
@@ -316,7 +316,6 @@ Start executing the tasks now. For each task, call the real tools. Report final 
         current_task_idx = 0
 
         # === AUTONOMOUS ReAct LOOP ===
-        # No iteration limit. The LLM decides when to stop.
         while True:
             cycle_count += 1
             print(f"\n{Colors.YELLOW}{'─' * 50}{Colors.ENDC}")
@@ -455,45 +454,44 @@ Start executing the tasks now. For each task, call the real tools. Report final 
 
                 # Live Update to DB for frontend visibility
                 try:
-                    import re
-                    # Look for Task N in the response text
-                    matches = re.findall(r'(?i)task\s+(\d+)', response_text)
-                    if matches:
-                        for m in matches:
-                            try:
-                                idx = int(m) - 1
-                                wf_temp = self.store.get_workflow(workflow_id) or self.store.get_workflow(workflow_id, self.owner_id)
-                                if wf_temp and 0 <= idx < len(wf_temp.tasks):
-                                    current_task_idx = max(current_task_idx, idx)
-                            except Exception:
-                                pass
-
-                    wf = self.store.get_workflow(workflow_id) or self.store.get_workflow(workflow_id, self.owner_id)
+                    wf = self.store.get_workflow(workflow_id, self.owner_id)
                     if wf and wf.tasks:
-                        # Mark earlier tasks as completed
-                        for i in range(current_task_idx):
-                            if i < len(wf.tasks):
-                                if wf.tasks[i].status.value in ("running", "pending"):
-                                    wf.tasks[i].status = WorkflowTaskStatus.COMPLETED
-                                    # Don't add boilerplate text
-                        
-                        target_task = wf.tasks[current_task_idx] if current_task_idx < len(wf.tasks) else wf.tasks[-1]
-                        if target_task.status.value == "pending":
-                            target_task.status = WorkflowTaskStatus.RUNNING
-                        
-                        target_task.result = (target_task.result or "")
-                        if response_text.strip():
-                            # Only add unique thoughts
-                            thought = response_text.strip()[:100]
-                            if thought not in target_task.result:
-                                target_task.result += f"• {thought}...\n"
-                        
-                        tool_log = f"○ {tool_name}"
-                        if tool_log not in target_task.result:
-                            target_task.result += f"{tool_log}\n"
-                        
-                        if not result_success:
-                            target_task.error = (target_task.error or "") + f"Error: {observation[:200]}\n"
+                        # Find which task this tool call belongs to by matching
+                        # tool name against task descriptions, falling back to
+                        # the next un-completed task in sequence.
+                        matched_idx = None
+                        tool_lower = (tool_name or "").lower()
+                        for idx, t in enumerate(wf.tasks):
+                            if tool_lower in (t.description or "").lower():
+                                matched_idx = idx
+                                break
+                        if matched_idx is None:
+                            # Fallback: first task that is still pending or running
+                            for idx, t in enumerate(wf.tasks):
+                                if t.status.value in ("pending", "running"):
+                                    matched_idx = idx
+                                    break
+                        if matched_idx is None:
+                            matched_idx = len(wf.tasks) - 1
+
+                        current_task_idx = matched_idx
+
+                        # Mark all tasks before this one as completed
+                        for idx in range(current_task_idx):
+                            if wf.tasks[idx].status.value in ("pending", "running"):
+                                wf.tasks[idx].status = WorkflowTaskStatus.COMPLETED
+
+                        target = wf.tasks[current_task_idx]
+                        target.status = WorkflowTaskStatus.RUNNING
+
+                        if result_success:
+                            target.status = WorkflowTaskStatus.COMPLETED
+                            target.result = observation[:500]
+                            target.error = ""
+                        else:
+                            target.status = WorkflowTaskStatus.FAILED
+                            target.error = observation[:500]
+
                         self.store.save_workflow(wf)
                 except Exception as e:
                     logger.warning(f"[Harry] Failed to live-update workflow tasks: {e}")
@@ -508,22 +506,24 @@ Start executing the tasks now. For each task, call the real tools. Report final 
             print(f"\n{Colors.CYAN}[Harry] Continuing to next cycle...{Colors.ENDC}")
             # Loop continues — LLM will see tool results and decide next
 
-        # Finalize workflow state in DB
+        # Finalize workflow state in DB — preserve per-task outcomes set during live-update
         try:
-            wf = self.store.get_workflow(workflow_id) or self.store.get_workflow(workflow_id, self.owner_id)
+            wf = self.store.get_workflow(workflow_id, self.owner_id)
             if wf:
                 if failed:
                     wf.status = WorkflowStatus.FAILED
+                    # Only mark still-pending tasks as failed; leave completed ones intact
                     for task in wf.tasks:
-                        task.status = WorkflowTaskStatus.FAILED
-                        task.error = final_result_text
+                        if task.status.value in ("pending", "running"):
+                            task.status = WorkflowTaskStatus.FAILED
+                            task.error = final_result_text
                 else:
-                    wf.status = WorkflowStatus.ACTIVE
+                    # Mark any remaining pending tasks as completed
+                    any_failed = any(t.status.value == "failed" for t in wf.tasks)
                     for task in wf.tasks:
-                        task.status = WorkflowTaskStatus.COMPLETED
-                        task.result = "Completed as part of full workflow execution."
-                    if wf.tasks:
-                        wf.tasks[-1].result = final_result_text
+                        if task.status.value in ("pending", "running"):
+                            task.status = WorkflowTaskStatus.COMPLETED
+                    wf.status = WorkflowStatus.FAILED if any_failed else WorkflowStatus.ACTIVE
                 self.store.save_workflow(wf)
                 logger.info(f"Finalized workflow {workflow_id}: tasks={'FAILED' if failed else 'COMPLETED'}")
             else:

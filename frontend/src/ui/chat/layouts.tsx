@@ -121,6 +121,12 @@ interface FullMessengerProps {
   className?: string
   headerActions?: React.ReactNode
   beforeComposer?: React.ReactNode
+  conversationStyle?: "sidebar" | "tabs"
+  compact?: boolean
+  messagesClassName?: string
+  composerClassName?: string
+  onCreateConversation?: () => void
+  hideConversationTabs?: boolean
 }
 
 function FullMessenger({
@@ -137,47 +143,86 @@ function FullMessenger({
   className,
   headerActions,
   beforeComposer,
+  conversationStyle = "sidebar",
+  compact = false,
+  messagesClassName,
+  composerClassName,
+  onCreateConversation,
+  hideConversationTabs = false,
 }: FullMessengerProps) {
   const activeConvo = conversations.find((c) => c.id === activeConversationId)
 
   return (
     <ChatProvider currentUser={currentUser} theme={theme}>
       <div className={cn("flex h-full bg-[var(--chat-bg-app)]", className)}>
-        {/* Sidebar — 320px */}
-        <aside className="flex w-80 shrink-0 flex-col border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)]">
-          <div className="flex items-center justify-between px-4 py-3">
-            <span className="text-[15px] font-semibold text-[var(--chat-text-primary)]">{title}</span>
-            <button className="text-[var(--chat-text-secondary)] hover:text-[var(--chat-text-primary)]">
-              <Plus className="size-5" />
-            </button>
-          </div>
-          {/* Search */}
-          <div className="px-3 pb-2">
-            <div className="flex items-center gap-2 rounded-[10px] bg-[var(--chat-bg-main)] px-3 py-2 opacity-50">
-              <Search className="size-3.5" />
-              <span className="text-[14px] text-[var(--chat-text-tertiary)]">Search</span>
+        {conversationStyle === "sidebar" && (
+          <aside className="flex w-80 shrink-0 flex-col border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)]">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-[15px] font-semibold text-[var(--chat-text-primary)]">{title}</span>
+              <button
+                onClick={onCreateConversation}
+                className="text-[var(--chat-text-secondary)] hover:text-[var(--chat-text-primary)]"
+              >
+                <Plus className="size-5" />
+              </button>
             </div>
-          </div>
-          {/* Conversation list */}
-          <div className="flex-1 overflow-y-auto py-1">
-            {conversations.map((c) => (
-              <ConversationItem
-                key={c.id}
-                convo={c}
-                isActive={c.id === activeConversationId}
-                onClick={() => onSelectConversation(c.id)}
-              />
-            ))}
-          </div>
-        </aside>
+            <div className="px-3 pb-2">
+              <div className="flex items-center gap-2 rounded-[10px] bg-[var(--chat-bg-main)] px-3 py-2 opacity-50">
+                <Search className="size-3.5" />
+                <span className="text-[14px] text-[var(--chat-text-tertiary)]">Search</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto py-1">
+              {conversations.map((c) => (
+                <ConversationItem
+                  key={c.id}
+                  convo={c}
+                  isActive={c.id === activeConversationId}
+                  onClick={() => onSelectConversation(c.id)}
+                />
+              ))}
+            </div>
+          </aside>
+        )}
 
         {/* Main panel */}
-        <main className="flex flex-1 flex-col bg-[var(--chat-bg-main)]">
+        <main
+          className={cn(
+            "flex flex-1 min-w-0 flex-col bg-[var(--chat-bg-main)]",
+            compact && "mx-auto w-full max-w-[760px] border-x border-[var(--chat-border)]"
+          )}
+        >
+          {conversationStyle === "tabs" && !hideConversationTabs && (
+            <div className="sticky top-0 z-20 flex items-end gap-2 border-b border-[var(--chat-border)] bg-[var(--chat-bg-header)] px-3 pt-2 backdrop-blur-[20px] backdrop-saturate-[180%]">
+              <div className="flex min-w-0 flex-1 items-end overflow-x-auto">
+                {conversations.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => onSelectConversation(c.id)}
+                    className={cn(
+                      "shrink-0 border border-b-0 border-transparent px-3 py-2 text-[12px] font-semibold transition-colors",
+                      c.id === activeConversationId
+                        ? "rounded-t-xl border-[var(--chat-border)] bg-[var(--chat-bg-main)] text-[var(--chat-text-primary)]"
+                        : "rounded-t-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"
+                    )}
+                  >
+                    {c.title}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={onCreateConversation}
+                className="mb-1 flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)] hover:text-[var(--chat-text-primary)]"
+              >
+                <Plus className="size-4" />
+              </button>
+            </div>
+          )}
           {activeConvo ? (
             <>
               <ChatHeader
                 title={activeConvo.title}
-                subtitle={subtitle || (activeConvo.isGroup ? "Group" : undefined)}
+                subtitle={subtitle || activeConvo.lastMessage || (activeConvo.isGroup ? "Group" : undefined)}
                 avatar={
                   <div className="relative">
                     <div className="flex size-10 items-center justify-center rounded-full bg-[var(--chat-bubble-incoming)] text-sm font-semibold text-[var(--chat-text-primary)]">
@@ -189,17 +234,19 @@ function FullMessenger({
                   </div>
                 }
                 actions={
-                  <div className="flex items-center gap-1">
-                    {headerActions}
-                    <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Phone className="size-4" /></button>
-                    <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Search className="size-4" /></button>
-                    <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Pin className="size-4" /></button>
-                  </div>
+                  headerActions || (
+                    <div className="flex items-center gap-1">
+                      <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Phone className="size-4" /></button>
+                      <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Search className="size-4" /></button>
+                      <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Pin className="size-4" /></button>
+                    </div>
+                  )
                 }
+                className={cn(conversationStyle === "tabs" && "py-2")}
               />
-              <ChatMessages messages={messages} typingUsers={typingUsers} />
+              <ChatMessages messages={messages} typingUsers={typingUsers} className={messagesClassName} />
               {beforeComposer}
-              <ChatComposer onSend={onSend} />
+              <ChatComposer onSend={onSend} className={composerClassName} />
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center">

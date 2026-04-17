@@ -136,6 +136,12 @@ export async function updateWorkflow(workflowId: string, updates: { name?: strin
   });
 }
 
+export async function deleteWorkflow(workflowId: string): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>(`/api/workflows/${workflowId}`, {
+    method: 'DELETE',
+  });
+}
+
 export interface PausedExecution {
   id: string;
   workflow_id: string;

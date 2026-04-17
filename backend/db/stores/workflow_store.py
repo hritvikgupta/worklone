@@ -612,6 +612,30 @@ class WorkflowStore:
     def delete_workflow(self, workflow_id: str, owner_id: str = None) -> bool:
         conn = self._get_conn()
         try:
+            # Guard: ensure workflow exists (and is owned by caller when owner_id is provided)
+            if owner_id:
+                row = conn.execute(
+                    "SELECT id FROM workflows WHERE id = ? AND owner_id = ?",
+                    (workflow_id, owner_id),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT id FROM workflows WHERE id = ?",
+                    (workflow_id,),
+                ).fetchone()
+            if not row:
+                return False
+
+            # Remove child records that do not currently use ON DELETE CASCADE.
+            conn.execute("DELETE FROM executions WHERE workflow_id = ?", (workflow_id,))
+            conn.execute("DELETE FROM background_jobs WHERE workflow_id = ?", (workflow_id,))
+
+            # Remove related workflow artifacts (safe even when CASCADE exists).
+            conn.execute("DELETE FROM webhooks WHERE workflow_id = ?", (workflow_id,))
+            conn.execute("DELETE FROM triggers WHERE workflow_id = ?", (workflow_id,))
+            conn.execute("DELETE FROM workflow_tasks WHERE workflow_id = ?", (workflow_id,))
+            conn.execute("DELETE FROM paused_executions WHERE workflow_id = ?", (workflow_id,))
+
             if owner_id:
                 result = conn.execute(
                     "DELETE FROM workflows WHERE id = ? AND owner_id = ?",

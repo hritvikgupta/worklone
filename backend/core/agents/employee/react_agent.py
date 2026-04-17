@@ -796,7 +796,7 @@ class GenericEmployeeAgent:
                             "mode": "multi_step",
                             "reason": "",
                             "tasks": plan_tasks,
-                            "status": "proposed",
+                            "status": "approved" if auto_approve_human else "proposed",
                         }
                         print(f"{Colors.CYAN}[Employee] Proposed plan:\n{self._format_plan_summary(plan_tasks)}{Colors.ENDC}")
                         if stream and emit_events:

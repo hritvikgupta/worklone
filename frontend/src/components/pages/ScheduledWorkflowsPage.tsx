@@ -11,7 +11,7 @@ import {
   X, 
   Play, 
   Zap, 
-  MoreHorizontal,
+  Trash2,
   Plus,
   Loader2
 } from 'lucide-react';
@@ -41,6 +41,7 @@ import {
   listWorkflows,
   generateWorkflow,
   executeWorkflow,
+  deleteWorkflow,
   updateWorkflow,
   WorkflowDetail,
   WorkflowExecution,
@@ -56,6 +57,29 @@ function formatDateTime(value: string | null | undefined): string {
 
 function formatStatus(status: string): string {
   return status.replace(/_/g, ' ');
+}
+
+function formatCron(cron: string | undefined | null): string {
+  if (!cron) return 'Scheduled';
+  const parts = cron.trim().split(/\s+/);
+  if (parts.length < 5) return cron;
+  const [min, hour, dom, month, dow] = parts;
+
+  const h = parseInt(hour, 10);
+  const m = parseInt(min, 10);
+  const isValidTime = !isNaN(h) && !isNaN(m);
+  const timeStr = isValidTime
+    ? new Date(2000, 0, 1, h, m).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    : `${hour}:${min}`;
+
+  if (dom === '*' && month === '*') {
+    if (dow === '*') return `Daily at ${timeStr}`;
+    const days: Record<string, string> = { '0':'Sun','1':'Mon','2':'Tue','3':'Wed','4':'Thu','5':'Fri','6':'Sat' };
+    const dayName = days[dow] ?? `day ${dow}`;
+    return `Every ${dayName} at ${timeStr}`;
+  }
+  if (dow === '*' && month === '*' && dom !== '*') return `Monthly on day ${dom} at ${timeStr}`;
+  return cron;
 }
 
 function statusTone(status: string): string {
@@ -183,6 +207,23 @@ export function ScheduledWorkflowsPage() {
       }
     } catch (err) {
       console.error('Failed to toggle workflow status:', err);
+    }
+  };
+
+  const handleDeleteWorkflow = async (workflowId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmed = window.confirm('Delete this workflow permanently?');
+    if (!confirmed) return;
+
+    try {
+      await deleteWorkflow(workflowId);
+      setWorkflows((prev) => prev.filter((w) => w.id !== workflowId));
+      if (selectedWorkflowId === workflowId) {
+        closeWorkflow();
+      }
+    } catch (err) {
+      console.error('Failed to delete workflow:', err);
+      window.alert('Failed to delete workflow');
     }
   };
 
@@ -350,7 +391,7 @@ export function ScheduledWorkflowsPage() {
                         {workflow.name}
                       </h3>
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
-                        <span className="capitalize">{workflow.schedule}</span>
+                        <span>{formatCron(workflow.schedule)}</span>
                         <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/20" />
                         <span>{((workflow.task_count || 0) * 20)} credits</span>
                       </div>
@@ -375,8 +416,13 @@ export function ScheduledWorkflowsPage() {
                        <Play className="h-3.5 w-3.5 fill-current" />
                      </Button>
                    </div>                    
-                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground hover:bg-zinc-100">
-                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleDeleteWorkflow(workflow.id, e)}
+                      className="h-7 w-7 rounded-full text-muted-foreground hover:text-rose-600 hover:bg-rose-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </motion.div>
@@ -387,7 +433,7 @@ export function ScheduledWorkflowsPage() {
       </div>
 
       {/* Floating Prompt Input Bar */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-40">
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-40">
         <div className="flex flex-col rounded-[24px] border border-border bg-card shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all focus-within:border-foreground/15 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
           {/* Input Area */}
           <div className="p-4 pb-0">
@@ -548,7 +594,7 @@ export function ScheduledWorkflowsPage() {
                           ) : (
                             <div className="space-y-2">
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="font-medium text-foreground">{selectedWorkflow.schedule}</span>
+                                <span className="font-medium text-foreground">{formatCron(selectedWorkflow.schedule)}</span>
                                 {selectedWorkflow.triggers?.[0]?.timezone && (
                                   <span className="text-[11px] text-muted-foreground">({selectedWorkflow.triggers[0].timezone})</span>
                                 )}

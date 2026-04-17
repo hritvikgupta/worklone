@@ -417,7 +417,10 @@ class AuthDB:
         conn = self._get_conn()
         try:
             rows = conn.execute(
-                "SELECT role, content, model, thinking, created_at FROM chat_messages WHERE session_id = ? ORDER BY created_at LIMIT ?",
+                # Use insertion id for deterministic ordering. created_at has
+                # second-level precision in SQLite and can tie for bursts.
+                "SELECT id, role, content, model, thinking, created_at "
+                "FROM chat_messages WHERE session_id = ? ORDER BY id ASC LIMIT ?",
                 (session_id, limit)
             ).fetchall()
             return [dict(row) for row in rows]

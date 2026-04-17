@@ -438,15 +438,13 @@ function ChatMessage({
       <div className={cn("flex flex-col", isOutgoing ? "max-w-[75%]" : "max-w-full w-full")}>
         {/* Sender name — only first in group, incoming */}
         {showSender && !isOutgoing && (
-          <span className="mb-0.5 ml-3 text-[14px] font-semibold leading-tight tracking-[-0.01em] text-[var(--chat-text-secondary)]">
+          <span className="mb-0.5 ml-2.5 text-[13px] font-semibold leading-tight tracking-[-0.01em] text-[var(--chat-text-secondary)]">
             {message.senderName}
           </span>
         )}
 
         {/* Bubble — relative for hover toolbar positioning */}
         <div className="relative">
-          {/* Hover actions toolbar */}
-          <ChatMessageActions message={message} isOutgoing={isOutgoing} />
 
           <div
             className={cn(
@@ -520,7 +518,7 @@ function ChatMessage({
 
             {/* Text content */}
             {message.text ? (
-              <div className="max-w-none break-words text-[15px] leading-[1.35] tracking-[-0.01em] space-y-2 [&_p]:whitespace-pre-wrap [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_pre]:bg-[var(--chat-bg-code)] [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_code]:font-mono [&_code]:text-[13px] [&_code]:bg-[var(--chat-bg-code)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1">
+              <div className="max-w-none break-words text-[14px] leading-[1.42] tracking-[-0.01em] space-y-1.5 [&_p]:whitespace-pre-wrap [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_pre]:bg-[var(--chat-bg-code)] [&_pre]:p-3 [&_pre]:rounded-md [&_pre]:overflow-x-auto [&_code]:font-mono [&_code]:text-[12px] [&_code]:bg-[var(--chat-bg-code)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mt-3 [&_h1]:mb-1.5 [&_h2]:text-base [&_h2]:font-bold [&_h2]:mt-2.5 [&_h2]:mb-1.5 [&_h3]:text-[15px] [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {message.text}
                 </ReactMarkdown>
@@ -1084,7 +1082,7 @@ function ChatMessages({
       {/* Scrollable area */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto px-4 py-4"
+        className="flex-1 overflow-y-auto px-4 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         role="log"
         aria-live="polite"
       >
@@ -1351,7 +1349,7 @@ function ChatComposer({
 
       {/* File preview strip */}
       {files.length > 0 && (
-        <div className="flex gap-3 overflow-x-auto border-t border-[var(--chat-border)] bg-background px-4 pt-3 pb-2 backdrop-blur-[20px]">
+        <div className="flex gap-2 overflow-x-auto border-t border-[var(--chat-border)] bg-[var(--chat-bg-main)] px-3 pt-2 pb-1.5 backdrop-blur-[20px]">
           {files.map((f) => (
             <ChatFilePreview key={f.id} item={f} onRemove={() => removeFile(f.id)} />
           ))}
@@ -1359,9 +1357,9 @@ function ChatComposer({
       )}
 
       {/* Composer body — professional style */}
-      <div className="bg-background px-4 py-4">
-        <div className="mx-auto max-w-3xl">
-          <div className="relative bg-card border border-border rounded-2xl p-3 shadow-sm focus-within:border-ring transition-colors">
+      <div className="bg-[var(--chat-bg-main)] px-3 py-2">
+        <div className="mx-auto max-w-[460px]">
+          <div className="relative rounded-xl border border-[var(--chat-border)] bg-[var(--chat-bg-main)] p-2 shadow-sm transition-colors focus-within:border-[var(--chat-border-strong)]">
             <textarea
               ref={textareaRef}
               value={value}
@@ -1371,20 +1369,20 @@ function ChatComposer({
               placeholder={placeholder}
               disabled={disabled}
               rows={1}
-              className="max-h-36 min-h-[44px] w-full resize-none overflow-y-auto border-none bg-transparent py-1 px-1 text-sm text-foreground shadow-none outline-none focus:outline-none focus:ring-0 placeholder:text-muted-foreground"
+              className="max-h-32 min-h-[36px] w-full resize-none overflow-y-auto border-none bg-transparent px-1 py-0.5 text-[13px] text-[var(--chat-text-primary)] shadow-none outline-none placeholder:text-[var(--chat-text-tertiary)] focus:outline-none focus:ring-0"
             />
             
-            <div className="flex items-center justify-between mt-2 pt-2">
+            <div className="mt-1.5 flex items-center justify-between border-t border-[var(--chat-border)] pt-1.5">
               <div className="flex items-center gap-1">
                 {onVoiceRecord && (
                   <button 
                     type="button" 
                     onClick={onVoiceRecord} 
                     disabled={disabled} 
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:opacity-50"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-tertiary)] transition-colors hover:bg-[var(--chat-accent-soft)] hover:text-[var(--chat-text-primary)] disabled:opacity-50"
                     aria-label="Record voice message"
                   >
-                    <Mic className="h-4 w-4" />
+                    <Mic className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
@@ -1393,14 +1391,14 @@ function ChatComposer({
                   onClick={handleSend}
                   disabled={!hasContent || disabled}
                   className={cn(
-                    "inline-flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 active:scale-95",
+                    "inline-flex h-7 w-7 items-center justify-center rounded-full transition-all duration-200 active:scale-95",
                     hasContent
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-transparent text-muted-foreground cursor-not-allowed"
+                      ? "bg-[var(--chat-accent)] text-white hover:opacity-90"
+                      : "bg-transparent text-[var(--chat-text-tertiary)] cursor-not-allowed"
                   )}
                   aria-label="Send message"
                 >
-                  <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+                  <ArrowUp className="h-3.5 w-3.5" strokeWidth={2.5} />
                 </button>
               </div>
             </div>

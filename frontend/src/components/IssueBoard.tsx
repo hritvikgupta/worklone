@@ -121,33 +121,33 @@ function IssueCard({ issue, getAgent, getPriorityColor, onClick, isOverlay, disp
     <Card 
       onClick={onClick}
       className={cn(
-        "shadow-none border-zinc-200/60 hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing group rounded-lg overflow-hidden bg-white",
-        isOverlay && "shadow-lg border-zinc-300 bg-white rotate-1 scale-[1.02] z-50"
+        "shadow-none border-zinc-200/60 bg-white hover:border-zinc-300 transition-all cursor-grab active:cursor-grabbing group rounded-lg overflow-hidden dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700",
+        isOverlay && "shadow-lg border-zinc-300 bg-white rotate-1 scale-[1.02] z-50 dark:border-zinc-700 dark:bg-zinc-900"
       )}
     >
       <CardContent className="p-3.5 space-y-2.5">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
+          <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-wider dark:text-zinc-500">
             {issue.id}
           </span>
           {displaySettings.showPriority && (
             <div className={cn(
               "px-1.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-widest",
               issue.priority === 'high' ? "bg-zinc-900 text-white" : 
-              issue.priority === 'medium' ? "bg-zinc-100 text-zinc-600 border border-zinc-200" : 
-              "bg-zinc-50 text-zinc-400 border border-zinc-100"
+              issue.priority === 'medium' ? "bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700" : 
+              "bg-zinc-50 text-zinc-400 border border-zinc-100 dark:bg-zinc-900 dark:text-zinc-500 dark:border-zinc-800"
             )}>
               {issue.priority}
             </div>
           )}
         </div>
         
-        <h4 className="text-[13px] font-semibold leading-snug text-zinc-900 group-hover:text-black transition-colors">
+        <h4 className="text-[13px] font-semibold leading-snug text-zinc-900 group-hover:text-black transition-colors dark:text-zinc-100 dark:group-hover:text-white">
           {issue.title}
         </h4>
         
         {displaySettings.showDescription && (
-          <p className="text-[11.5px] text-zinc-500 line-clamp-2 leading-relaxed font-medium">
+          <p className="text-[11.5px] text-zinc-500 line-clamp-2 leading-relaxed font-medium dark:text-zinc-400">
             {issue.description}
           </p>
         )}
@@ -158,16 +158,16 @@ function IssueCard({ issue, getAgent, getPriorityColor, onClick, isOverlay, disp
               <div className="flex items-center gap-1.5">
                 <Avatar className="h-5 w-5 rounded-full border border-zinc-100">
                   <AvatarImage src={getAgent(issue.agentId)?.avatar_url} />
-                  <AvatarFallback className="text-[8px] bg-zinc-50 text-zinc-400">{getAgent(issue.agentId)?.name[0]}</AvatarFallback>
+                  <AvatarFallback className="text-[8px] bg-zinc-50 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-300">{getAgent(issue.agentId)?.name[0]}</AvatarFallback>
                 </Avatar>
-                <span className="text-[10px] font-medium text-zinc-400 italic">
+                <span className="text-[10px] font-medium text-zinc-400 italic dark:text-zinc-500">
                   {getAgent(issue.agentId)?.name}
                 </span>
               </div>
             )}
           </div>
           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <MoreHorizontal className="w-3.5 h-3.5 text-zinc-300" />
+            <MoreHorizontal className="w-3.5 h-3.5 text-zinc-300 dark:text-zinc-600" />
           </div>
         </div>
       </CardContent>
@@ -239,7 +239,7 @@ function DroppableColumn({
   };
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-[280px] flex flex-col gap-3 bg-zinc-50/50 rounded-lg p-2.5 h-full border border-zinc-100 shadow-sm overflow-hidden">
+    <div ref={setNodeRef} className="flex-shrink-0 w-[280px] flex flex-col gap-3 rounded-lg p-2.5 h-full border border-zinc-100 bg-zinc-50/50 shadow-sm overflow-hidden dark:border-zinc-800 dark:bg-zinc-950/50">
       <div className={cn(
         "flex items-center justify-between px-2 py-1.5 rounded-md",
         column.color ? column.color.replace('bg-', 'bg-zinc-900').replace('text-white', 'text-white') : "bg-transparent"
@@ -260,25 +260,25 @@ function DroppableColumn({
               onChange={(e) => setNewLabel(e.target.value)}
               onBlur={handleRename}
               onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-              className="h-6 text-[12px] font-bold bg-white border-zinc-200 px-1.5"
+              className="h-6 text-[12px] font-bold bg-white border-zinc-200 px-1.5 dark:bg-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
             />
           ) : (
             <h3 
-              className="font-bold text-[12px] tracking-tight uppercase text-zinc-900 truncate cursor-pointer hover:opacity-80"
+              className="font-bold text-[12px] tracking-tight uppercase text-zinc-900 truncate cursor-pointer hover:opacity-80 dark:text-zinc-100"
               onClick={() => setIsEditing(true)}
             >
               {column.label}
             </h3>
           )}
           
-          <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100/80 px-1.5 py-0.5 rounded-sm shrink-0">
+          <span className="text-[10px] font-bold text-zinc-400 bg-zinc-100/80 px-1.5 py-0.5 rounded-sm shrink-0 dark:bg-zinc-800/80 dark:text-zinc-300">
             {columnIssues.length}
           </span>
         </div>
         <div className="flex items-center gap-0.5">
           <DropdownMenu>
-            <DropdownMenuTrigger className="p-1 hover:bg-zinc-100 rounded-md transition-colors">
-              <MoreHorizontal className="w-3.5 h-3.5 text-zinc-400" />
+            <DropdownMenuTrigger className="p-1 hover:bg-zinc-100 rounded-md transition-colors dark:hover:bg-zinc-800">
+              <MoreHorizontal className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuGroup>
@@ -296,8 +296,8 @@ function DroppableColumn({
                       key={color.name}
                       onClick={() => onChangeColumnColor(column.id, color.value)}
                       className={cn(
-                        "w-6 h-6 rounded-full border border-zinc-200",
-                        color.value || "bg-white"
+                        "w-6 h-6 rounded-full border border-zinc-200 dark:border-zinc-700",
+                        color.value || "bg-white dark:bg-zinc-900"
                       )}
                       title={color.name}
                     />
@@ -316,9 +316,9 @@ function DroppableColumn({
           </DropdownMenu>
           <button 
             onClick={() => onAddIssue(column.id)}
-            className="p-1 hover:bg-zinc-100 rounded-md transition-colors"
+            className="p-1 hover:bg-zinc-100 rounded-md transition-colors dark:hover:bg-zinc-800"
           >
-            <Plus className="w-3.5 h-3.5 text-zinc-400" />
+            <Plus className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500" />
           </button>
         </div>
       </div>
@@ -342,7 +342,7 @@ function DroppableColumn({
           </SortableContext>
           <button 
             onClick={() => onAddIssue(column.id)}
-            className="w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-200 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 hover:bg-zinc-50 rounded-md transition-all group"
+            className="w-full py-2 flex items-center justify-center gap-2 border border-dashed border-zinc-200 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 hover:bg-zinc-50 rounded-md transition-all group dark:border-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
           >
             <Plus className="w-3 h-3" />
             Add Task

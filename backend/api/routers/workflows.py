@@ -532,3 +532,20 @@ async def update_workflow(workflow_id: str, request: UpdateWorkflowRequest, user
     workflow.updated_at = datetime.now()
     store.save_workflow(workflow)
     return {"success": True}
+
+
+@router.delete("/workflows/{workflow_id}")
+async def delete_workflow(workflow_id: str, user=Depends(get_current_user)):
+    """Delete a workflow and related records for the current user."""
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    workflow = store.get_workflow(workflow_id, user["id"])
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    deleted = store.delete_workflow(workflow_id, owner_id=user["id"])
+    if not deleted:
+        raise HTTPException(status_code=500, detail="Failed to delete workflow")
+
+    return {"success": True}

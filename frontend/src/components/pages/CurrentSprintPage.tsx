@@ -183,11 +183,14 @@ export function CurrentSprintPage() {
     return <div className="p-8 h-full flex items-center justify-center">Loading Sprint...</div>;
   }
 
+  const sprintName = sprintData?.sprint.name?.trim() || '';
+  const displaySprintTitle = sprintName && !/^sprint\s*\d+$/i.test(sprintName) ? sprintName : 'Current Sprint';
+
   return (
     <div className="p-8 h-full">
       <div className="h-full max-w-[1600px] mx-auto space-y-6 animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">{sprintData?.sprint.name || 'Current Sprint'}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{displaySprintTitle}</h2>
           <p className="text-muted-foreground text-sm">{sprintData?.sprint.goal || 'Active tasks and agent assignments for the current cycle.'}</p>
         </div>
         <div className="flex-1 min-h-0">

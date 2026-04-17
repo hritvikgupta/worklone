@@ -433,6 +433,10 @@ from backend.core.tools.system_tools.file_tool import FileTool
 from backend.core.tools.system_tools.http_tool import HTTPTool
 from backend.core.tools.system_tools.memory_tool import MemoryTool
 from backend.core.tools.system_tools.shell_tool import ShellTool
+from backend.core.tools.system_tools.session_search_tool import SessionSearchTool
+from backend.core.tools.system_tools.cronjob_tool import CronjobTool
+from backend.core.tools.system_tools.web_search_tool import WebSearchTool
+from backend.core.tools.system_tools.web_extract_tool import WebExtractTool
 from backend.core.tools.employee_tools.task_tool import TaskTool
 from backend.core.tools.employee_tools.ask_user_tool import AskUserTool
 from backend.core.tools.employee_tools.run_task_tool import RunTaskTool
@@ -443,13 +447,9 @@ from backend.core.tools.employee_tools.document_tools import (
     ReadMyDocumentTool,
 )
 from backend.core.tools.workflow_tools.coworker_tools import (
-    AddBlockTool,
-    ConnectBlocksTool,
-    CreateWorkflowTool,
     ExecuteWorkflowTool,
     ListWorkflowsTool,
     MonitorWorkflowTool,
-    SetTriggerTool,
 )
 from backend.core.tools.workflow_tools.approval_tool import ApprovalTool
 from backend.core.tools.workflow_tools.monitoring_tools import (
@@ -1741,6 +1741,10 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(FunctionTool, "FunctionTool", "run_function")
     add(LLMTool, "LLMTool", "call_llm")
     add(SQLTool, "SQLTool", "run_sql")
+    add(SessionSearchTool, "SessionSearchTool", "session_search")
+    add(CronjobTool, "CronjobTool", "cronjob")
+    add(WebSearchTool, "WebSearchTool", "web_search")
+    add(WebExtractTool, "WebExtractTool", "web_extract")
 
     # Employee core tools (default) — task management, human-in-the-loop, async execution, team messaging
     add(TaskTool, "TaskTool", "manage_tasks")
@@ -1771,10 +1775,6 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(CreateIncidentReportTool, "CreateIncidentReportTool", "create_incident_report")
 
     # Workflow tools (optional — must be explicitly added to employee)
-    add(CreateWorkflowTool, "CreateWorkflowTool", "create_workflow")
-    add(AddBlockTool, "AddBlockTool", "add_block")
-    add(ConnectBlocksTool, "ConnectBlocksTool", "connect_blocks")
-    add(SetTriggerTool, "SetTriggerTool", "set_trigger")
     add(ExecuteWorkflowTool, "ExecuteWorkflowTool", "execute_workflow")
     add(ListWorkflowsTool, "ListWorkflowsTool", "list_workflows")
     add(MonitorWorkflowTool, "MonitorWorkflowTool", "monitor_workflow")

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FullMessenger } from '@/components/ui/chat/layouts';
 import type { ChatMessageData, ChatUser } from '@/components/ui/chat/types';
 import type { SidebarConversation } from '@/components/ui/chat/layouts';
-import { Plus, History, ChevronDown, ListChecks, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, History, ChevronDown, ListChecks, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -88,13 +88,15 @@ export function ChatView() {
   };
 
   const [employees, setEmployees] = useState<EmployeeDetail[]>([]);
-  const [activeEmployeeId, setActiveEmployeeId] = useState<string>('');
+  const [chatPanes, setChatPanes] = useState<Array<{ id: string; employeeId: string }>>([
+    { id: 'pane-1', employeeId: '' }
+  ]);
   const [sessions, setSessions] = useState<Record<string, ChatSession[]>>({});
   const [activeSessionId, setActiveSessionId] = useState<Record<string, string>>({});
   const [messages, setMessages] = useState<Record<string, ChatMessageData[]>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [activePlans, setActivePlans] = useState<Record<string, ChatMessageData['plan']>>({});
-  const [isPlanCollapsed, setIsPlanCollapsed] = useState(false);
+  const [collapsedPlans, setCollapsedPlans] = useState<Record<string, boolean>>({});
   const [pendingResume, setPendingResume] = useState<{
     employeeId: string;
     sessionId: string;
@@ -109,9 +111,14 @@ export function ChatView() {
       try {
         const data = await listEmployees();
         setEmployees(data);
-        if (data.length > 0 && !activeEmployeeId) {
-          setActiveEmployeeId(data[0].id);
-        }
+        if (data.length === 0) return;
+        setChatPanes((prev) => {
+          if (prev.some((pane) => pane.employeeId)) return prev;
+          return data.slice(0, Math.min(3, data.length)).map((employee, index) => ({
+            id: `pane-${index + 1}`,
+            employeeId: employee.id,
+          }));
+        });
       } catch (error) {
         console.error('Failed to fetch employees:', error);
       }
@@ -119,28 +126,31 @@ export function ChatView() {
     fetchEmployees();
   }, []);
 
-  useEffect(() => {
-    if (!activeEmployeeId) return;
+  const fetchSessionsForEmployee = async (employeeId: string) => {
+    if (!employeeId) return;
+    try {
+      const sessionList = await listEmployeeChatSessions(employeeId);
+      setSessions((prev) => ({ ...prev, [employeeId]: sessionList }));
 
-    async function fetchSessions() {
-      try {
-        const sessionList = await listEmployeeChatSessions(activeEmployeeId);
-        setSessions(prev => ({ ...prev, [activeEmployeeId]: sessionList }));
-        
-        if (!activeSessionId[activeEmployeeId] && sessionList.length > 0) {
-          const firstSessionId = sessionList[0].id;
-          setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: firstSessionId }));
-          void fetchMessages(activeEmployeeId, firstSessionId);
-        } else if (sessionList.length === 0) {
-          setMessages(prev => ({ ...prev, [activeEmployeeId]: [] }));
-        }
-      } catch (error) {
-        console.error('Failed to fetch sessions:', error);
+      if (!activeSessionId[employeeId] && sessionList.length > 0) {
+        const firstSessionId = sessionList[0].id;
+        setActiveSessionId((prev) => ({ ...prev, [employeeId]: firstSessionId }));
+        void fetchMessages(employeeId, firstSessionId);
+      } else if (sessionList.length === 0) {
+        setMessages((prev) => ({ ...prev, [employeeId]: [] }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error);
+    }
+  };
+
+  useEffect(() => {
+    for (const pane of chatPanes) {
+      if (pane.employeeId && sessions[pane.employeeId] === undefined) {
+        void fetchSessionsForEmployee(pane.employeeId);
       }
     }
-    
-    fetchSessions();
-  }, [activeEmployeeId]);
+  }, [chatPanes, sessions]);
 
   const fetchMessages = async (employeeId: string, sessionId: string) => {
     try {
@@ -161,35 +171,39 @@ export function ChatView() {
     }
   };
 
-  const handleSelectConversation = (id: string) => {
-    setActiveEmployeeId(id);
-    if (activeSessionId[id]) {
-      void fetchMessages(id, activeSessionId[id]);
+  const handleSelectConversation = (paneId: string, employeeId: string) => {
+    setChatPanes((prev) =>
+      prev.map((pane) => (pane.id === paneId ? { ...pane, employeeId } : pane))
+    );
+    if (activeSessionId[employeeId]) {
+      void fetchMessages(employeeId, activeSessionId[employeeId]);
+    } else {
+      void fetchSessionsForEmployee(employeeId);
     }
   };
 
-  const handleStartNewSession = async () => {
-    if (!activeEmployeeId) return;
-    const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+  const handleStartNewSession = async (employeeId: string) => {
+    if (!employeeId) return;
+    const activeEmployee = employees.find(e => e.id === employeeId);
     if (!activeEmployee) return;
 
     try {
-      const newSession = await createEmployeeChatSession(activeEmployeeId, 'New Chat', activeEmployee.model);
+      const newSession = await createEmployeeChatSession(employeeId, 'New Chat', activeEmployee.model);
       setSessions(prev => ({
         ...prev,
-        [activeEmployeeId]: [newSession, ...(prev[activeEmployeeId] || [])]
+        [employeeId]: [newSession, ...(prev[employeeId] || [])]
       }));
-      setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: newSession.id }));
-      setMessages(prev => ({ ...prev, [activeEmployeeId]: [] }));
-      setActivePlans(prev => ({ ...prev, [activeEmployeeId]: undefined }));
+      setActiveSessionId(prev => ({ ...prev, [employeeId]: newSession.id }));
+      setMessages(prev => ({ ...prev, [employeeId]: [] }));
+      setActivePlans(prev => ({ ...prev, [employeeId]: undefined }));
     } catch (error) {
       console.error('Failed to create new session:', error);
     }
   };
 
-  const handleSwitchSession = (sessionId: string) => {
-    setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: sessionId }));
-    void fetchMessages(activeEmployeeId, sessionId);
+  const handleSwitchSession = (employeeId: string, sessionId: string) => {
+    setActiveSessionId(prev => ({ ...prev, [employeeId]: sessionId }));
+    void fetchMessages(employeeId, sessionId);
   };
 
   const handlePlanDecision = async (approved: boolean) => {
@@ -214,21 +228,21 @@ export function ChatView() {
     }
   };
 
-  const handleSend = async (text: string) => {
-    if (!activeEmployeeId) return;
-    const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+  const handleSend = async (employeeId: string, text: string) => {
+    if (!employeeId) return;
+    const activeEmployee = employees.find(e => e.id === employeeId);
     if (!activeEmployee) return;
 
-    let sessionId = activeSessionId[activeEmployeeId];
+    let sessionId = activeSessionId[employeeId];
     
     if (!sessionId) {
       try {
-        const newSession = await createEmployeeChatSession(activeEmployeeId, 'New Chat', activeEmployee.model);
+        const newSession = await createEmployeeChatSession(employeeId, 'New Chat', activeEmployee.model);
         sessionId = newSession.id;
-        setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: sessionId }));
+        setActiveSessionId(prev => ({ ...prev, [employeeId]: sessionId }));
         setSessions(prev => ({
           ...prev,
-          [activeEmployeeId]: [newSession, ...(prev[activeEmployeeId] || [])]
+          [employeeId]: [newSession, ...(prev[employeeId] || [])]
         }));
       } catch (error) {
         console.error('Failed to create session on send:', error);
@@ -247,7 +261,7 @@ export function ChatView() {
 
     setMessages(prev => ({
       ...prev,
-      [activeEmployeeId]: [...(prev[activeEmployeeId] || []), userMessage]
+      [employeeId]: [...(prev[employeeId] || []), userMessage]
     }));
 
     setIsLoading(true);
@@ -256,7 +270,7 @@ export function ChatView() {
     const assistantMessageId = `assistant-${Date.now()}`;
     const assistantMessage: ChatMessageData = {
       id: assistantMessageId,
-      senderId: activeEmployeeId,
+      senderId: employeeId,
       senderName: activeEmployee.name,
       text: '',
       timestamp: new Date(),
@@ -266,11 +280,11 @@ export function ChatView() {
 
     setMessages(prev => ({
       ...prev,
-      [activeEmployeeId]: [...(prev[activeEmployeeId] || []), assistantMessage]
+      [employeeId]: [...(prev[employeeId] || []), assistantMessage]
     }));
 
     try {
-      const history = (messages[activeEmployeeId] || []).map(m => ({
+      const history = (messages[employeeId] || []).map(m => ({
         role: m.senderId === currentUser.id ? 'user' : 'assistant',
         content: m.text || ''
       }));
@@ -279,7 +293,7 @@ export function ChatView() {
       let thinkingBuffer = '';
       let activities: NonNullable<ChatMessageData['activities']> = [];
       
-      const stream = streamEmployeeChatEvents(activeEmployeeId, {
+      const stream = streamEmployeeChatEvents(employeeId, {
         message: text,
         conversation_history: history,
         model: activeEmployee.model,
@@ -293,10 +307,10 @@ export function ChatView() {
             answerBuffer += token;
           }
           setMessages(prev => {
-            const convoMessages = prev[activeEmployeeId] || [];
+            const convoMessages = prev[employeeId] || [];
             return {
               ...prev,
-              [activeEmployeeId]: convoMessages.map(m =>
+              [employeeId]: convoMessages.map(m =>
                 m.id === assistantMessageId ? {
                   ...m,
                   text: answerBuffer,
@@ -323,7 +337,7 @@ export function ChatView() {
               priority: task.priority || 'medium',
             })),
           };
-          setActivePlans(prev => ({ ...prev, [activeEmployeeId]: planData }));
+          setActivePlans(prev => ({ ...prev, [employeeId]: planData }));
           continue;
         }
 
@@ -366,11 +380,11 @@ export function ChatView() {
             if (action === 'create_plan' && Array.isArray(data?.tasks)) {
                setActivePlans(prev => ({
                  ...prev,
-                 [activeEmployeeId]: {
-                   mode: prev[activeEmployeeId]?.mode || 'multi_step',
-                   reason: prev[activeEmployeeId]?.reason || '',
-                   message: prev[activeEmployeeId]?.message || '',
-                   status: prev[activeEmployeeId]?.status || 'proposed',
+                 [employeeId]: {
+                   mode: prev[employeeId]?.mode || 'multi_step',
+                   reason: prev[employeeId]?.reason || '',
+                   message: prev[employeeId]?.message || '',
+                   status: prev[employeeId]?.status || 'proposed',
                    tasks: data.tasks.map((task: any, i: number) => ({
                      task_id: String(task.task_id || `task-${i + 1}`),
                      order: task.order || i + 1,
@@ -384,14 +398,14 @@ export function ChatView() {
             }
             if (data?.task_id && data.status) {
               setActivePlans(prev => {
-                const plan = prev[activeEmployeeId];
+                const plan = prev[employeeId];
                 if (!plan) return prev;
                 const nextTasks = plan.tasks.map(t => 
                   t.task_id === data.task_id ? { ...t, status: String(data.status) } : t
                 );
                 return {
                   ...prev,
-                  [activeEmployeeId]: {
+                  [employeeId]: {
                     ...plan,
                     status: nextTasks.every(t => t.status === 'done') ? 'completed' : plan.status,
                     tasks: nextTasks
@@ -417,12 +431,12 @@ export function ChatView() {
           if (event.plan) {
             setActivePlans(prev => ({
               ...prev,
-              [activeEmployeeId]: {
-                mode: (event.plan as any)?.mode || prev[activeEmployeeId]?.mode || 'multi_step',
-                reason: (event.plan as any)?.reason || prev[activeEmployeeId]?.reason || '',
+              [employeeId]: {
+                mode: (event.plan as any)?.mode || prev[employeeId]?.mode || 'multi_step',
+                reason: (event.plan as any)?.reason || prev[employeeId]?.reason || '',
                 message: confirmMsg,
                 status: 'proposed',
-                tasks: prev[activeEmployeeId]?.tasks || [],
+                tasks: prev[employeeId]?.tasks || [],
               },
             }));
           }
@@ -431,18 +445,18 @@ export function ChatView() {
           activities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
           setIsLoading(false);
           setPendingResume({
-            employeeId: activeEmployeeId,
+            employeeId,
             sessionId: sessionId,
             askType,
           });
         } else if (event.type === 'task_started') {
           const taskId = event.task_id || '';
           setActivePlans(prev => {
-             const plan = prev[activeEmployeeId];
+             const plan = prev[employeeId];
              if (!plan) return prev;
              return {
                ...prev,
-               [activeEmployeeId]: {
+               [employeeId]: {
                  ...plan,
                  status: 'running',
                  tasks: plan.tasks.map(t => t.task_id === taskId ? { ...t, status: 'in_progress' } : t)
@@ -470,10 +484,10 @@ export function ChatView() {
 
         // Update UI state
         setMessages(prev => {
-          const convoMessages = prev[activeEmployeeId] || [];
+          const convoMessages = prev[employeeId] || [];
           return {
             ...prev,
-            [activeEmployeeId]: convoMessages.map(m => 
+            [employeeId]: convoMessages.map(m => 
               m.id === assistantMessageId ? { 
                 ...m, 
                 text: answerBuffer,
@@ -494,10 +508,10 @@ export function ChatView() {
       isStreamingRef.current = false;
       
       setMessages(prev => {
-        const convoMessages = prev[activeEmployeeId] || [];
+        const convoMessages = prev[employeeId] || [];
         return {
           ...prev,
-          [activeEmployeeId]: convoMessages.map(m => {
+          [employeeId]: convoMessages.map(m => {
             if (m.id === userMessage.id) return { ...m, status: 'read' };
             if (m.id === assistantMessageId) return { ...m, status: 'read' };
             return m;
@@ -507,178 +521,278 @@ export function ChatView() {
     }
   };
 
-  const conversations: SidebarConversation[] = employees.map(e => ({
-    id: e.id,
-    title: e.name,
-    lastMessage: e.role,
-    presence: 'online',
-  }));
+  const addPaneForEmployee = async (employeeId: string) => {
+    if (!employeeId) return;
+    const employee = employees.find((item) => item.id === employeeId);
+    if (!employee) return;
 
-  const activeEmployee = employees.find(e => e.id === activeEmployeeId);
-  const currentSessions = sessions[activeEmployeeId] || [];
-  const currentSessionId = activeSessionId[activeEmployeeId];
+    try {
+      let sessionList = sessions[employeeId];
+      if (!sessionList) {
+        sessionList = await listEmployeeChatSessions(employeeId);
+        setSessions((prev) => ({ ...prev, [employeeId]: sessionList || [] }));
+      }
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-2.5 text-[12px] font-medium text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
-          >
-            <History className="h-3.5 w-3.5" />
-            <span>Sessions</span>
-            <ChevronDown className="h-3 w-3 opacity-50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel>
-            {activeEmployee ? `${activeEmployee.name}'s Sessions` : 'Sessions'}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleStartNewSession}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Session
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {currentSessions.length === 0 ? (
-            <DropdownMenuItem disabled>No sessions yet</DropdownMenuItem>
-          ) : (
-            currentSessions.map((s) => (
-              <DropdownMenuItem
-                key={s.id}
-                onClick={() => handleSwitchSession(s.id)}
-                className="flex items-center justify-between"
+      const latestSession = sessionList?.[0];
+      const currentSession = activeSessionId[employeeId];
+
+      if (!latestSession || (currentSession && currentSession === latestSession.id)) {
+        const newSession = await createEmployeeChatSession(employeeId, 'New Chat', employee.model);
+        setSessions((prev) => ({
+          ...prev,
+          [employeeId]: [newSession, ...(prev[employeeId] || [])],
+        }));
+        setActiveSessionId((prev) => ({ ...prev, [employeeId]: newSession.id }));
+        setMessages((prev) => ({ ...prev, [employeeId]: [] }));
+        setActivePlans((prev) => ({ ...prev, [employeeId]: undefined }));
+      } else {
+        setActiveSessionId((prev) => ({ ...prev, [employeeId]: latestSession.id }));
+        void fetchMessages(employeeId, latestSession.id);
+      }
+    } catch (error) {
+      console.error('Failed to prepare session for added chat pane:', error);
+      return;
+    }
+
+    setChatPanes((prev) => ([
+      ...prev,
+      { id: `pane-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, employeeId },
+    ]));
+  };
+
+  const removePane = (paneId: string) => {
+    setChatPanes((prev) => (prev.length <= 1 ? prev : prev.filter((pane) => pane.id !== paneId)));
+  };
+
+  return (
+    <div className="flex-1 h-full w-full overflow-hidden">
+      <div className="flex h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {chatPanes.map((pane) => {
+          const employeeId = pane.employeeId;
+          const activeEmployee = employees.find((employee) => employee.id === employeeId);
+          const currentSessions = sessions[employeeId] || [];
+          const currentSessionId = activeSessionId[employeeId];
+          const selectedPlan = activePlans[employeeId];
+          const isPlanCollapsed = collapsedPlans[employeeId] ?? false;
+          const paneConversations: SidebarConversation[] = activeEmployee ? [{
+            id: activeEmployee.id,
+            title: activeEmployee.name,
+            lastMessage: activeEmployee.role,
+            presence: 'online',
+          }] : [];
+
+          const headerActions = (
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-7 items-center gap-1 rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-2 text-[11px] font-medium text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    <span>Sessions</span>
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel>
+                    {activeEmployee ? `${activeEmployee.name}'s Sessions` : 'Sessions'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => void handleStartNewSession(employeeId)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Session
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {currentSessions.length === 0 ? (
+                    <DropdownMenuItem disabled>No sessions yet</DropdownMenuItem>
+                  ) : (
+                    currentSessions.map((session) => (
+                      <DropdownMenuItem
+                        key={session.id}
+                        onClick={() => handleSwitchSession(employeeId, session.id)}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="truncate">{session.title || 'Untitled Session'}</span>
+                        {currentSessionId === session.id && (
+                          <span className="text-[10px] font-bold text-[var(--chat-accent)] uppercase">Active</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <button
+                onClick={() => void handleStartNewSession(employeeId)}
+                className="flex size-7 items-center justify-center rounded-md bg-[var(--chat-accent)] text-white transition-transform active:scale-95"
+                title="New Session"
               >
-                <span className="truncate">{s.title || 'Untitled Session'}</span>
-                {currentSessionId === s.id && (
-                  <span className="text-[10px] font-bold text-[var(--chat-accent)] uppercase">Active</span>
-                )}
-              </DropdownMenuItem>
-            ))
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+                <Plus className="size-3.5" />
+              </button>
 
-      <button
-        onClick={handleStartNewSession}
-        className="flex size-8 items-center justify-center rounded-lg bg-[var(--chat-accent)] text-white transition-transform active:scale-95"
-        title="New Session"
-      >
-        <Plus className="size-4" />
-      </button>
-    </div>
-  );
-
-  const selectedPlan = activePlans[activeEmployeeId];
-
-  const planPanel = selectedPlan ? (
-    <div className="shrink-0 border-t border-[var(--chat-border)] bg-[var(--chat-bg-main)]">
-      <div className="mx-auto max-w-3xl px-4 py-2">
-        <div className="rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] overflow-hidden shadow-sm">
-          <div className={cn(
-            "flex items-center justify-between gap-3 px-3 py-2.5",
-            !isPlanCollapsed && "border-b border-[var(--chat-border)]"
-          )}>
-            <div className="flex min-w-0 items-center gap-2.5">
-              <ListChecks className="h-4 w-4 shrink-0 text-[var(--chat-text-secondary)]" />
-              <div className="min-w-0">
-                <div className="truncate text-[13px] font-medium leading-4 text-[var(--chat-text-primary)]">
-                  {selectedPlan.tasks.filter((task) => task.status === 'done').length} of {selectedPlan.tasks.length} tasks completed
-                </div>
-                <div className="truncate text-[11px] leading-4 text-[var(--chat-text-tertiary)] mt-0.5">
-                  {selectedPlan.message || selectedPlan.reason || 'Agent-generated execution plan'}
-                </div>
-              </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <div className="rounded-full border border-[var(--chat-border)] px-2 py-0.5 text-[11px] text-[var(--chat-text-secondary)]">
-                {selectedPlan.status === 'approved' ? 'Approved' : selectedPlan.status === 'running' ? 'Running' : selectedPlan.status === 'completed' ? 'Completed' : 'Needs approval'}
-              </div>
               <button
                 type="button"
-                onClick={() => setIsPlanCollapsed(!isPlanCollapsed)}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"
-                aria-label={isPlanCollapsed ? 'Expand task plan' : 'Collapse task plan'}
+                onClick={() => removePane(pane.id)}
+                disabled={chatPanes.length <= 1}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)] disabled:opacity-40"
+                aria-label="Close pane"
               >
-                <ChevronDown className={cn("h-4 w-4 transition-transform", !isPlanCollapsed && "rotate-180")} />
+                <X className="h-3 w-3" />
               </button>
             </div>
-          </div>
+          );
 
-          {!isPlanCollapsed && (
-          <div className="max-h-52 space-y-2 overflow-y-auto px-3 py-2.5">
-            {selectedPlan.tasks.map((task, index) => (
-              <div key={task.task_id} className="flex items-start gap-2.5">
-                <div className="pt-0.5">
-                  {task.status === 'done' ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                  ) : task.status === 'in_progress' ? (
-                    <span className="mt-0.5 block h-3 w-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                  ) : task.status === 'blocked' || task.status === 'cancelled' ? (
-                    <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
-                  ) : (
-                    <span className="mt-1 block h-3 w-3 rounded-full border border-[var(--chat-text-tertiary)]" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className={cn("text-[12px] leading-5", task.status === 'done' ? "text-[var(--chat-text-tertiary)] line-through" : "text-[var(--chat-text-secondary)]")}>
-                    {index + 1}. {task.title}
+          const planPanel = selectedPlan ? (
+            <div className="shrink-0 border-t border-[var(--chat-border)] bg-[var(--chat-bg-main)]">
+              <div className="mx-auto max-w-3xl px-3 py-1.5">
+                <div className="rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] overflow-hidden shadow-sm">
+                  <div className={cn(
+                    "flex items-center justify-between gap-2 px-2.5 py-2",
+                    !isPlanCollapsed && "border-b border-[var(--chat-border)]"
+                  )}>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <ListChecks className="h-4 w-4 shrink-0 text-[var(--chat-text-secondary)]" />
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px] font-medium leading-4 text-[var(--chat-text-primary)]">
+                          {selectedPlan.tasks.filter((task) => task.status === 'done').length} of {selectedPlan.tasks.length} tasks completed
+                        </div>
+                        <div className="truncate text-[11px] leading-4 text-[var(--chat-text-tertiary)] mt-0.5">
+                          {selectedPlan.message || selectedPlan.reason || 'Agent-generated execution plan'}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <div className="rounded-full border border-[var(--chat-border)] px-2 py-0.5 text-[11px] text-[var(--chat-text-secondary)]">
+                        {selectedPlan.status === 'approved' ? 'Approved' : selectedPlan.status === 'running' ? 'Running' : selectedPlan.status === 'completed' ? 'Completed' : 'Needs approval'}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCollapsedPlans((prev) => ({ ...prev, [employeeId]: !isPlanCollapsed }))}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"
+                        aria-label={isPlanCollapsed ? 'Expand task plan' : 'Collapse task plan'}
+                      >
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", !isPlanCollapsed && "rotate-180")} />
+                      </button>
+                    </div>
                   </div>
-                  {task.description && (
-                    <div className="mt-0.5 text-[11px] leading-[18px] text-[var(--chat-text-tertiary)]">
-                      {task.description}
+
+                  {!isPlanCollapsed && (
+                    <div className="max-h-40 space-y-1.5 overflow-y-auto px-2.5 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                      {selectedPlan.tasks.map((task, index) => (
+                        <div key={task.task_id} className="flex items-start gap-2.5">
+                          <div className="pt-0.5">
+                            {task.status === 'done' ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                            ) : task.status === 'in_progress' ? (
+                              <span className="mt-0.5 block h-3 w-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                            ) : task.status === 'blocked' || task.status === 'cancelled' ? (
+                              <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                            ) : (
+                              <span className="mt-1 block h-3 w-3 rounded-full border border-[var(--chat-text-tertiary)]" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className={cn("text-[12px] leading-5", task.status === 'done' ? "text-[var(--chat-text-tertiary)] line-through" : "text-[var(--chat-text-secondary)]")}>
+                              {index + 1}. {task.title}
+                            </div>
+                            {task.description && (
+                              <div className="mt-0.5 text-[11px] leading-[18px] text-[var(--chat-text-tertiary)]">
+                                {task.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {pendingResume && pendingResume.employeeId === employeeId && pendingResume.askType === 'approval' && selectedPlan.status !== 'approved' && selectedPlan.status !== 'running' && selectedPlan.status !== 'completed' && (
+                    <div className="flex items-center justify-end gap-2 border-t border-[var(--chat-border)] px-2.5 py-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void handlePlanDecision(false)}
+                        disabled={isResuming}
+                        className="h-8 px-3 text-[11px]"
+                      >
+                        Reject
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => void handlePlanDecision(true)}
+                        disabled={isResuming}
+                        className="h-8 px-3 text-[11px]"
+                      >
+                        {isResuming ? 'Approving…' : 'Approve plan'}
+                      </Button>
                     </div>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-          )}
-
-          {pendingResume && pendingResume.askType === 'approval' && selectedPlan.status !== 'approved' && selectedPlan.status !== 'running' && selectedPlan.status !== 'completed' && (
-            <div className="flex items-center justify-end gap-2 border-t border-[var(--chat-border)] px-3 py-2.5">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void handlePlanDecision(false)}
-                disabled={isResuming}
-                className="h-8 px-3 text-[11px]"
-              >
-                Reject
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void handlePlanDecision(true)}
-                disabled={isResuming}
-                className="h-8 px-3 text-[11px]"
-              >
-                {isResuming ? 'Approving…' : 'Approve plan'}
-              </Button>
             </div>
-          )}
+          ) : null;
+
+          return (
+            <div
+              key={pane.id}
+              className="flex h-full min-h-0 w-[460px] shrink-0 flex-col overflow-hidden border-r border-r-[#e8edf3] bg-[var(--chat-bg-app)]"
+            >
+              <div className="min-h-0 flex-1">
+                <FullMessenger
+                  currentUser={currentUser}
+                  conversations={paneConversations}
+                  activeConversationId={employeeId}
+                  onSelectConversation={() => {}}
+                  messages={messages[employeeId] || []}
+                  onSend={(text) => void handleSend(employeeId, text)}
+                  title="Employees"
+                  theme="lunar"
+                  className="h-full w-full [--chat-bg-app:#f8fafc] [--chat-bg-sidebar:#f8fafc] [--chat-bg-main:#ffffff] [--chat-bg-header:rgba(255,255,255,0.95)] [--chat-bg-composer:rgba(255,255,255,0.96)] [--chat-bubble-outgoing:#334155] [--chat-bubble-outgoing-text:#f8fafc] [--chat-bubble-incoming:#f1f5f9] [--chat-bubble-incoming-text:#0f172a] [--chat-text-primary:#0f172a] [--chat-text-secondary:#475569] [--chat-text-tertiary:#64748b] [--chat-border:rgba(15,23,42,0.08)] [--chat-border-strong:rgba(15,23,42,0.12)] [--chat-accent:#334155] [--chat-accent-soft:rgba(51,65,85,0.08)]"
+                  headerActions={headerActions}
+                  beforeComposer={planPanel}
+                  conversationStyle="tabs"
+                  hideConversationTabs
+                  messagesClassName="px-2"
+                  composerClassName="px-2 py-1"
+                />
+              </div>
+            </div>
+          );
+        })}
+        <div className="flex h-full min-h-0 w-[460px] shrink-0 items-center justify-center border-r border-r-[#e8edf3] bg-[var(--chat-bg-app)]">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-4 py-3 text-[14px] font-semibold text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Chat</span>
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="w-64">
+              <DropdownMenuLabel>Select Employee</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {employees.length === 0 ? (
+                <DropdownMenuItem disabled>No employees available</DropdownMenuItem>
+              ) : (
+                employees.map((employee) => (
+                  <DropdownMenuItem
+                    key={employee.id}
+                    onClick={() => void addPaneForEmployee(employee.id)}
+                  >
+                    {employee.name}
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-    </div>
-  ) : null;
-
-  return (
-    <div className="flex-1 h-full w-full overflow-hidden flex">
-      <FullMessenger
-        currentUser={currentUser}
-        conversations={conversations}
-        activeConversationId={activeEmployeeId}
-        onSelectConversation={handleSelectConversation}
-        messages={messages[activeEmployeeId] || []}
-        onSend={handleSend}
-        title="Employees"
-        theme="lunar"
-        className="w-full h-full"
-        headerActions={headerActions}
-        beforeComposer={planPanel}
-      />
     </div>
   );
 }
