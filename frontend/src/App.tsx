@@ -27,15 +27,6 @@ function AuthenticatedShell() {
 
   const showKatyToggle = location.pathname !== '/chat';
 
-  useEffect(() => {
-    const theme = localStorage.getItem('theme');
-    if (theme === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
   return (
     <div className="flex h-screen bg-background text-foreground antialiased overflow-hidden">
       <Sidebar />
@@ -113,6 +104,23 @@ function AuthenticatedShell() {
 
 export default function App() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  // Centralize dark-mode toggling. Unauthenticated routes (landing, login,
+  // waitlist) always render light so theme-variable classes inside embedded
+  // dashboard/stepper components don't flip based on stale `.dark` state.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!isAuthenticated) {
+      root.classList.remove('dark');
+      return;
+    }
+    const theme = localStorage.getItem('theme');
+    if (theme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      root.classList.add('dark');
+    }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
