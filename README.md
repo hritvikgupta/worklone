@@ -1,202 +1,215 @@
-# Workflow Engine — AI Co-Worker Platform
+# Worklone: AI Employees That Learn & Adapt
 
-Complete workflow automation system. No Sim dependency. No licensing fees. 100% yours.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-3776AB.svg?logo=python)](https://www.python.org/downloads/)
+[![Node.js 18+](https://img.shields.io/badge/node-%3E%3D18-339933.svg?logo=node.js)](https://nodejs.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 
-## Project Structure
+**Worklone** is an open-source platform that lets you create, manage, and deploy AI employees for your business. These aren't static chatbots—they're autonomous agents that reason, use tools, execute workflows, collaborate with each other, and **get smarter over time** through self-learning.
 
-```
-ceo-agent/
-├── backend/                    ← FastAPI server (your main entry point)
-│   ├── main.py                 ← All 32 API endpoints + startup/shutdown
-│   ├── core/
-│   │   ├── config.py           ← Environment settings
-│   │   └── dependencies.py     ← Shared service instances
-│   ├── services/
-│   │   ├── auth_service.py     ← Users + API keys
-│   │   └── workflow_service.py ← Workflow/Block/Edge/Trigger CRUD
-│   └── api/
-│       ├── auth_middleware.py  ← Auth extraction
-│       └── auth_router.py      ← Auth endpoints (supplemental)
-│
-├── workflows/                  ← Core engine (27 files)
-│   ├── types.py                ← Data models
-│   ├── store.py                ← Multi-tenant SQLite persistence
-│   ├── utils.py                ← Template resolver, ID gen
-│   ├── logger.py               ← Logging
-│   ├── coworker.py             ← ReAct co-worker agent
-│   ├── coworker_tools.py       ← Workflow management tools
-│   ├── worker.py               ← Background job processor + scheduler
-│   ├── tools/                  ← Integration tools (HTTP, LLM, Slack, Gmail, etc.)
-│   └── engine/                 ← DAG execution engine
-│       ├── dag_builder.py      ← Workflow → DAG
-│       ├── executor.py         ← Parallel-aware executor
-│       ├── variable_resolver.py← {{block.output}} resolution
-│       └── handlers/           ← Block type handlers
-│
-├── scripts/                    ← Test scripts
-├── .reference/                 ← Old Sim code (for reference only)
-├── agent-harness/              ← Frontend (connects to backend)
-├── .env.example                ← Environment template
-└── requirements.txt
-```
+Think of Worklone as your digital workforce: hire AI employees for product management, engineering, sales, support, operations, or any role you define. Each employee learns your preferences, builds skills from experience, and improves with every interaction.
+
+---
+
+## Why Worklone?
+
+| Traditional Automation | Worklone AI Employees |
+|------------------------|----------------------|
+| Rigid if-then rules | Autonomous reasoning with ReAct |
+| Manual updates required | Self-learning from experience |
+| Single-purpose bots | Multi-tool, multi-skill agents |
+| No memory or context | Remembers users, builds skills |
+| Closed-source, expensive | Open-source, self-hosted, free |
+
+---
+
+## Features
+
+### 🧠 Self-Adapting AI Employees
+- **Learns from every interaction** — automatically captures user preferences, work styles, and domain knowledge
+- **Builds skills autonomously** — discovers multi-step procedures through trial-and-error and saves them as reusable skills
+- **Improves over time** — the more you use it, the better it gets at understanding your needs
+
+### 👥 AI Employee System
+- **Create custom employees** with specific roles, personalities, and capabilities
+- **Pre-built Katy** — an AI Product Manager ready to help with roadmaps, PRDs, and prioritization
+- **Assign 500+ tools** — from GitHub and Slack to Salesforce and Stripe
+- **Track performance** — monitor tokens, costs, and activity per employee
+- **Team collaboration** — employees can message each other and work together on tasks
+
+### 🔧 Massive Tool Ecosystem
+- **500+ pre-built tools** across GitHub, Slack, Gmail, Jira, Notion, Salesforce, Stripe, Linear, HubSpot, Google Drive, Google Calendar, and more
+- **Custom tool framework** — add your own tools in under 50 lines of code
+- **Native function calling** — agents autonomously decide which tools to use and when
+
+### ⚡ DAG-Based Workflow Engine
+- **Visual workflow builder** — 13 block types including agents, tools, conditions, loops, and parallel execution
+- **Multiple triggers** — API, webhook, schedule (cron), or manual
+- **Human-in-the-loop** — approval blocks for critical decisions
+- **Background execution** — long-running workflows with monitoring and history
+
+### 🔒 Private & Self-Hosted
+- **100% self-hosted** — your data never leaves your infrastructure
+- **Zero-config persistence** — SQLite database, no Redis or PostgreSQL required
+- **Multi-tenant** — owner-based data isolation with session and API key auth
+
+---
 
 ## Quick Start
 
+### Prerequisites
+- Python 3.9+
+- Node.js 18+
+- An [OpenRouter API key](https://openrouter.ai/) (or NVIDIA API key)
+
+### 1. Clone & Configure
 ```bash
-# 1. Setup
+git clone https://github.com/YOUR_USERNAME/worklone.git
+cd worklone
 cp .env.example .env
-# Edit .env — add OPENROUTER_API_KEY
-
-# 2. Run server
-uvicorn backend.main:app --reload --port 8002
-
-# 3. Test
-curl http://localhost:8002/health
+# Edit .env and add your OPENROUTER_API_KEY
 ```
 
-## API Endpoints (32 total)
+### 2. Start the Platform
+```bash
+# Start both backend and frontend
+./start.sh
 
-### Auth
-```
-POST   /api/auth/register          {"user_id": "user-1", "name": "Alice"}
-GET    /api/users/me               (header: x-user-id: user-1)
-POST   /api/auth/keys              Create API key (raw key shown once)
-GET    /api/auth/keys              List keys
-DELETE /api/auth/keys/{id}         Revoke key
-```
+# Or start them separately:
+# Backend
+uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
 
-### Workflows
-```
-GET    /api/workflows              List (filtered by user)
-POST   /api/workflows              Create
-GET    /api/workflows/{id}         Full details (blocks + edges + triggers)
-PATCH  /api/workflows/{id}         Update metadata
-DELETE /api/workflows/{id}         Delete
+# Frontend (in another terminal)
+cd frontend && npm install && npm run dev
 ```
 
-### Blocks
-```
-POST   /api/workflows/{id}/blocks       Add block
-PATCH  /api/workflows/blocks/{id}       Update block
-DELETE /api/workflows/blocks/{id}       Delete block
-```
+### 3. Meet Your First Employee
+Open `http://localhost:5173` and start chatting with **Katy**, your AI Product Manager. Or create a custom employee for any role you need.
 
-### Edges
-```
-POST   /api/workflows/{id}/edges        Add edge
-DELETE /api/workflows/edges/{id}        Delete edge
-```
+---
 
-### Triggers
-```
-POST   /api/workflows/{id}/triggers     Add trigger (webhook/schedule/api/manual)
-PATCH  /api/workflows/triggers/{id}     Update (enable/disable)
-DELETE /api/workflows/triggers/{id}     Delete
-```
-
-### Execution
-```
-POST   /api/workflows/{id}/execute      Run (sync or async)
-GET    /api/workflows/{id}/executions   History
-```
-
-### Webhooks (catch-all)
-```
-POST   /api/webhooks/{path}             Receive webhook → queue execution
-```
-
-### Schedules
-```
-GET    /api/schedules                   List schedules
-POST   /api/schedules/tick              Trigger dispatch (for external cron)
-```
-
-### Other
-```
-GET    /api/jobs                        Background jobs
-GET    /api/tools                       Available tools
-POST   /api/coworker/chat               Talk to AI co-worker
-GET    /health                          Health check
-GET    /                                API info
-```
-
-## Connecting from agent-harness Frontend
-
-```javascript
-// In agent-harness, make requests with:
-const BASE = 'http://localhost:8002';
-const HEADERS = { 'x-user-id': 'your-user-id' };
-
-// Create workflow
-const wf = await fetch(`${BASE}/api/workflows`, {
-  method: 'POST',
-  headers: { ...HEADERS, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ name: 'my-workflow', description: '...' }),
-});
-
-// Add block
-await fetch(`${BASE}/api/workflows/${wf.id}/blocks`, {
-  method: 'POST',
-  headers: { ...HEADERS, 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    block_type: 'agent',
-    name: 'Analyze',
-    model: 'openai/gpt-4o',
-    system_prompt: 'You are...',
-    prompt: 'Analyze this data...',
-  }),
-});
-
-// Add edge
-await fetch(`${BASE}/api/workflows/${wf.id}/edges`, {
-  method: 'POST',
-  headers: { ...HEADERS, 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    from_block_id: 'blk_abc',
-    to_block_id: 'blk_xyz',
-  }),
-});
-
-// Execute
-const result = await fetch(`${BASE}/api/workflows/${wf.id}/execute`, {
-  method: 'POST',
-  headers: { ...HEADERS, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ input_data: { key: 'value' } }),
-});
-```
-
-## How It Works
-
-### Triggers (like Sim's)
-- **Webhook**: POST to `/api/webhooks/{path}` → finds trigger → queues job → executes workflow
-- **Schedule**: ScheduleDispatcher polls for due schedules → enqueues → worker executes
-- **API**: POST `/api/workflows/{id}/execute`
-- **Manual**: Same as API, tracked separately
-
-### Parallel Execution (like Sim's)
-- Sentinel nodes injected during graph building
-- Branch cloning with `₍n₎` subscript notation
-- Topological sort respects all DAG dependencies
-- Result aggregation at end sentinel
-
-### Background Worker
-- Polls every 5s for pending jobs
-- Retry with exponential backoff (max 3 attempts)
-- Job types: `workflow_execution`, `schedule_dispatch`
-- SQLite-based queue (no Redis)
-
-### Multi-Tenant
-- Every record scoped to `owner_id`
-- Users auto-created on first access
-- API keys: `wf_<random>`, SHA-256 hashed
-- Three auth methods: API key, Bearer token, x-user-id header
-
-## Environment Variables
+## Architecture
 
 ```
-OPENROUTER_API_KEY=sk-or-...     # Required for LLM
-SLACK_BOT_TOKEN=xoxb-...         # Optional
-GMAIL_ACCESS_TOKEN=ya29....      # Optional
-WORKFLOW_DB=workflows.db          # SQLite path
-PORT=8002                         # Server port
+┌─────────────────────────────────────────────────────────┐
+│                    Worklone Platform                     │
+├─────────────────────────────────────────────────────────┤
+│  Frontend (React + TypeScript + Tailwind)               │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐   │
+│  │ Dashboard   │ │ Chat UI     │ │ Workflow Builder│   │
+│  └─────────────┘ └─────────────┘ └─────────────────┘   │
+├─────────────────────────────────────────────────────────┤
+│  Backend (FastAPI + Python)                             │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐   │
+│  │ Agent Engine│ │ Tool System │ │ Workflow Engine │   │
+│  │ (ReAct)     │ │ (500+ tools)│ │ (DAG-based)     │   │
+│  └─────────────┘ └─────────────┘ └─────────────────┘   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │           Self-Learning System                  │   │
+│  │  ┌──────────────┐  ┌──────────────────────┐    │   │
+│  │  │ User Memory  │  │ Learned Skills       │    │   │
+│  │  │ (every 8     │  │ (every 10 tool       │    │   │
+│  │  │  turns)      │  │  iterations)         │    │   │
+│  │  └──────────────┘  └──────────────────────┘    │   │
+│  └─────────────────────────────────────────────────┘   │
+├─────────────────────────────────────────────────────────┤
+│  Persistence (SQLite)                                   │
+│  Employees · Workflows · Skills · Memory · Auth         │
+└─────────────────────────────────────────────────────────┘
 ```
+
+See [Architecture Overview](docs/ARCHITECTURE.md) for detailed system design.
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Installation Guide](docs/INSTALLATION.md) | Detailed setup for local, Docker, and production |
+| [Architecture](docs/ARCHITECTURE.md) | System design, data flow, and principles |
+| [AI Employees](docs/AGENTS.md) | How employees work, create, and collaborate |
+| [Self-Learning](docs/SELF_LEARNING.md) | How employees learn and improve over time |
+| [Tool System](docs/TOOLS.md) | Available tools and how to build custom ones |
+| [Workflows](docs/WORKFLOWS.md) | DAG workflow engine, block types, and triggers |
+| [API Reference](docs/API_REFERENCE.md) | REST endpoints, WebSocket, and authentication |
+| [Contributing](docs/CONTRIBUTING.md) | How to contribute, style guide, and testing |
+| [Security](SECURITY.md) | Security policy and reporting |
+
+---
+
+## Use Cases
+
+### Product Management
+Katy, your AI PM, can:
+- Write PRDs and user stories
+- Prioritize features using RICE or MoSCoW
+- Plan sprints and roadmaps
+- Analyze user feedback and metrics
+
+### Engineering
+AI engineers can:
+- Create and manage GitHub issues and PRs
+- Review code and suggest improvements
+- Run tests and debug failures
+- Document codebases and APIs
+
+### Sales & CRM
+AI sales reps can:
+- Manage Salesforce leads and opportunities
+- Draft personalized outreach emails
+- Track deal pipelines and forecast revenue
+- Schedule meetings via Google Calendar
+
+### Customer Support
+AI support agents can:
+- Respond to tickets via Slack or email
+- Search knowledge bases (Notion, Google Drive)
+- Escalate complex issues to human agents
+- Track satisfaction and resolution metrics
+
+### Operations
+AI ops managers can:
+- Monitor Stripe subscriptions and payments
+- Generate reports from multiple data sources
+- Automate recurring tasks with scheduled workflows
+- Coordinate across teams and tools
+
+---
+
+## Tech Stack
+
+**Backend:** FastAPI, Python 3.9+, SQLite, httpx, Pydantic, Uvicorn
+**Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Recharts
+**LLM Providers:** OpenRouter (primary), NVIDIA NIM (secondary)
+**Integrations:** GitHub, Slack, Gmail, Jira, Notion, Salesforce, Stripe, Linear, HubSpot, Google Drive, Google Calendar, and more
+
+---
+
+## Roadmap
+
+- [ ] Autonomous Skill Acquisition (learning new tools via documentation)
+- [ ] Multi-Agent Collaboration Framework
+- [ ] One-Click Docker Deployment
+- [ ] Enterprise SSO & RBAC
+- [ ] Vector memory for long-term knowledge retention
+- [ ] Employee performance analytics dashboard
+- [ ] Marketplace for pre-built employee templates
+
+---
+
+## Contributing
+
+We welcome contributions! Whether it's fixing a bug, adding a tool, or improving documentation—every contribution matters. See our [Contributing Guide](docs/CONTRIBUTING.md) to get started.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">Built with ❤️ by the Worklone Community</p>
