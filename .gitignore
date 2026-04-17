@@ -37,7 +37,9 @@ agentic-os/
 .claude/
 .qwen/
 .reference/
-
+.kilo/
 # Logs
 *.log
 logs/
+screenshots/    
+.agents/

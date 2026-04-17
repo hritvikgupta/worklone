@@ -236,11 +236,7 @@ export function SkillLibrary() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-          <div><span className="font-semibold text-foreground">{skills.length}</span> skills</div>
-          <div><span className="font-semibold text-foreground">public</span> library</div>
-          <div><span className="font-semibold text-foreground">db-backed</span> catalog</div>
-        </div>
+
 
         {error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>

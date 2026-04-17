@@ -7,13 +7,21 @@ Prompt Generator Service — uses OpenRouter models to generate:
 import json
 import os
 from typing import Any
+from json import JSONDecodeError
 
 import httpx
 
-from backend.tools.catalog import list_catalog_tools, OPTIONAL_EMPLOYEE_TOOL_NAMES
-from backend.workflows.logger import get_logger
+from backend.core.config.settings import get_settings
+from backend.core.errors import (
+    InvalidProviderResponseError,
+    ProviderRequestError,
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+)
+from backend.core.logging import get_logger
+from backend.core.tools.catalog import list_catalog_tools, OPTIONAL_EMPLOYEE_TOOL_NAMES
 
-logger = get_logger("prompt_generator")
+logger = get_logger("services.prompt_generator")
 
 KIMI_MODEL = "moonshotai/kimi-k2"
 DEFAULT_SKILL_MODEL = os.getenv("OPENROUTER_SKILL_MODEL", "minimax/minimax-m2.7")
@@ -23,6 +31,161 @@ from backend.services.llm_config import get_provider_config, detect_provider, ge
 
 # Every optional tool the user can toggle in the UI
 _OPTIONAL_TOOLS: list[dict] | None = None
+
+
+def _truncate(value: str, limit: int | None = None) -> str:
+    max_length = limit or get_settings().provider_error_body_limit
+    if len(value) <= max_length:
+        return value
+    return f"{value[:max_length]}..."
+
+
+def _extract_json_payload(raw: str) -> dict[str, Any]:
+    content = raw.strip()
+    if content.startswith("```"):
+        content = content.split("\n", 1)[1] if "\n" in content else ""
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+    try:
+        return json.loads(content)
+    except JSONDecodeError as exc:
+        raise exc
+
+
+async def _run_completion_request(
+    *,
+    service_name: str,
+    model: str,
+    system: str,
+    user_message: str,
+    temperature: float,
+    max_tokens: int,
+) -> dict[str, Any]:
+    provider_name = detect_provider(model)
+    llm_config = get_provider_config(model)
+    api_key = llm_config["api_key"]
+    base_url = llm_config["base_url"]
+
+    if not api_key:
+        raise ProviderUnavailableError(service_name, provider_name, details={"model": model})
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0 if max_tokens <= 2048 else 90.0) as client:
+            resp = await client.post(
+                f"{base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    **get_headers(model),
+                },
+                json={
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user_message},
+                    ],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                    **get_payload_extras(model),
+                },
+            )
+            resp.raise_for_status()
+    except httpx.TimeoutException as exc:
+        logger.warning(
+            "Provider timeout service=%s provider=%s model=%s",
+            service_name,
+            provider_name,
+            model,
+        )
+        raise ProviderTimeoutError(service_name, provider_name, model) from exc
+    except httpx.HTTPStatusError as exc:
+        response = exc.response
+        body = _truncate(response.text)
+        logger.error(
+            "Provider request failed service=%s provider=%s model=%s status=%s body=%s",
+            service_name,
+            provider_name,
+            model,
+            response.status_code,
+            body,
+        )
+        raise ProviderRequestError(
+            service_name,
+            provider_name,
+            model=model,
+            upstream_status=response.status_code,
+            details={"upstream_body": body},
+        ) from exc
+    except httpx.HTTPError as exc:
+        logger.exception(
+            "Provider transport error service=%s provider=%s model=%s",
+            service_name,
+            provider_name,
+            model,
+        )
+        raise ProviderRequestError(
+            service_name,
+            provider_name,
+            model=model,
+            upstream_status=0,
+            retryable=True,
+            details={"reason": exc.__class__.__name__},
+        ) from exc
+
+    try:
+        data = resp.json()
+    except ValueError as exc:
+        body = _truncate(resp.text)
+        logger.error(
+            "Provider returned non-JSON service=%s provider=%s model=%s body=%s",
+            service_name,
+            provider_name,
+            model,
+            body,
+        )
+        raise InvalidProviderResponseError(
+            service_name,
+            provider_name,
+            model=model,
+            details={"reason": "non_json_response", "upstream_body": body},
+        ) from exc
+
+    try:
+        raw_content = data["choices"][0]["message"]["content"]
+        if not isinstance(raw_content, str) or not raw_content.strip():
+            raise KeyError("content")
+    except (KeyError, IndexError, TypeError) as exc:
+        logger.error(
+            "Provider response missing content service=%s provider=%s model=%s keys=%s",
+            service_name,
+            provider_name,
+            model,
+            list(data.keys()) if isinstance(data, dict) else type(data).__name__,
+        )
+        raise InvalidProviderResponseError(
+            service_name,
+            provider_name,
+            model=model,
+            details={"reason": "missing_message_content"},
+        ) from exc
+
+    try:
+        return _extract_json_payload(raw_content)
+    except JSONDecodeError as exc:
+        logger.error(
+            "Provider returned invalid JSON payload service=%s provider=%s model=%s content=%s",
+            service_name,
+            provider_name,
+            model,
+            _truncate(raw_content),
+        )
+        raise InvalidProviderResponseError(
+            service_name,
+            provider_name,
+            model=model,
+            details={"reason": "invalid_json_payload"},
+        ) from exc
 
 
 def _get_optional_tools() -> list[dict]:
@@ -219,10 +382,6 @@ async def generate_employee_prompt(
     If public_skills is provided, the LLM will select from existing
     public skills and can propose new ones to be auto-created.
     """
-    llm_config = get_provider_config(KIMI_MODEL)
-    if not llm_config["api_key"]:
-        raise RuntimeError("OPENROUTER_API_KEY not set")
-
     optional_tools = _get_optional_tools()
     tools_list = "\n".join(
         f"- {t['name']} ({t['category']}) — {t['description']}"
@@ -249,44 +408,15 @@ async def generate_employee_prompt(
 
     user_message = f"Employee name: {name}\nEmployee description: {description}"
 
-    logger.info(f"Generating prompt for employee '{name}' via {KIMI_MODEL}")
-    
-    # Use centralized config
-    provider_name = detect_provider(KIMI_MODEL)
-    llm_config = get_provider_config(KIMI_MODEL)
-    
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.post(
-            f"{llm_config['base_url']}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {llm_config['api_key']}",
-                "Content-Type": "application/json",
-                **get_headers(KIMI_MODEL),
-            },
-            json={
-                "model": KIMI_MODEL,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user_message},
-                ],
-                "temperature": 0.7,
-                "max_tokens": 2048,
-                **get_payload_extras(KIMI_MODEL),
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-    raw = data["choices"][0]["message"]["content"].strip()
-
-    # Strip markdown fences if present
-    if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1]  # remove first line
-        if raw.endswith("```"):
-            raw = raw[:-3]
-        raw = raw.strip()
-
-    result = json.loads(raw)
+    logger.info("Generating prompt for employee '%s' via %s", name, KIMI_MODEL)
+    result = await _run_completion_request(
+        service_name="Employee prompt generation service",
+        model=KIMI_MODEL,
+        system=system,
+        user_message=user_message,
+        temperature=0.7,
+        max_tokens=2048,
+    )
 
     # Validate tools — only keep ones that actually exist in our catalog
     valid_tool_names = {t["name"] for t in optional_tools}
@@ -318,10 +448,6 @@ async def generate_public_skill(
     model: str | None = None,
 ) -> dict[str, Any]:
     """Generate a reusable workplace skill in SKILL.md format."""
-    api_key = os.getenv("OPENROUTER_API_KEY", "")
-    if not api_key:
-        raise RuntimeError("OPENROUTER_API_KEY not set")
-
     optional_tools = _get_optional_tools()
     tools_list = "\n".join(
         f"- {t['name']} ({t['category']}) — {t['description']}"
@@ -335,49 +461,16 @@ async def generate_public_skill(
         f"Reference employee role context: {employee_role.strip() or 'General workplace employee'}"
     )
     selected_model = model or DEFAULT_SKILL_MODEL
-    
-    # Use centralized config
-    provider_name = detect_provider(selected_model)
-    llm_config = get_provider_config(selected_model)
-    effective_api_key = llm_config["api_key"]
-    base_url = llm_config["base_url"]
-    
-    if not effective_api_key:
-        raise RuntimeError(f"{provider_name.upper()}_API_KEY not set")
 
-    logger.info("Generating public skill '%s' via %s (provider: %s)", title, selected_model, provider_name)
-
-    async with httpx.AsyncClient(timeout=90.0) as client:
-        resp = await client.post(
-            f"{base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {effective_api_key}",
-                "Content-Type": "application/json",
-                **get_headers(selected_model),
-            },
-            json={
-                "model": selected_model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user_message},
-                ],
-                "temperature": 0.7,
-                "max_tokens": 4096,
-                **get_payload_extras(selected_model),
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-    raw = data["choices"][0]["message"]["content"].strip()
-
-    if raw.startswith("```"):
-        raw = raw.split("\n", 1)[1]
-        if raw.endswith("```"):
-            raw = raw[:-3]
-        raw = raw.strip()
-
-    result = json.loads(raw)
+    logger.info("Generating public skill '%s' via %s", title, selected_model)
+    result = await _run_completion_request(
+        service_name="Public skill generation service",
+        model=selected_model,
+        system=system,
+        user_message=user_message,
+        temperature=0.7,
+        max_tokens=4096,
+    )
 
     valid_tool_names = {t["name"] for t in optional_tools}
     result["suggested_tools"] = [

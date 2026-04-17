@@ -1,6 +1,5 @@
 import { EmployeeFormData } from '@/src/components/EmployeePanel';
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { requestJson } from '@/lib/api';
 
 export interface EmployeeDetail {
   id: string;
@@ -73,15 +72,7 @@ export interface EmployeeModelOption {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
-  }
-  return res.json();
+  return requestJson<T>(path, options, 'The employee request could not be completed.');
 }
 
 export async function listEmployees(): Promise<EmployeeDetail[]> {
@@ -133,7 +124,6 @@ export async function updateEmployee(employeeId: string, form: Partial<EmployeeF
   if (form.model !== undefined) body.model = form.model;
   if (form.temperature !== undefined) body.temperature = form.temperature;
   if (form.max_tokens !== undefined) body.max_tokens = form.max_tokens;
-  if (form.is_active !== undefined) body.is_active = form.is_active;
   if (form.tools !== undefined) body.tools = form.tools;
   if (form.skills !== undefined) body.skills = form.skills;
   if (form.memory !== undefined) body.memory = form.memory;

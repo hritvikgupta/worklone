@@ -20,10 +20,10 @@ if str(REPO_ROOT) not in sys.path:
 
 load_dotenv(REPO_ROOT / ".env")
 
-from backend.employee.types import PublicSkill
+from backend.core.agents.employee.types import PublicSkill
 from backend.services.prompt_generator import generate_public_skill
-from backend.store.employee_store import EmployeeStore
-from backend.workflows.utils import generate_id
+from backend.db.stores.employee_store import EmployeeStore
+from backend.core.workflows.utils import generate_id
 
 
 SEED_SKILLS = [

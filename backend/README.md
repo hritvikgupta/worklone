@@ -165,13 +165,13 @@ Stream Katy's response using Server-Sent Events (SSE).
 
 ### Adding New Endpoints
 
-1. Create a new router in `backend/routers/`
+1. Create a new router in `backend/api/routers/`
 2. Include it in `backend/api/routes.py`
 3. Create corresponding service in `backend/services/`
 
 ### Adding New Tools
 
-1. Create tool class in `backend/tools/` under the appropriate tool category
+1. Create tool class in `backend/core/tools/` under the appropriate tool category
 2. Inherit from `BaseTool`
 3. Implement the `execute` method
 4. Register or import it where needed

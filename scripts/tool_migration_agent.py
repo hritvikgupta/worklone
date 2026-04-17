@@ -7,7 +7,7 @@ from pathlib import Path
 SIM_BASE_DIR = Path("/Users/hritvik/Downloads/ceo-agent/.reference/sim/apps/sim")
 TOOLS_SCHEMA_DIR = SIM_BASE_DIR / "tools"
 TOOLS_API_DIR = SIM_BASE_DIR / "app/api/tools"
-OUTPUT_DIR = Path("/Users/hritvik/Downloads/ceo-agent/backend/tools/integration_tools_v2")
+OUTPUT_DIR = Path("/Users/hritvik/Downloads/ceo-agent/backend/core/tools/integration_tools_v2")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = "x-ai/grok-4.1-fast"
@@ -37,8 +37,8 @@ Here is the EXACT structural pattern you MUST follow:
 from typing import Any, Dict
 import httpx
 import base64
-from backend.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
-from backend.tools.integration_tools.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
+from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
+from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class [Provider][Action]Tool(BaseTool): # e.g., GmailSendTool
     name = "action_name_from_schema" 

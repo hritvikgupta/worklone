@@ -11,14 +11,20 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 from backend.api.routes import router
-from backend.store.workflow_store import WorkflowStore
-from backend.workflows.worker import BackgroundWorker
+from backend.core.errors import register_exception_handlers
+from backend.core.logging import RequestContextMiddleware, configure_logging, get_logger
+from backend.db.stores.workflow_store import WorkflowStore
+from backend.core.workflows.worker import BackgroundWorker
+
+configure_logging()
 
 app = FastAPI(
     title="CEO Agent Backend",
     description="Backend API for CEO Agent with Katy PM Assistant",
     version="1.0.0",
 )
+
+logger = get_logger("api.main")
 
 # Build CORS origins from defaults + env so OAuth tunnel domains work.
 default_origins = {
@@ -57,6 +63,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestContextMiddleware)
+register_exception_handlers(app)
 
 # Include routes
 app.include_router(router, prefix="/api")
@@ -70,12 +78,14 @@ workflow_worker_task: asyncio.Task | None = None
 async def start_workflow_worker():
     global workflow_worker_task
     if workflow_worker_task is None or workflow_worker_task.done():
+        logger.info("Starting workflow worker")
         workflow_worker_task = asyncio.create_task(workflow_worker.start())
 
 
 @app.on_event("shutdown")
 async def stop_workflow_worker():
     global workflow_worker_task
+    logger.info("Stopping workflow worker")
     await workflow_worker.stop()
     if workflow_worker_task is not None:
         workflow_worker_task.cancel()

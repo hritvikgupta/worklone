@@ -1,5 +1,5 @@
 import { Team } from '../types';
-import { BACKEND_URL, CHAT_AUTH_EXPIRED_ERROR } from '../../lib/api';
+import { BACKEND_URL, requestJson } from '../../lib/api';
 
 export interface TeamRunMember {
   id: string;
@@ -25,40 +25,19 @@ export interface TeamRun {
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('auth_token');
-  const headers: Record<string, string> = {
+  return {
     'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
 }
 
 export async function listTeams(): Promise<Team[]> {
-  const response = await fetch(`${BACKEND_URL}/api/teams`, {
-    headers: authHeaders(),
-  });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to list teams (${response.status})`);
-  }
-  const data = await response.json();
+  const data = await requestJson<{ teams: Team[] }>('/api/teams', { headers: authHeaders() }, 'Teams could not be loaded.');
   return data.teams || [];
 }
 
 export async function getTeam(teamId: string): Promise<Team> {
-  const response = await fetch(`${BACKEND_URL}/api/teams/${teamId}`, {
-    headers: authHeaders(),
-  });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to get team (${response.status})`);
-  }
-  const data = await response.json();
+  const data = await requestJson<any>(`/api/teams/${teamId}`, { headers: authHeaders() }, 'The team could not be loaded.');
   return {
     ...data.team,
     members: data.members || [],
@@ -68,18 +47,11 @@ export async function getTeam(teamId: string): Promise<Team> {
 }
 
 export async function createTeam(teamData: Omit<Team, 'id' | 'createdAt'>): Promise<Team> {
-  const response = await fetch(`${BACKEND_URL}/api/teams`, {
+  const data = await requestJson<any>('/api/teams', {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(teamData),
-  });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to create team (${response.status})`);
-  }
-  const data = await response.json();
+  }, 'The team could not be created.');
   return {
     ...data.team,
     members: data.members || [],
@@ -88,18 +60,11 @@ export async function createTeam(teamData: Omit<Team, 'id' | 'createdAt'>): Prom
 }
 
 export async function updateTeam(teamId: string, teamData: Omit<Team, 'id' | 'createdAt'>): Promise<Team> {
-  const response = await fetch(`${BACKEND_URL}/api/teams/${teamId}`, {
+  const data = await requestJson<any>(`/api/teams/${teamId}`, {
     method: 'PUT',
     headers: authHeaders(),
     body: JSON.stringify(teamData),
-  });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to update team (${response.status})`);
-  }
-  const data = await response.json();
+  }, 'The team could not be updated.');
   return {
     ...data.team,
     members: data.members || [],
@@ -108,16 +73,10 @@ export async function updateTeam(teamId: string, teamData: Omit<Team, 'id' | 'cr
 }
 
 export async function deleteTeam(teamId: string): Promise<void> {
-  const response = await fetch(`${BACKEND_URL}/api/teams/${teamId}`, {
+  await requestJson<{ success: boolean }>(`/api/teams/${teamId}`, {
     method: 'DELETE',
     headers: authHeaders(),
-  });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to delete team (${response.status})`);
-  }
+  }, 'The team could not be deleted.');
 }
 
 export async function startRun(
@@ -127,37 +86,20 @@ export async function startRun(
 ): Promise<{ run_id: string; conversation_id: string }> {
   const payload = { goal, member_tasks: memberTasks };
   console.log('[startRun] payload:', JSON.stringify(payload));
-  const response = await fetch(`${BACKEND_URL}/api/teams/${teamId}/runs`, {
+  const data = await requestJson<any>(`/api/teams/${teamId}/runs`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(payload),
-  });
-  if (response.status === 401) throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  if (!response.ok) {
-    const errBody = await response.json().catch(() => ({}));
-    console.error('[startRun] error:', errBody);
-    throw new Error(errBody.detail || `Failed to start run (${response.status})`);
-  }
-  const data = await response.json();
+  }, 'The team run could not be started.');
   return { run_id: data.run_id, conversation_id: data.run?.conversation_id || '' };
 }
 
 export async function getRun(teamId: string, runId: string): Promise<TeamRun> {
-  const response = await fetch(`${BACKEND_URL}/api/teams/${teamId}/runs/${runId}`, {
-    headers: authHeaders(),
-  });
-  if (response.status === 401) throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  if (!response.ok) throw new Error(`Failed to get run (${response.status})`);
-  const data = await response.json();
+  const data = await requestJson<any>(`/api/teams/${teamId}/runs/${runId}`, { headers: authHeaders() }, 'The team run could not be loaded.');
   return { ...data.run, members: data.members || [] };
 }
 
 export async function listRuns(teamId: string): Promise<TeamRun[]> {
-  const response = await fetch(`${BACKEND_URL}/api/teams/${teamId}/runs`, {
-    headers: authHeaders(),
-  });
-  if (response.status === 401) throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  if (!response.ok) throw new Error(`Failed to list runs (${response.status})`);
-  const data = await response.json();
+  const data = await requestJson<any>(`/api/teams/${teamId}/runs`, { headers: authHeaders() }, 'Team runs could not be loaded.');
   return data.runs || [];
 }

@@ -193,10 +193,10 @@ To change the backend URL:
 
 ### Adding New API Endpoints
 
-1. Create a new router in `backend/routers/`
+1. Create a new router in `backend/api/routers/`
 2. Include it in `backend/api/routes.py`:
    ```python
-   from backend.routers.new_feature import router as new_feature_router
+   from backend.api.routers.new_feature import router as new_feature_router
    router.include_router(new_feature_router, prefix="/new-feature")
    ```
 3. Create corresponding API client function in `frontend/lib/api.ts`
@@ -248,7 +248,7 @@ curl -X POST http://localhost:8000/api/chat/ \
 
 **Solutions:**
 1. Make sure you're running from project root (`/Users/hritvik/Downloads/ceo-agent`)
-2. All imports should use `backend.` prefix (e.g., `from backend.workflows...`)
+2. All imports should use `backend.` prefix (e.g., `from backend.core.workflows...`)
 
 ### TypeScript errors
 

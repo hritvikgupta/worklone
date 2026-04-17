@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Plus, Trash2, Save, Loader2, Sparkles, Paperclip, Mic, Send, BookOpen, FileText } from 'lucide-react';
+import { X, Plus, Trash2, Save, Loader2, Sparkles, Paperclip, Mic, Send, BookOpen, FileText, Check, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getModelsCatalog, getToolsCatalog, EmployeeModelOption, getAvailableProviders, ProviderInfo } from '@/src/api/employees';
 import { ModelSelect } from '@/src/components/ModelSelect';
@@ -76,7 +79,7 @@ const emptyForm: EmployeeFormData = {
 
 export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: EmployeePanelProps) {
   const [form, setForm] = useState<EmployeeFormData>(emptyForm);
-  const [activeTab, setActiveTab] = useState<'profile' | 'tools' | 'skills'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'tools' | 'skills' | 'memory'>('profile');
   const [newSkill, setNewSkill] = useState({ skill_name: '', category: 'research', description: '' });
   const [availableTools, setAvailableTools] = useState<AvailableTool[]>([]);
   const [toolsLoading, setToolsLoading] = useState(false);
@@ -93,6 +96,7 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
   const [selectedSkillDetail, setSelectedSkillDetail] = useState<PublicSkillDetail | null>(null);
   const [availableSkillSlugs, setAvailableSkillSlugs] = useState<string[]>([]);
   const [agentFiles, setAgentFiles] = useState<FileItem[]>([]);
+  const [toolSearch, setToolSearch] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -173,6 +177,14 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
         .finally(() => {
           if (!cancelled) setPublicSkillsLoading(false);
         });
+
+      getMarkdownTree('agent')
+        .then((treeData) => {
+          if (!cancelled) {
+            setAgentFiles(mapMarkdownNodesToFileItems(treeData));
+          }
+        })
+        .catch(() => {});
     }
 
     return () => {
@@ -227,6 +239,15 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const toggleFile = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      memory: prev.memory.includes(id)
+        ? prev.memory.filter((fid) => fid !== id)
+        : [...prev.memory, id],
+    }));
+  };
+
   const toggleTool = (toolName: string) => {
     setForm((prev) => ({
       ...prev,
@@ -240,7 +261,7 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
     if (!newSkill.skill_name.trim()) return;
     setForm((prev) => ({
       ...prev,
-      skills: [...prev.skills, { ...newSkill }],
+      skills: [...prev.skills, { ...newSkill, proficiency_level: 50 }],
     }));
     setNewSkill({ skill_name: '', category: 'research', description: '' });
   };
@@ -263,151 +284,108 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
   return (
     <AnimatePresence>
       {open && (
-        <>
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex justify-end p-4 sm:p-6 lg:p-8">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-background/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+            style={{
+              backgroundImage: 'radial-gradient(circle, var(--border) 1px, transparent 1px)',
+              backgroundSize: '24px 24px'
+            }}
           />
 
-          {/* Slide Panel */}
           <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed right-0 top-0 z-50 h-full w-[80%] max-w-6xl bg-card shadow-2xl"
+            initial={{ opacity: 0, x: 50, scale: 0.98 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 50, scale: 0.98 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-lg h-full bg-background rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden"
           >
-            <div className="relative flex h-full flex-col overflow-hidden">
-              {/* Panel Header */}
-              <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {employee ? 'Edit Employee' : 'Create Employee'}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {employee ? 'Update persona, tools, and capabilities' : 'Define a new AI employee'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onClose}
-                    className="gap-1.5 text-xs"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={isSaving || !form.name.trim()}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Save className="h-3.5 w-3.5" />
-                    )}
-                    {isSaving ? 'Saving...' : 'Save Employee'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={onClose}
-                    className="h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+            <div className="flex items-center justify-between p-4 border-b border-border bg-background">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center bg-muted/50 p-1 rounded-full border border-border/50">
+                  {(['profile', 'tools', 'skills', 'memory'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        "px-4 py-1.5 text-sm font-medium rounded-full transition-all capitalize",
+                        activeTab === tab
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
 
-              {/* Tabs */}
-              <div className="flex border-b border-border px-6">
-                {(['profile', 'tools', 'skills', 'memory'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`border-b-2 px-4 py-2.5 text-sm font-medium capitalize transition-colors ${
-                      activeTab === tab
-                        ? 'border-primary text-foreground'
-                        : 'border-transparent text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-5 pb-56">
+            <div className="flex-1 overflow-y-auto bg-muted/20">
+              <div className="p-6">
                 {activeTab === 'profile' && (
-                  <div className="w-full max-w-none space-y-6 text-left">
-                    {/* Name */}
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        Name <span className="text-destructive">*</span>
-                      </label>
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Name</Label>
                       <input
                         type="text"
                         value={form.name}
                         onChange={(e) => updateField('name', e.target.value)}
-                        placeholder="e.g. Katy, Sam, Mira"
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                        placeholder="Employee name"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring h-11 shadow-sm"
                       />
                     </div>
 
-                    {/* Role */}
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        Role <span className="text-destructive">*</span>
-                      </label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Role</Label>
                       <input
                         type="text"
                         value={form.role}
                         onChange={(e) => updateField('role', e.target.value)}
-                        placeholder="e.g. Product Manager, Data Analyst"
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                        placeholder="e.g. Senior Backend Engineer"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring h-11 shadow-sm"
                       />
                     </div>
 
-                    {/* Avatar URL */}
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        Avatar URL
-                      </label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Avatar URL</Label>
                       <input
                         type="text"
                         value={form.avatar_url}
                         onChange={(e) => updateField('avatar_url', e.target.value)}
-                        placeholder="https://api.dicebear.com/7.x/avataaars/svg?seed=katy"
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                        placeholder="https://..."
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring h-11 shadow-sm"
                       />
                     </div>
 
-                    {/* Description */}
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        Description
-                      </label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">Description</Label>
                       <textarea
                         value={form.description}
                         onChange={(e) => updateField('description', e.target.value)}
-                        placeholder="Brief description of what this employee does..."
                         rows={3}
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring resize-none shadow-sm"
+                        placeholder="A brief bio or description"
                       />
                     </div>
 
-                    <Separator />
+                    <Separator className="bg-border/50" />
 
-                    {/* Model */}
-                    <div>
-                      <label className="mb-1.5 block text-sm font-medium text-foreground">
-                        LLM Model
-                      </label>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-muted-foreground">LLM Model</Label>
                       <ModelSelect
                         value={form.model}
                         onChange={(value) => updateField('model', value)}
@@ -417,22 +395,15 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                         provider={selectedProvider}
                         onProviderChange={(provider) => {
                           setSelectedProvider(provider);
-                          // Clear current model when switching providers
                           updateField('model', '');
                         }}
                         availableProviders={availableProviders}
                       />
-                      {modelsLoading && (
-                        <p className="mt-1.5 text-[11px] text-muted-foreground">Loading models...</p>
-                      )}
                     </div>
 
-                    {/* Temperature & Max Tokens */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="mb-1.5 block text-sm font-medium text-foreground">
-                          Temperature
-                        </label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-muted-foreground">Temperature</Label>
                         <div className="flex items-center gap-3">
                           <input
                             type="range"
@@ -443,15 +414,13 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                             onChange={(e) => updateField('temperature', parseFloat(e.target.value))}
                             className="flex-1"
                           />
-                          <span className="w-12 text-center text-sm font-mono text-foreground">
+                          <span className="w-10 text-right text-xs font-mono text-foreground">
                             {form.temperature.toFixed(1)}
                           </span>
                         </div>
                       </div>
-                      <div>
-                        <label className="mb-1.5 block text-sm font-medium text-foreground">
-                          Max Tokens
-                        </label>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-muted-foreground">Max Tokens</Label>
                         <input
                           type="number"
                           value={form.max_tokens}
@@ -459,43 +428,46 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                           min="256"
                           max="16384"
                           step="256"
-                          className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring h-10 shadow-sm"
                         />
                       </div>
                     </div>
 
-                    <Separator />
+                    <Separator className="bg-border/50" />
 
-                    {/* System Prompt */}
-                    <div>
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <label className="text-sm font-medium text-foreground">
-                          System Prompt
-                        </label>
-                        <Badge variant="secondary" className="gap-1 text-[10px] bg-emerald-500/10 text-emerald-400">
-                          <Sparkles className="h-3 w-3" />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium text-muted-foreground">System Prompt</Label>
+                        <Badge variant="outline" className="text-[10px] bg-emerald-500/5 text-emerald-600 border-emerald-500/20">
                           Persona Definition
                         </Badge>
                       </div>
                       <textarea
                         value={form.system_prompt}
                         onChange={(e) => updateField('system_prompt', e.target.value)}
-                        placeholder={`You are {name}, a {role}. Your responsibilities include...`}
                         rows={12}
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-mono text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring shadow-sm"
+                        placeholder="Define the employee's instructions..."
                       />
-                      <p className="mt-1.5 text-[11px] text-muted-foreground">
-                        Define the persona, responsibilities, and behavior rules for this employee.
-                      </p>
                     </div>
                   </div>
                 )}
 
                 {activeTab === 'tools' && (
-                  <div className="w-full max-w-none space-y-4 text-left">
-                    <p className="text-sm text-muted-foreground">
-                      Select which tools this employee can access. Tools give the employee the ability to interact with external systems.
-                    </p>
+                  <div className="space-y-4">
+                    <div className="flex flex-col gap-3">
+                      <p className="text-xs text-muted-foreground">Configure the capabilities and tools accessible to this employee.</p>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search tools..."
+                          value={toolSearch}
+                          onChange={(e) => setToolSearch(e.target.value)}
+                          className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring h-10 shadow-sm"
+                        />
+                      </div>
+                    </div>
                     {toolsError && (
                       <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                         {toolsError}
@@ -508,119 +480,121 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                       </div>
                     )}
                     <div className="grid gap-2">
-                      {availableTools.map((tool) => {
+                      {availableTools
+                        .filter((tool) =>
+                          tool.name.toLowerCase().includes(toolSearch.toLowerCase()) ||
+                          tool.description.toLowerCase().includes(toolSearch.toLowerCase()) ||
+                          tool.category.toLowerCase().includes(toolSearch.toLowerCase())
+                        )
+                        .map((tool) => {
                         const isSelected = form.tools.includes(tool.name);
                         return (
                           <button
                             key={tool.name}
                             type="button"
                             onClick={() => toggleTool(tool.name)}
-                            className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-all ${
+                            className={cn(
+                              "flex flex-col gap-1 rounded-xl border p-4 text-left transition-all",
                               isSelected
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-card hover:bg-muted'
-                            }`}
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                            )}
                           >
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <div className="text-sm font-medium text-foreground">{tool.name}</div>
-                                <Badge variant="secondary" className="text-[10px] capitalize">
-                                  {tool.category.replace(/_/g, ' ')}
-                                </Badge>
-                              </div>
-                              <div className="text-xs text-muted-foreground">{tool.description}</div>
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm font-semibold text-foreground">{tool.name}</div>
+                              {isSelected && <Check className="h-4 w-4 text-primary" />}
                             </div>
-                            <Badge
-                              variant="secondary"
-                              className={`text-[10px] ${
-                                isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                              }`}
-                            >
-                              {isSelected ? 'Enabled' : 'Disabled'}
-                            </Badge>
+                            <div className="text-xs leading-relaxed opacity-70">{tool.description}</div>
+                            <div className="mt-2 flex items-center gap-2">
+                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider px-1.5 py-0">
+                                {tool.category.replace(/_/g, ' ')}
+                              </Badge>
+                            </div>
                           </button>
                         );
                       })}
                     </div>
-                    {!toolsLoading && !toolsError && availableTools.length === 0 && (
-                      <div className="rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-                        No tools available.
-                      </div>
-                    )}
                   </div>
                 )}
 
                 {activeTab === 'skills' && (
-                  <div className="w-full max-w-none space-y-6 text-left">
-                    <div>
-                      <p className="text-sm text-muted-foreground">
-                        Skills represent high-level capabilities assigned from the public skills library. They are shown on the dashboard and help categorize what the employee does.
-                      </p>
-                    </div>
-
-                    {/* Add Skill from Public Library */}
-                    <div className="rounded-lg border border-border bg-muted p-4 space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Plus className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-foreground">Add Skill from Library</span>
-                      </div>
+                  <div className="space-y-6">
+                    <Card className="border-border/60 shadow-sm overflow-hidden">
+                      <CardHeader className="bg-muted/30 pb-3">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-bold uppercase tracking-wider text-foreground">Add Skill from Library</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-4">
                       {publicSkillsLoading ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Loading public skills...
                         </div>
                       ) : (
-                        <>
-                          <Select
-                            value={newSkill.skill_name}
-                            onValueChange={(value) => {
-                              const skill = publicSkills.find((s) => s.slug === value);
-                              if (skill) {
-                                setNewSkill({
-                                  skill_name: skill.slug,
-                                  category: skill.category,
-                                  description: skill.description,
-                                });
-                              }
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a public skill..." />
-                            </SelectTrigger>
-                            <SelectContent className="w-auto min-w-[320px]">
-                              {publicSkills
-                                .filter((s) => !form.skills.some((fs) => fs.skill_name === s.slug))
-                                .map((s) => (
-                                  <SelectItem key={s.slug} value={s.slug}>
-                                    {s.title} — {s.category}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
+                          <>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium text-muted-foreground">Select a public skill</Label>
+                              <Select
+                                value={newSkill.skill_name}
+                                onValueChange={(value) => {
+                                  const skill = publicSkills.find((s) => s.slug === value);
+                                  if (skill) {
+                                    setNewSkill({
+                                      skill_name: skill.slug,
+                                      category: skill.category,
+                                      description: skill.description,
+                                    });
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="h-10 bg-background">
+                                  <SelectValue placeholder="Select a public skill..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {publicSkills
+                                    .filter((s) => !form.skills.some((fs) => fs.skill_name === s.slug))
+                                    .map((s) => (
+                                      <SelectItem key={s.slug} value={s.slug}>
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="font-medium">{s.title}</span>
+                                          <span className="text-[10px] text-muted-foreground uppercase">{s.category}</span>
+                                        </div>
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           {newSkill.skill_name && (
-                            <div className="text-xs text-muted-foreground">{newSkill.description}</div>
-                          )}
-                          <Button
-                            size="sm"
-                            onClick={addSkill}
-                            disabled={!newSkill.skill_name.trim()}
-                            className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/80"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                            Add Skill
-                          </Button>
+                              <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground leading-relaxed italic">
+                                {newSkill.description}
+                              </div>
+                            )}
+                            <Button
+                              size="sm"
+                              onClick={addSkill}
+                              disabled={!newSkill.skill_name.trim()}
+                              className="w-full h-9 gap-2"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Attach to Employee
+                            </Button>
                         </>
                       )}
-                    </div>
+                      </CardContent>
+                    </Card>
 
-                    {/* Skills List */}
-                    {form.skills.length > 0 ? (
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-foreground">Assigned Skills ({form.skills.length})</h4>
+                    <div className="space-y-3">
+                      <Label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
+                        Assigned Skills ({form.skills.length})
+                      </Label>
+                      {form.skills.length > 0 ? (
+                        <div className="space-y-2">
                         {form.skills.map((skill, index) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-3"
+                            className="flex items-center justify-between rounded-xl border border-border/60 bg-background p-3 shadow-sm hover:border-primary/30 transition-all"
                           >
                             <button
                               type="button"
@@ -631,41 +605,53 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                                   .then((d) => setSelectedSkillDetail(d))
                                   .catch(() => {});
                               }}
-                              className="flex flex-1 items-center gap-2 text-left"
+                              className="flex flex-1 items-center gap-3 text-left min-w-0"
                             >
-                              <BookOpen className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-foreground">{skill.skill_name}</span>
-                              <Badge variant="secondary" className="text-[10px] capitalize">
-                                {skill.category}
-                              </Badge>
+                              <div className="h-8 w-8 rounded-lg bg-primary/5 flex items-center justify-center shrink-0">
+                                <BookOpen className="h-4 w-4 text-primary" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-foreground truncate">{skill.skill_name}</p>
+                                <Badge variant="outline" className="text-[9px] uppercase tracking-wider h-4 px-1 border-none bg-muted text-muted-foreground">
+                                  {skill.category}
+                                </Badge>
+                              </div>
                             </button>
-                            <button
-                              type="button"
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => removeSkill(index)}
-                              className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </button>
+                            </Button>
                           </div>
                         ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-start justify-center rounded-lg border-2 border-border border-border py-12 pl-4 text-left">
-                        <p className="text-sm text-muted-foreground">No skills assigned yet</p>
-                        <p className="mt-1 text-xs text-muted-foreground">Add skills from the public library above</p>
-                      </div>
-                    )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-10 bg-background/50">
+                          <p className="text-xs text-muted-foreground">No skills assigned yet</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {activeTab === 'memory' && (
-                  <div className="w-full max-w-none space-y-6 text-left">
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-medium text-foreground">Memory Files</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Select files and folders to index into this employee's memory.
-                      </p>
-                    </div>
+                  <div className="space-y-6 text-left">
+                    <Card className="border-border/60 shadow-sm overflow-hidden">
+                      <CardHeader className="bg-muted/30 pb-3">
+                        <div className="flex items-center gap-2">
+                          <Paperclip className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-bold uppercase tracking-wider text-foreground">Memory Files</span>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-4 space-y-4">
+                        <p className="text-xs text-muted-foreground">
+                          Select files and folders to index into this employee's memory.
+                        </p>
+                      </CardContent>
+                    </Card>
 
                     <div className="border border-border/60 rounded-2xl bg-background overflow-hidden shadow-sm">
                       <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
@@ -683,13 +669,13 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
 
                     {form.memory.length > 0 && (
                       <div className="mt-6 p-4 rounded-xl border border-primary/20 bg-primary/5">
-                        <label className="text-xs font-bold uppercase tracking-widest text-primary mb-2 block">Attached to Memory</label>
+                        <Label className="text-xs font-bold uppercase tracking-widest text-primary mb-2 block">Attached to Memory</Label>
                         <div className="flex flex-wrap gap-2">
                           {form.memory.map((fid) => (
-                            <Badge key={fid} variant="secondary" className="gap-1.5 px-2 py-1 bg-background border-border text-foreground">
+                            <Badge key={fid} variant="secondary" className="gap-1.5 px-2 py-1 bg-background border-border">
                               <FileText className="w-3 h-3 text-muted-foreground" />
                               {fid.split('/').pop() || fid}
-                              <button type="button" onClick={() => toggleFile(fid)} className="hover:text-destructive text-muted-foreground transition-colors ml-1">
+                              <button type="button" onClick={() => toggleFile(fid)} className="hover:text-destructive">
                                 <X className="w-3 h-3" />
                               </button>
                             </Badge>
@@ -700,39 +686,29 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-6">
-                <div className="pointer-events-auto mx-auto w-full max-w-3xl">
-                  <div className="relative rounded-xl border border-border bg-card p-3 shadow-sm transition-colors focus-within:border-ring">
-                    <textarea
-                      placeholder="Chat with this employee..."
-                      disabled
-                      rows={2}
-                      className="min-h-[52px] w-full resize-none border-none bg-transparent py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
-                    />
-                    <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
-                      <div className="flex items-center gap-1">
-                        <span className="rounded-md border border-border bg-muted px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                          Chat panel
-                        </span>
-                        <Button variant="ghost" size="icon" disabled className="h-8 w-8 text-muted-foreground">
-                          <Paperclip className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" disabled className="h-8 w-8 text-muted-foreground">
-                          <Mic className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <Button
-                        size="icon"
-                        disabled
-                        className="h-8 w-8 rounded-lg bg-primary text-primary-foreground hover:bg-primary disabled:opacity-100"
-                      >
-                        <Send className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="p-4 border-t border-border bg-background flex items-center justify-end gap-3 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)]">
+              <Button variant="outline" onClick={onClose} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !form.name.trim()}
+                className="gap-2 px-6"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
             </div>
           </motion.div>
 
@@ -829,7 +805,7 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
               );
             })()}
           </AnimatePresence>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

@@ -1,4 +1,4 @@
-import { BACKEND_URL } from '../../lib/api';
+import { BACKEND_URL, requestJson, throwIfErrorResponse } from '../../lib/api';
 
 export interface Sprint {
   id: string;
@@ -78,88 +78,74 @@ export async function getActiveSprint(): Promise<SprintData> {
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
   });
-  if (!res.ok) {
-    if (res.status === 404) {
-        throw new Error("No active sprint found");
-    }
-    throw new Error('Failed to fetch active sprint');
+  if (!res.ok && res.status === 404) {
+    throw new Error('No active sprint found');
   }
+  await throwIfErrorResponse(res, 'The active sprint could not be loaded.');
   return res.json();
 }
 
 export async function createTask(sprintId: string, data: { title: string; column_id: string; requirements?: string; description?: string; priority?: string; employee_id?: string }): Promise<{ task_id: string }> {
-  const res = await fetch(`${BACKEND_URL}/api/sprints/${sprintId}/tasks`, {
+  return requestJson<{ task_id: string }>(`/api/sprints/${sprintId}/tasks`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
     body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to create task');
-  return res.json();
+  }, 'The sprint task could not be created.');
 }
 
 export async function updateTaskColumn(taskId: string, columnId: string): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/sprints/tasks/${taskId}/column`, {
+  await requestJson<{ status: string }>(`/api/sprints/tasks/${taskId}/column`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
     body: JSON.stringify({ column_id: columnId }),
-  });
-  if (!res.ok) throw new Error('Failed to update task column');
+  }, 'The task column could not be updated.');
 }
 
 export async function updateTaskDetails(taskId: string, data: { title: string; description: string; requirements: string }): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/sprints/tasks/${taskId}/details`, {
+  await requestJson<{ status: string }>(`/api/sprints/tasks/${taskId}/details`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
     body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to update task details');
+  }, 'The task details could not be updated.');
 }
 
 export async function updateTaskAssignment(taskId: string, employeeId: string): Promise<void> {
-  const res = await fetch(`${BACKEND_URL}/api/sprints/tasks/${taskId}/assignment`, {
+  await requestJson<{ status: string }>(`/api/sprints/tasks/${taskId}/assignment`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
     body: JSON.stringify({ employee_id: employeeId }),
-  });
-  if (!res.ok) throw new Error('Failed to update task assignment');
+  }, 'The task assignment could not be updated.');
 }
 
 export async function runTask(sprintId: string, taskId: string): Promise<{ run_id: string; status: string }> {
-  const res = await fetch(`${BACKEND_URL}/api/sprints/${sprintId}/tasks/${taskId}/run`, {
+  return requestJson<{ run_id: string; status: string }>(`/api/sprints/${sprintId}/tasks/${taskId}/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(body || 'Failed to start task run');
-  }
-  return res.json();
+  }, 'The sprint task run could not be started.');
 }
 
 export async function addTaskMessage(taskId: string, data: { content: string; sender_id?: string; sender_name?: string; sender_type?: string; message_type?: string }): Promise<{ message_id: string }> {
-  const res = await fetch(`${BACKEND_URL}/api/sprints/tasks/${taskId}/messages`, {
+  return requestJson<{ message_id: string }>(`/api/sprints/tasks/${taskId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
     },
     body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error('Failed to add message');
-  return res.json();
+  }, 'The task message could not be added.');
 }

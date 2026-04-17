@@ -5,8 +5,8 @@ from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from dotenv import load_dotenv
 
-from backend.employee.react_agent import ContextMessage, GenericEmployeeAgent
-from backend.store.auth_store import AuthDB
+from backend.core.agents.employee.react_agent import ContextMessage, GenericEmployeeAgent
+from backend.db.stores.auth_store import AuthDB
 
 load_dotenv()
 

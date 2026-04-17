@@ -4,7 +4,7 @@ Handles per-user per-employee chat sessions.
 """
 
 from typing import Optional
-from backend.store.auth_store import AuthDB
+from backend.db.stores.auth_store import AuthDB
 
 _db = AuthDB()
 

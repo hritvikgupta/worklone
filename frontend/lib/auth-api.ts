@@ -2,7 +2,7 @@
  * Auth API functions
  */
 
-import { BACKEND_URL } from './api';
+import { BACKEND_URL, errorMessageForCode, parseBackendError } from './api';
 
 export const AUTH_EXPIRED_ERROR = 'AUTH_EXPIRED';
 
@@ -18,6 +18,8 @@ export interface AuthResponse {
   token?: string;
   user?: AuthUser;
   error?: string;
+  error_code?: string;
+  retryable?: boolean;
 }
 
 /**
@@ -31,10 +33,19 @@ export async function register(email: string, password: string, name: string): P
       body: JSON.stringify({ email, password, name }),
     });
 
+    if (!response.ok) {
+      throw await parseBackendError(response, 'Registration failed.');
+    }
     return await response.json();
   } catch (error) {
     console.error('Register error:', error);
-    return { success: false, error: 'Registration failed' };
+    const code = error instanceof Error && 'code' in error && typeof error.code === 'string' ? error.code : 'AUTH_REGISTER_FAILED';
+    return {
+      success: false,
+      error: errorMessageForCode(code, 'Registration failed'),
+      error_code: code,
+      retryable: true,
+    };
   }
 }
 
@@ -49,10 +60,19 @@ export async function login(email: string, password: string): Promise<AuthRespon
       body: JSON.stringify({ email, password }),
     });
 
+    if (!response.ok) {
+      throw await parseBackendError(response, 'Login failed.');
+    }
     return await response.json();
   } catch (error) {
     console.error('Login error:', error);
-    return { success: false, error: 'Login failed' };
+    const code = error instanceof Error && 'code' in error && typeof error.code === 'string' ? error.code : 'AUTH_LOGIN_FAILED';
+    return {
+      success: false,
+      error: errorMessageForCode(code, 'Login failed'),
+      error_code: code,
+      retryable: true,
+    };
   }
 }
 

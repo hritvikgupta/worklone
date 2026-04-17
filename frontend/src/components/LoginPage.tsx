@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, User } from 'lucide-react';
 import { motion } from 'motion/react';
+import { errorMessageForCode } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 export function LoginPage() {
@@ -19,15 +20,20 @@ export function LoginPage() {
     setIsLoading(true);
 
     try {
-      let success: boolean;
+      let result;
       if (isLogin) {
-        success = await login(email, password);
+        result = await login(email, password);
       } else {
-        success = await register(email, password, name);
+        result = await register(email, password, name);
       }
 
-      if (!success) {
-        setError(isLogin ? 'Invalid email or password' : 'Registration failed. Email may already be in use.');
+      if (!result.success) {
+        setError(
+          errorMessageForCode(
+            result.error_code || 'AUTH_FAILED',
+            result.error || (isLogin ? 'Invalid email or password.' : 'Registration failed.')
+          )
+        );
       }
     } catch {
       setError('An error occurred. Please try again.');

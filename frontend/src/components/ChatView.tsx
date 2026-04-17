@@ -19,6 +19,7 @@ import {
   getEmployeeChatSessionMessages,
   listEmployeeChatSessions,
   streamEmployeeChatEvents,
+  resumeEmployeeChat,
   ChatSession,
 } from '@/lib/api';
 import { listEmployees, EmployeeDetail } from '@/src/api/employees';
@@ -94,7 +95,13 @@ export function ChatView() {
   const [isLoading, setIsLoading] = useState(false);
   const [activePlans, setActivePlans] = useState<Record<string, ChatMessageData['plan']>>({});
   const [isPlanCollapsed, setIsPlanCollapsed] = useState(false);
-  
+  const [pendingResume, setPendingResume] = useState<{
+    employeeId: string;
+    sessionId: string;
+    askType: string;
+  } | null>(null);
+  const [isResuming, setIsResuming] = useState(false);
+
   const isStreamingRef = useRef(false);
 
   useEffect(() => {
@@ -148,6 +155,7 @@ export function ChatView() {
       }));
       setMessages(prev => ({ ...prev, [employeeId]: mappedMessages }));
       setActivePlans(prev => ({ ...prev, [employeeId]: undefined })); // Reset plan on session load
+      setPendingResume(null);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
     }
@@ -182,6 +190,28 @@ export function ChatView() {
   const handleSwitchSession = (sessionId: string) => {
     setActiveSessionId(prev => ({ ...prev, [activeEmployeeId]: sessionId }));
     void fetchMessages(activeEmployeeId, sessionId);
+  };
+
+  const handlePlanDecision = async (approved: boolean) => {
+    if (!pendingResume) return;
+    setIsResuming(true);
+    try {
+      await resumeEmployeeChat(pendingResume.employeeId, {
+        approved,
+        message: approved ? 'Approved' : 'Rejected',
+        session_id: pendingResume.sessionId,
+      });
+      setActivePlans(prev => {
+        const plan = prev[pendingResume.employeeId];
+        if (!plan) return prev;
+        return { ...prev, [pendingResume.employeeId]: { ...plan, status: approved ? 'approved' : 'proposed' } };
+      });
+    } catch (e) {
+      console.error('Failed to resume:', e);
+    } finally {
+      setPendingResume(null);
+      setIsResuming(false);
+    }
   };
 
   const handleSend = async (text: string) => {
@@ -380,6 +410,31 @@ export function ChatView() {
               detail: event.success === false ? (event.message || event.output || 'Tool failed') : undefined,
             };
           }
+        } else if (event.type === 'confirmation_required') {
+          const confirmMsg = event.message || 'Waiting for your approval to continue.';
+          const askType = event.ask_type || 'approval';
+          // Update plan with the ask_user message as description
+          if (event.plan) {
+            setActivePlans(prev => ({
+              ...prev,
+              [activeEmployeeId]: {
+                mode: (event.plan as any)?.mode || prev[activeEmployeeId]?.mode || 'multi_step',
+                reason: (event.plan as any)?.reason || prev[activeEmployeeId]?.reason || '',
+                message: confirmMsg,
+                status: 'proposed',
+                tasks: prev[activeEmployeeId]?.tasks || [],
+              },
+            }));
+          }
+          // Show the agent's question as the answer bubble
+          answerBuffer = confirmMsg;
+          activities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
+          setIsLoading(false);
+          setPendingResume({
+            employeeId: activeEmployeeId,
+            sessionId: sessionId,
+            askType,
+          });
         } else if (event.type === 'task_started') {
           const taskId = event.task_id || '';
           setActivePlans(prev => {
@@ -405,6 +460,7 @@ export function ChatView() {
             },
           ];
         } else if (event.type === 'final') {
+          setPendingResume(null);
           activities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
           answerBuffer = event.content || answerBuffer;
         } else if (event.type === 'error') {
@@ -578,6 +634,30 @@ export function ChatView() {
               </div>
             ))}
           </div>
+          )}
+
+          {pendingResume && pendingResume.askType === 'approval' && selectedPlan.status !== 'approved' && selectedPlan.status !== 'running' && selectedPlan.status !== 'completed' && (
+            <div className="flex items-center justify-end gap-2 border-t border-[var(--chat-border)] px-3 py-2.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handlePlanDecision(false)}
+                disabled={isResuming}
+                className="h-8 px-3 text-[11px]"
+              >
+                Reject
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => void handlePlanDecision(true)}
+                disabled={isResuming}
+                className="h-8 px-3 text-[11px]"
+              >
+                {isResuming ? 'Approving…' : 'Approve plan'}
+              </Button>
+            </div>
           )}
         </div>
       </div>

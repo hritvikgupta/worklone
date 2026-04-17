@@ -3,14 +3,14 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AuthUser } from '@/lib/auth-api';
+import { AuthUser, AuthResponse } from '@/lib/auth-api';
 import * as authApi from '@/lib/auth-api';
 
 interface AuthContextType {
   user: AuthUser | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthResponse>;
+  register: (email: string, password: string, name: string) => Promise<AuthResponse>;
   logout: () => void;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -73,26 +73,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [token]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<AuthResponse> => {
     const result = await authApi.login(email, password);
     if (result.success && result.token) {
       setToken(result.token);
       setUser(result.user || null);
       localStorage.setItem('auth_token', result.token);
-      return true;
+      return result;
     }
-    return false;
+    return result;
   };
 
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
+  const register = async (email: string, password: string, name: string): Promise<AuthResponse> => {
     const result = await authApi.register(email, password, name);
     if (result.success && result.token) {
       setToken(result.token);
       setUser(result.user || null);
       localStorage.setItem('auth_token', result.token);
-      return true;
+      return result;
     }
-    return false;
+    return result;
   };
 
   const logout = () => {

@@ -4,7 +4,7 @@ Single source of truth for the get_current_user FastAPI dependency.
 """
 
 from fastapi import Header
-from backend.store.auth_store import AuthDB
+from backend.db.stores.auth_store import AuthDB
 
 _db = AuthDB()
 

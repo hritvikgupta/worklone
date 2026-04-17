@@ -252,20 +252,21 @@ export function HowItWorksSection() {
   }
 
   return (
-    <div ref={containerRef} className="relative h-[500vh] mb-32 sm:mb-48">
-        <section className="sticky top-0 h-screen flex items-center bg-white px-6 sm:px-8 lg:px-10 border-y border-black/5 overflow-hidden">
-
-        <div className="mx-auto max-w-6xl w-full">
-            <div className="mb-20 text-center mx-auto max-w-2xl">
+    <div className="mb-32 sm:mb-48">
+        <div className="mb-16 pt-16 text-center mx-auto max-w-2xl px-6">
             <h2 className="text-[32px] sm:text-[40px] font-medium tracking-tight text-zinc-950 leading-tight">
                 How it works
             </h2>
             <p className="mt-6 text-[16px] sm:text-[18px] leading-7 text-zinc-600">
                 From hiring to execution, get your AI workforce up and running in minutes.
             </p>
-            </div>
+        </div>
 
-            <div className="grid lg:grid-cols-[1.1fr_1.3fr] gap-12 lg:gap-24 items-center">
+        <div ref={containerRef} className="relative h-[500vh]">
+            <section className="sticky top-0 h-screen flex items-center bg-white px-6 sm:px-8 lg:px-10 border-y border-black/5 overflow-hidden">
+
+            <div className="mx-auto max-w-6xl w-full">
+                <div className="grid lg:grid-cols-[1.1fr_1.3fr] gap-12 lg:gap-24 items-center">
             <div className="w-full">
                 <Stepper value={activeStep} orientation="vertical">
                 <StepperNav className="w-full">
@@ -318,6 +319,7 @@ export function HowItWorksSection() {
             </div>
         </div>
         </section>
+        </div>
     </div>
   );
 }

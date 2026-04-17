@@ -12,7 +12,7 @@ from typing import Any, Callable, Optional
 
 import httpx
 
-from backend.store.auth_store import AuthDB
+from backend.db.stores.auth_store import AuthDB
 
 
 def _get_provider_env_value(provider: str, suffix: str) -> str:

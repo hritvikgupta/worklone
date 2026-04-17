@@ -1,15 +1,4 @@
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem('auth_token');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
-}
+import { BACKEND_URL, requestJson, throwIfErrorResponse } from '../../lib/api';
 
 export interface WorkflowSummary {
   id: string;
@@ -78,15 +67,7 @@ export interface WorkflowDetail extends WorkflowSummary {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { ...authHeaders(), ...options?.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
-  }
-  return res.json();
+  return requestJson<T>(path, options, 'The workflow request could not be completed.');
 }
 
 export async function generateWorkflow(prompt: string, model?: string): Promise<{ success: boolean; workflow_id: string }> {
@@ -110,14 +91,14 @@ export async function executeWorkflow(
   workflowId: string,
   onEvent?: (event: Record<string, unknown>) => void,
 ): Promise<{ success: boolean }> {
-  const res = await fetch(`${API_BASE}/api/workflows/${workflowId}/execute`, {
+  const res = await fetch(`${BACKEND_URL}/api/workflows/${workflowId}/execute`, {
     method: 'POST',
-    headers: authHeaders(),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+    },
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
-  }
+  await throwIfErrorResponse(res, 'The workflow execution could not be started.');
   if (!res.body) return { success: true };
 
   const reader = res.body.getReader();

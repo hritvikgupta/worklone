@@ -3,16 +3,16 @@ API Routes
 """
 
 from fastapi import APIRouter
-from backend.routers.chat import router as chat_router
-from backend.routers.auth import router as auth_router
-from backend.routers.oauth import router as oauth_router
-from backend.routers.files import router as files_router
-from backend.routers.skills import router as skills_router
-from backend.routers.employee import router as employee_router
-from backend.routers.workflows import router as workflows_router
-from backend.routers.teams import router as teams_router
-from backend.routers.sprints import router as sprints_router
-from backend.routers.dashboard import router as dashboard_router
+from backend.api.routers.chat import router as chat_router
+from backend.api.routers.auth import router as auth_router
+from backend.api.routers.oauth import router as oauth_router
+from backend.api.routers.files import router as files_router
+from backend.api.routers.skills import router as skills_router
+from backend.api.routers.employee import router as employee_router
+from backend.api.routers.workflows import router as workflows_router
+from backend.api.routers.teams import router as teams_router
+from backend.api.routers.sprints import router as sprints_router
+from backend.api.routers.dashboard import router as dashboard_router
 
 router = APIRouter()
 

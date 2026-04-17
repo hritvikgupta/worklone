@@ -7,6 +7,37 @@
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 export const CHAT_AUTH_EXPIRED_ERROR = 'CHAT_AUTH_EXPIRED';
 
+export interface BackendErrorShape {
+  code: string;
+  message: string;
+  retryable: boolean;
+  details?: Record<string, unknown>;
+}
+
+export class BackendApiError extends Error {
+  code: string;
+  retryable: boolean;
+  status?: number;
+  details?: Record<string, unknown>;
+
+  constructor(
+    message: string,
+    options?: {
+      code?: string;
+      retryable?: boolean;
+      status?: number;
+      details?: Record<string, unknown>;
+    }
+  ) {
+    super(message);
+    this.name = 'BackendApiError';
+    this.code = options?.code || 'UNKNOWN_ERROR';
+    this.retryable = options?.retryable ?? false;
+    this.status = options?.status;
+    this.details = options?.details;
+  }
+}
+
 export interface ChatRequest {
   message: string;
   user_id?: string;
@@ -81,6 +112,7 @@ export interface ChatStreamEvent {
   task_id?: string;
   task_title?: string;
   instructions?: string;
+  error?: BackendErrorShape;
 }
 
 export interface EmployeeChatResumePayload {
@@ -176,7 +208,21 @@ function parseSseBufferChunk(buffer: string): {
   return { events, remaining, done: false };
 }
 
-function authHeaders(): Record<string, string> {
+export function isBackendApiError(error: unknown): error is BackendApiError {
+  return error instanceof BackendApiError;
+}
+
+export function getErrorMessage(error: unknown, fallback = 'Something went wrong.'): string {
+  if (error instanceof BackendApiError) {
+    return error.message;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
+
+export function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('auth_token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -187,25 +233,133 @@ function authHeaders(): Record<string, string> {
   return headers;
 }
 
+async function readJsonSafe(response: Response): Promise<unknown> {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+export function errorMessageForCode(code: string, fallback: string): string {
+  switch (code) {
+    case 'PROVIDER_TIMEOUT':
+      return 'The service is taking too long to respond. Try again in a moment.';
+    case 'PROVIDER_REQUEST_FAILED':
+      return 'The service is busy right now. Try again shortly.';
+    case 'INVALID_PROVIDER_RESPONSE':
+      return 'The service returned an invalid response. Try again.';
+    case 'PROVIDER_UNAVAILABLE':
+      return 'This service is not configured right now.';
+    case 'EMPLOYEE_CHAT_FAILED':
+    case 'KATY_CHAT_FAILED':
+      return 'The chat service could not complete the request.';
+    case 'EMPLOYEE_CHAT_STREAM_FAILED':
+    case 'KATY_CHAT_STREAM_FAILED':
+      return 'The chat stream stopped unexpectedly.';
+    case 'WORKFLOW_EXECUTION_FAILED':
+      return 'The workflow execution failed.';
+    case 'WORKFLOW_GENERATION_FAILED':
+      return 'The workflow generator could not complete the request.';
+    case 'WORKFLOW_LIST_FAILED':
+      return 'Workflows could not be loaded right now.';
+    case 'MODEL_CATALOG_UNAVAILABLE':
+      return 'The model catalog could not be loaded right now.';
+    case 'AUTH_INVALID_CREDENTIALS':
+      return 'Invalid email or password.';
+    case 'AUTH_EMAIL_IN_USE':
+      return 'That email is already in use.';
+    case 'AUTH_PASSWORD_TOO_SHORT':
+      return 'Password must be at least 6 characters.';
+    default:
+      return fallback;
+  }
+}
+
+export async function parseBackendError(response: Response, fallbackMessage: string): Promise<BackendApiError> {
+  const data = await readJsonSafe(response);
+
+  if (data && typeof data === 'object') {
+    const record = data as Record<string, unknown>;
+    const nestedError = record.error;
+    if (nestedError && typeof nestedError === 'object') {
+      const err = nestedError as Record<string, unknown>;
+      const code = typeof err.code === 'string' ? err.code : 'API_ERROR';
+      const message = typeof err.message === 'string' ? err.message : errorMessageForCode(code, fallbackMessage);
+      const retryable = typeof err.retryable === 'boolean' ? err.retryable : response.status >= 500;
+      const details = err.details && typeof err.details === 'object' ? (err.details as Record<string, unknown>) : undefined;
+      return new BackendApiError(errorMessageForCode(code, message), {
+        code,
+        retryable,
+        status: response.status,
+        details,
+      });
+    }
+
+    const code = typeof record.error_code === 'string' ? record.error_code : undefined;
+    const message =
+      typeof record.error === 'string'
+        ? record.error
+        : typeof record.detail === 'string'
+          ? record.detail
+          : fallbackMessage;
+    if (code || typeof record.error === 'string' || typeof record.detail === 'string') {
+      return new BackendApiError(errorMessageForCode(code || 'API_ERROR', message), {
+        code: code || 'API_ERROR',
+        retryable: typeof record.retryable === 'boolean' ? record.retryable : response.status >= 500,
+        status: response.status,
+      });
+    }
+  }
+
+  const text = await response.text().catch(() => '');
+  return new BackendApiError(text || fallbackMessage, {
+    code: 'HTTP_ERROR',
+    retryable: response.status >= 500,
+    status: response.status,
+  });
+}
+
+export async function throwIfErrorResponse(response: Response, fallbackMessage: string): Promise<void> {
+  if (response.status === 401) {
+    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
+  }
+  if (!response.ok) {
+    throw await parseBackendError(response, fallbackMessage);
+  }
+}
+
+export async function requestJson<T>(
+  path: string,
+  options?: RequestInit,
+  fallbackMessage = 'Request failed.'
+): Promise<T> {
+  const response = await fetch(`${BACKEND_URL}${path}`, {
+    headers: { ...authHeaders(), ...options?.headers },
+    ...options,
+  });
+  await throwIfErrorResponse(response, fallbackMessage);
+  return response.json();
+}
+
 /**
  * Send a message to Katy and get a response
  */
 export async function sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/chat/`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(request),
-    });
-
-    if (response.status === 401) {
-      throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-    }
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await requestJson<ChatResponse>(
+      '/api/chat/',
+      {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(request),
+      },
+      'The chat service could not complete the request.'
+    );
     return data;
   } catch (error) {
     console.error('Error sending chat message:', error);
@@ -215,20 +369,15 @@ export async function sendChatMessage(request: ChatRequest): Promise<ChatRespons
 
 export async function sendEmployeeChatMessage(employeeId: string, request: EmployeeChatRequest): Promise<ChatResponse> {
   try {
-    const response = await fetch(`${BACKEND_URL}/api/employees/${employeeId}/chat`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(request),
-    });
-
-    if (response.status === 401) {
-      throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-    }
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await requestJson<ChatResponse>(
+      `/api/employees/${employeeId}/chat`,
+      {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(request),
+      },
+      'The employee chat service could not complete the request.'
+    );
     return data;
   } catch (error) {
     console.error('Error sending employee chat message:', error);
@@ -247,12 +396,7 @@ export async function* streamChatEvents(request: ChatRequest): AsyncGenerator<Ch
       body: JSON.stringify(request),
     });
 
-    if (response.status === 401) {
-      throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-    }
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    await throwIfErrorResponse(response, 'The chat stream could not be started.');
 
     const reader = response.body?.getReader();
     if (!reader) {
@@ -304,12 +448,7 @@ export async function resumeEmployeeChat(
       body: JSON.stringify(payload),
     }
   );
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to resume employee chat (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The employee chat could not be resumed.');
   return response.json();
 }
 
@@ -324,12 +463,7 @@ export async function* streamEmployeeChatEvents(
       body: JSON.stringify(request),
     });
 
-    if (response.status === 401) {
-      throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-    }
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    await throwIfErrorResponse(response, 'The employee chat stream could not be started.');
 
     const reader = response.body?.getReader();
     if (!reader) {
@@ -373,12 +507,7 @@ export async function listChatSessions(): Promise<ChatSession[]> {
   const response = await fetch(`${BACKEND_URL}/api/chat/sessions`, {
     headers: authHeaders(),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to list sessions (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'Chat sessions could not be loaded.');
   const data = await response.json();
   return data.sessions || [];
 }
@@ -389,12 +518,7 @@ export async function createChatSession(title = 'New Chat', model?: string): Pro
     headers: authHeaders(),
     body: JSON.stringify({ title, model }),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to create session (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The chat session could not be created.');
   const data = await response.json();
   return data.session;
 }
@@ -409,12 +533,7 @@ export async function createEmployeeChatSession(
     headers: authHeaders(),
     body: JSON.stringify({ title, model }),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to create employee session (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The employee chat session could not be created.');
   const data = await response.json();
   return data.session;
 }
@@ -423,12 +542,7 @@ export async function listEmployeeChatSessions(employeeId: string): Promise<Chat
   const response = await fetch(`${BACKEND_URL}/api/employees/${employeeId}/chat/sessions`, {
     headers: authHeaders(),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to list employee sessions (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'Employee chat sessions could not be loaded.');
   const data = await response.json();
   return data.sessions || [];
 }
@@ -443,12 +557,7 @@ export async function getEmployeeChatSessionMessages(
       headers: authHeaders(),
     }
   );
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load employee session messages (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'Employee chat messages could not be loaded.');
   const data = await response.json();
   return data.messages || [];
 }
@@ -457,12 +566,7 @@ export async function getChatSessionMessages(sessionId: string): Promise<ChatSes
   const response = await fetch(`${BACKEND_URL}/api/chat/sessions/${sessionId}/messages`, {
     headers: authHeaders(),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load session messages (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'Chat messages could not be loaded.');
   const data = await response.json();
   return data.messages || [];
 }
@@ -471,12 +575,7 @@ export async function getMarkdownTree(scope: 'agent' | 'shared'): Promise<Markdo
   const response = await fetch(`${BACKEND_URL}/api/files/tree?scope=${scope}`, {
     headers: authHeaders(),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load markdown tree (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'Files could not be loaded.');
   const data = await response.json();
   return data.tree || [];
 }
@@ -491,12 +590,7 @@ export async function getMarkdownContent(
       headers: authHeaders(),
     }
   );
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load file (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The file could not be loaded.');
   return response.json();
 }
 
@@ -518,12 +612,7 @@ export async function uploadFile(
     headers, // Don't set Content-Type, let browser set it with boundary
     body: formData,
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to upload file (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The file could not be uploaded.');
   return response.json();
 }
 
@@ -547,12 +636,7 @@ export async function fetchRawFileBlob(scope: string, path: string): Promise<Blo
       headers: authHeaders(),
     }
   );
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load raw file (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The file could not be loaded.');
   return response.blob();
 }
 
@@ -566,12 +650,7 @@ export async function updateMarkdownContent(
     headers: authHeaders(),
     body: JSON.stringify({ scope, path, content }),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to update markdown file (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The file could not be saved.');
   return response.json();
 }
 
@@ -579,12 +658,7 @@ export async function listPublicSkills(): Promise<PublicSkillListItem[]> {
   const response = await fetch(`${BACKEND_URL}/api/skills/public`, {
     headers: authHeaders(),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load public skills (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'Public skills could not be loaded.');
   const data = await response.json();
   return data.skills || [];
 }
@@ -593,12 +667,7 @@ export async function getPublicSkillDetail(slug: string): Promise<PublicSkillDet
   const response = await fetch(`${BACKEND_URL}/api/skills/public/${encodeURIComponent(slug)}`, {
     headers: authHeaders(),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to load public skill detail (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The public skill could not be loaded.');
   const data = await response.json();
   return data.skill;
 }
@@ -615,12 +684,7 @@ export async function createPublicSkill(request: CreatePublicSkillRequest): Prom
     headers: authHeaders(),
     body: JSON.stringify(request),
   });
-  if (response.status === 401) {
-    throw new Error(CHAT_AUTH_EXPIRED_ERROR);
-  }
-  if (!response.ok) {
-    throw new Error(`Failed to create public skill (${response.status})`);
-  }
+  await throwIfErrorResponse(response, 'The public skill could not be created.');
   const data = await response.json();
   return data.skill;
 }

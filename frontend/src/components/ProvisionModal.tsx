@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getErrorMessage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { generateEmployeePrompt, GeneratedPromptResult } from '@/src/api/employees';
 import type { EmployeeFormData } from '@/src/components/EmployeePanel';
@@ -49,6 +50,7 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
         max_tokens: 4096,
         tools: result.tools,
         skills: result.skills,
+        memory: [],
       };
 
       onGenerated(form);
@@ -56,7 +58,7 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
       setName('');
       setDescription('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate prompt');
+      setError(getErrorMessage(err, 'Failed to generate prompt'));
     } finally {
       setLoading(false);
     }

@@ -8,8 +8,8 @@ import sys
 from typing import List, Optional, AsyncGenerator, Dict, Any
 from dotenv import load_dotenv
 
-from backend.product_manager.katy import KatyPMAgent
-from backend.store.auth_store import AuthDB
+from backend.core.agents.product_manager.katy import KatyPMAgent
+from backend.db.stores.auth_store import AuthDB
 
 load_dotenv()
 
@@ -44,7 +44,7 @@ class KatyService:
         if len(agent.messages) > 0:
             return
 
-        from backend.product_manager.katy import ContextMessage
+        from backend.core.agents.product_manager.katy import ContextMessage
 
         if session_id:
             stored_history = self.db.get_chat_history(session_id=session_id, limit=500)
