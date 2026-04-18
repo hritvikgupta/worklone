@@ -8,6 +8,7 @@ const workforceProfiles = [
     name: 'Katy',
     role: 'Product Manager',
     image: '/employees/women_1.png',
+    bgColor: 'bg-[#F4F7FB]', // soft blue
     summary: 'Katy owns roadmap definition, requirement quality, and execution cadence across the workspace. She translates ambiguous requests into clear plans, creates the right artifacts, and keeps product, engineering, and operations aligned around the next highest-leverage move.',
     stats: {
       runtime: '1,420 hrs',
@@ -22,6 +23,7 @@ const workforceProfiles = [
     name: 'Sam',
     role: 'Data Analyst',
     image: '/employees/men_1.png',
+    bgColor: 'bg-[#F0FDF4]', // soft emerald/green
     summary: 'Sam turns messy operational and product data into decisions that can actually be acted on. He explains movement in the numbers, monitors health across the business, and produces concise analysis that helps the team move faster with less guesswork.',
     stats: {
       runtime: '980 hrs',
@@ -36,6 +38,7 @@ const workforceProfiles = [
     name: 'Mira',
     role: 'Growth Lead',
     image: '/employees/women_2.png',
+    bgColor: 'bg-[#FAF5FF]', // soft purple
     summary: 'Mira drives acquisition, positioning, and funnel improvement through disciplined experimentation. She identifies where growth is stalling, tests what changes conversion, and keeps demand generation tied to measurable commercial outcomes.',
     stats: {
       runtime: '1,150 hrs',
@@ -61,19 +64,16 @@ function ProfileCard({ profile }: { profile: typeof workforceProfiles[0] }) {
         style={{ transformStyle: 'preserve-3d' }}
       >
         {/* Front of Card */}
-        <div 
+        <div
           className={cn(
-            "w-full bg-white rounded-[32px] border border-black/[0.08] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-12 backface-hidden",
+            "w-full rounded-[32px] border border-black/[0.08] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-12 backface-hidden",
+            profile.bgColor || "bg-white",
             isFlipped ? "pointer-events-none" : "pointer-events-auto"
           )}
           style={{ backfaceVisibility: 'hidden' }}
-        >
-          <div className="grid items-center gap-12 lg:grid-cols-2 min-h-[380px]">
+        >          <div className="grid items-center gap-12 lg:grid-cols-2 min-h-[380px]">
             <div className="order-2 lg:order-1 flex flex-col justify-center h-full">
               <div>
-                <div className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-zinc-500 mb-6">
-                  Autonomous Employee
-                </div>
                 <h3 className="text-3xl font-medium tracking-tight text-zinc-950">
                   {profile.name}
                 </h3>

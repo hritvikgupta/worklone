@@ -266,7 +266,7 @@ export function HowItWorksSection() {
             <section className="sticky top-0 h-screen flex items-center bg-white px-6 sm:px-8 lg:px-10 border-y border-black/5 overflow-hidden">
 
             <div className="mx-auto max-w-6xl w-full">
-                <div className="grid lg:grid-cols-[1.1fr_1.3fr] gap-12 lg:gap-24 items-center">
+                <div className="grid lg:grid-cols-[0.8fr_1.4fr] gap-12 lg:gap-24 items-center">
             <div className="w-full">
                 <Stepper value={activeStep} orientation="vertical">
                 <StepperNav className="w-full">
@@ -277,22 +277,22 @@ export function HowItWorksSection() {
                         className="relative flex flex-col items-start w-full group/step"
                         completed={activeStep > index + 1}
                     >
-                        <StepperTrigger className="w-full items-start gap-6 pb-12 last:pb-0 group-data-[state=inactive]/step:opacity-30 transition-all duration-700 ease-in-out">
-                        <StepperIndicator className="mt-1 size-9 shrink-0 border-none data-[state=active]:bg-zinc-950 data-[state=active]:text-white data-[state=completed]:bg-zinc-950 data-[state=completed]:text-white bg-zinc-100 text-zinc-500 font-medium text-sm transition-all duration-500">
+                        <StepperTrigger className="w-full items-start gap-4 pb-8 last:pb-0 group-data-[state=inactive]/step:opacity-30 transition-all duration-700 ease-in-out">
+                        <StepperIndicator className="mt-0.5 size-8 shrink-0 border-none data-[state=active]:bg-zinc-950 data-[state=active]:text-white data-[state=completed]:bg-zinc-950 data-[state=completed]:text-white bg-zinc-100 text-zinc-500 font-medium text-sm transition-all duration-500">
                             {activeStep > index + 1 ? <CheckIcon className="size-4" /> : index + 1}
                         </StepperIndicator>
-                        <div className="text-left flex-1 pt-0.5">
-                            <StepperTitle className="text-[20px] font-medium text-zinc-950 mb-2">
+                        <div className="text-left flex-1 pt-1">
+                            <StepperTitle className="text-[16px] font-medium text-zinc-950 mb-1.5">
                             {step.title}
                             </StepperTitle>
-                            <StepperDescription className="text-[16px] leading-relaxed text-zinc-600">
+                            <StepperDescription className="text-[14px] leading-relaxed text-zinc-600">
                             {step.description}
                             </StepperDescription>
                         </div>
                         </StepperTrigger>
                         
                         {index < steps.length - 1 && (
-                        <StepperSeparator className="absolute left-[17.5px] top-11 h-[calc(100%-2.75rem)] w-[1.5px] bg-zinc-100 group-data-[state=completed]/step:bg-zinc-950 transition-colors duration-1000" />
+                        <StepperSeparator className="absolute left-[15px] top-10 h-[calc(100%-2.5rem)] w-[1.5px] bg-zinc-100 group-data-[state=completed]/step:bg-zinc-950 transition-colors duration-1000" />
                         )}
                     </StepperItem>
                     ))}

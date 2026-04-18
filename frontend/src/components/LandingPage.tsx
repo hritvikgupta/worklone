@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
@@ -89,29 +89,52 @@ const pricingPlans = [
 ];
 
 export function LandingPage() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
-      <section className="relative overflow-hidden bg-white">
-        <div className="relative px-6 pt-5 sm:px-8 lg:px-10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src="/brand/worklone-mark-black.png"
-                alt="Worklone"
-                className="h-7 w-auto"
-              />
-              <div className="text-lg font-semibold tracking-tight">Worklone</div>
-            </div>
-
-            <Link
-              to="/waitlist"
-              className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-            >
-              Join Waitlist
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+      {/* Sticky Navbar */}
+      <div 
+        className={`fixed top-0 z-50 flex w-full justify-center transition-all duration-500 ${
+          isScrolled ? 'pt-0' : 'pt-5'
+        }`}
+      >
+        <div 
+          className={`flex items-center justify-between bg-white/95 backdrop-blur-md transition-all duration-500 ${
+            isScrolled 
+              ? 'w-full px-6 py-4 sm:px-8 lg:px-10 shadow-sm' 
+              : 'mx-auto w-[90%] rounded-[28px] px-6 py-3 shadow-sm'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <img
+              src="/brand/worklone-mark-black.png"
+              alt="Worklone"
+              className="h-7 w-auto"
+            />
+            <div className="text-[18px] font-normal tracking-[-0.02em] text-[#0F172A] font-['Lato']">Worklone</div>
           </div>
 
+          <Link
+            to="/waitlist"
+            className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+          >
+            Join Waitlist
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+
+      <section className="relative overflow-hidden bg-white pt-24">
+        <div className="relative px-6 sm:px-8 lg:px-10">
           <div className="relative z-10 mx-auto max-w-4xl px-4 pt-16 pb-6 text-center sm:pt-20">
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
