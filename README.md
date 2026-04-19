@@ -1,8 +1,7 @@
 # Worklone: AI Employees That Learn & Adapt
 
 [![License: Non--Commercial--Research](https://img.shields.io/badge/License-Non--Commercial--Research-red.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-3776AB.svg?logo=python)](https://www.python.org/downloads/)
-[![Node.js 18+](https://img.shields.io/badge/node-%3E%3D18-339933.svg?logo=node.js)](https://nodejs.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
@@ -41,7 +40,7 @@ Commercial use, resale, hosted paid offerings, or product monetization are not a
 
 ### 👥 AI Employee System
 - **Create custom employees** with specific roles, personalities, and capabilities
-- **Gemenic Workplace self-learning employees** — adaptive employees that improve through production feedback loops
+- **Self-learning employees** — adaptive employees that improve through production feedback loops
 - **Assign 500+ tools** — from GitHub and Slack to Salesforce and Stripe
 - **Track performance** — monitor tokens, costs, and activity per employee
 - **Team collaboration** — employees can message each other and work together on tasks
@@ -59,7 +58,7 @@ Commercial use, resale, hosted paid offerings, or product monetization are not a
 
 ### 🔒 Private & Self-Hosted
 - **100% self-hosted** — your data never leaves your infrastructure
-- **Zero-config persistence** — SQLite database, no Redis or PostgreSQL required
+- **Persistent data layer** — SQLite for application state, Redis for dispatch/realtime coordination
 - **Multi-tenant** — owner-based data isolation with session and API key auth
 
 ---
@@ -67,42 +66,37 @@ Commercial use, resale, hosted paid offerings, or product monetization are not a
 ## Quick Start
 
 ### Prerequisites
-- Python 3.9+
-- Node.js 18+
+- Docker Desktop (or Docker Engine + Compose)
 - An [OpenRouter API key](https://openrouter.ai/) (or NVIDIA API key)
 
 ### 1. Clone & Configure
 ```bash
-git clone https://github.com/YOUR_USERNAME/worklone.git
+git clone https://github.com/hritvikgupta/worklone.git
 cd worklone
 cp .env.example .env
-# Edit .env and add your OPENROUTER_API_KEY
-# For open-source/self-hosted usage keep: DEPLOYMENT_MODE=self_hosted
-# For managed platform usage set: DEPLOYMENT_MODE=cloud and PROVIDER_* OAuth credentials
 ```
 
-### 2. Start the Platform (Docker, recommended)
-```bash
-# First run (builds images and installs all Python/Node dependencies automatically)
-./scripts/docker-up.sh
-```
+Edit `.env` and set:
+- `OPENROUTER_API_KEY=...`
+- `DEPLOYMENT_MODE=self_hosted` (for open-source/self-hosted usage)
 
-In detached mode:
-```bash
-docker compose up -d --build
-```
-
-If port `3000` is already in use on your machine, this script auto-cleans it and starts Docker:
+### 2. Start the Platform
 ```bash
 ./scripts/docker-up.sh
 ```
 
-Stop all services:
+The script:
+- starts Docker if needed
+- frees frontend port conflicts
+- builds images
+- starts `frontend + backend + redis`
+
+Stop services:
 ```bash
 docker compose down
 ```
 
-### 3. Launch Gemenic Workplace
+### 3. Open Worklone
 Open:
 - Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:8000`
@@ -112,35 +106,9 @@ Open:
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Worklone Platform                     │
-├─────────────────────────────────────────────────────────┤
-│  Frontend (React + TypeScript + Tailwind)               │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐   │
-│  │ Dashboard   │ │ Chat UI     │ │ Workflow Builder│   │
-│  └─────────────┘ └─────────────┘ └─────────────────┘   │
-├─────────────────────────────────────────────────────────┤
-│  Backend (FastAPI + Python)                             │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐   │
-│  │ Agent Engine│ │ Tool System │ │ Workflow Engine │   │
-│  │ (ReAct)     │ │ (500+ tools)│ │ (DAG-based)     │   │
-│  └─────────────┘ └─────────────┘ └─────────────────┘   │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │           Self-Learning System                  │   │
-│  │  ┌──────────────┐  ┌──────────────────────┐    │   │
-│  │  │ User Memory  │  │ Learned Skills       │    │   │
-│  │  │ (every 8     │  │ (every 10 tool       │    │   │
-│  │  │  turns)      │  │  iterations)         │    │   │
-│  │  └──────────────┘  └──────────────────────┘    │   │
-│  └─────────────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────────────┤
-│  Persistence (SQLite)                                   │
-│  Employees · Workflows · Skills · Memory · Auth         │
-└─────────────────────────────────────────────────────────┘
-```
+The current architecture (frontend + backend + redis + sqlite + self-learning loop) is documented here:
 
-See [Architecture Overview](docs/ARCHITECTURE.md) for detailed system design.
+- [Architecture](docs/ARCHITECTURE.md)
 
 ---
 
@@ -148,7 +116,6 @@ See [Architecture Overview](docs/ARCHITECTURE.md) for detailed system design.
 
 | Document | Description |
 |----------|-------------|
-| [Installation Guide](docs/INSTALLATION.md) | Detailed setup for local, Docker, and production |
 | [Architecture](docs/ARCHITECTURE.md) | System design, data flow, and principles |
 | [AI Employees](docs/AGENTS.md) | How employees work, create, and collaborate |
 | [Self-Learning](docs/SELF_LEARNING.md) | How employees learn and improve over time |
@@ -201,9 +168,9 @@ AI ops managers can:
 
 ## Tech Stack
 
-**Backend:** FastAPI, Python 3.9+, SQLite, httpx, Pydantic, Uvicorn
+**Backend:** FastAPI, Python 3.11 (Docker image), SQLite, Redis, httpx, Pydantic, Uvicorn
 **Frontend:** React 19, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Recharts
-**LLM Providers:** OpenRouter (primary), NVIDIA NIM (secondary)
+**LLM Providers:** OpenRouter, OpenAI, Groq, NVIDIA NIM (user-configurable)
 **Integrations:** GitHub, Slack, Gmail, Jira, Notion, Salesforce, Stripe, Linear, HubSpot, Google Drive, Google Calendar, and more
 
 ---

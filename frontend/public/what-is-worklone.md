@@ -32,13 +32,13 @@ We do not believe one generic agent should be expected to do everything equally 
 
 So Worklone is built around specialization. The employee is provisioned with identity, instructions, skills, memory, and the right access boundaries for its role. That structure matters because useful execution depends on more than model quality. It depends on role clarity. Once the role is clear, the employee can not only perform its own duties but also orchestrate work around them, creating automations or workflows where they make sense instead of treating workflows as the product itself.
 
-## Why Katy Matters
+## Why Role-Specialized Employees Matter
 
-Our first employee, Katy, is a Product Manager. We started there because product work is one of the clearest tests of whether AI can actually function as an employee rather than as a utility. A real product manager does not just answer questions. They interpret ambiguity, define the shape of work, create artifacts, prioritize trade-offs, coordinate action, and bring structure where none existed before.
+Our earliest production focus has been product work because it stress-tests the employee model in realistic conditions. Product tasks are ambiguous, cross-functional, and artifact-heavy. They require reasoning, prioritization, structured writing, and coordination across systems. That makes them a strong proving ground for whether an AI employee can operate with ownership rather than just answer prompts.
 
-Katy has been an important proof point for us because she demonstrates the behavior we think this category requires. She does not simply wait to be prompted for output. She can take a business request, reason through what matters, create the right artifacts, and move the task toward execution. That matters more to us than any isolated benchmark because it shows the employee model can work in a role that demands both judgment and orchestration.
+What matters to us is not one model benchmark or one generated response. What matters is repeatable execution quality across full task lifecycles: understanding intent, planning, acting with tools, adapting to feedback, and delivering outputs that teams can actually use. That is the behavior Worklone is designed to scale across multiple roles.
 
-Katy is not the endpoint. She is the first expression of the model. The larger ambition is a workforce of specialized AI employees operating across product, engineering, analytics, operations, research, and other functions inside one shared system.
+The long-term target is a workforce of specialized AI employees across product, engineering, analytics, operations, research, and more, each with clear role boundaries and shared operating context.
 
 ## Why Now
 

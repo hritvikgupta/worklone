@@ -7,31 +7,21 @@ Worklone provides a comprehensive REST API and WebSocket interface for interacti
 ## Base URL
 
 ```
-http://localhost:8000/api
+http://localhost:8000
 ```
 
 ---
 
 ## Authentication
 
-All requests (except health checks and registration) require authentication.
+Most requests require authentication (except health + register/login).
 
 ### Methods
 
 | Method | Header | Example |
 |--------|--------|---------|
 | API Key | `x-api-key` | `x-api-key: sk-worklone-...` |
-| User ID | `x-user-id` | `x-user-id: user-123` |
 | Bearer Token | `Authorization` | `Authorization: Bearer token` |
-
-### Generating API Keys
-
-```bash
-curl -X POST http://localhost:8000/api/auth/keys \
-  -H "x-user-id: your-user-id" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "My API Key"}'
-```
 
 ---
 
@@ -45,7 +35,7 @@ curl -X POST http://localhost:8000/api/auth/keys \
 
 ```bash
 curl http://localhost:8000/health
-# {"status": "ok"}
+# {"status": "healthy", "version": "1.0.0"}
 ```
 
 ---
@@ -56,37 +46,17 @@ curl http://localhost:8000/health
 |--------|------|-------------|
 | `POST` | `/api/auth/register` | Register a new user |
 | `POST` | `/api/auth/login` | Login and create session |
-| `GET` | `/api/users/me` | Get current user info |
-| `POST` | `/api/auth/keys` | Generate API key |
-| `GET` | `/api/auth/keys` | List API keys |
-| `DELETE` | `/api/auth/keys/{id}` | Delete API key |
-| `GET` | `/api/auth/sessions` | List active sessions |
-| `DELETE` | `/api/auth/sessions/{id}` | Revoke session |
-
-#### Register
-
-```bash
-curl -X POST http://localhost:8000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "secure123"}'
-```
-
-#### Login
-
-```bash
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "secure123"}'
-```
+| `GET` | `/api/auth/me` | Get current user info |
+| `POST` | `/api/auth/logout` | Logout current session |
 
 ---
 
-### Chat (Katy)
+### Chat
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/chat` | Send message to Katy (non-streaming) |
-| `POST` | `/api/chat/stream` | Send message to Katy (SSE streaming) |
+| `POST` | `/api/chat` | Send message (non-streaming) |
+| `POST` | `/api/chat/stream` | Send message (SSE streaming) |
 | `GET` | `/api/chat/sessions` | List chat sessions |
 | `POST` | `/api/chat/sessions` | Create chat session |
 | `GET` | `/api/chat/sessions/{id}/messages` | Get session messages |
@@ -218,10 +188,10 @@ curl -X POST http://localhost:8000/api/employees \
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/api/files/upload` | Upload file |
-| `GET` | `/api/files/{id}/download` | Download file |
 | `GET` | `/api/files/tree` | Get file tree |
-| `GET` | `/api/files/{id}` | Get file metadata |
-| `DELETE` | `/api/files/{id}` | Delete file |
+| `GET` | `/api/files/raw` | Read file bytes/content by `scope` + `path` |
+| `GET` | `/api/files/content` | Read text content by `scope` + `path` |
+| `PUT` | `/api/files/content` | Create/update text content by `scope` + `path` |
 
 ---
 
@@ -236,46 +206,35 @@ curl -X POST http://localhost:8000/api/employees \
 
 ---
 
-### OAuth/Integrations
+### Integrations
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/oauth/connect/{provider}` | Connect OAuth provider |
-| `POST` | `/api/oauth/disconnect/{provider}` | Disconnect OAuth provider |
-| `GET` | `/api/oauth/callback/{provider}` | OAuth callback handler |
+| `GET` | `/api/integrations/` | List integrations and connection status |
+| `GET` | `/api/integrations/authorize` | Generate OAuth authorization URL |
+| `GET` | `/api/integrations/callback/{provider}` | OAuth callback handler |
+| `POST` | `/api/integrations/{provider}/disconnect` | Disconnect integration |
+| `PUT` | `/api/integrations/credentials` | Save self-hosted OAuth client credentials |
+| `GET` | `/api/integrations/credentials/{provider}` | Get client credential status |
 
 ---
 
-## WebSocket Interface
+## Realtime Interface
 
-### `/ws`
+The backend mounts Socket.IO under:
 
-Connect for real-time streaming of agent reasoning and tool usage.
+- `http://localhost:8000/socket.io`
 
-#### Connection
+SSE is still used for streaming chat endpoints.
 
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws');
-```
+---
 
-#### Sending Messages
+## Source of Truth
 
-```json
-{
-  "type": "message",
-  "content": "Create a workflow to summarize my emails"
-}
-```
+Use the generated OpenAPI docs for exact request/response schemas:
 
-#### Response Types
-
-| Type | Description |
-|------|-------------|
-| `chunk` | Incremental text output |
-| `action` | Tool being called |
-| `observation` | Tool execution result |
-| `final` | Final response from agent |
-| `error` | Error details |
+- `http://localhost:8000/docs`
+- `http://localhost:8000/openapi.json`
 
 ---
 

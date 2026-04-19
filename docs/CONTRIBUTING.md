@@ -12,7 +12,7 @@ Thank you for considering contributing to Worklone! We welcome contributions of 
 
 Before creating a bug report:
 
-- Check the [issue tracker](https://github.com/YOUR_USERNAME/worklone/issues) for existing reports
+- Check the [issue tracker](https://github.com/hritvikgupta/worklone/issues) for existing reports
 - Test with the latest version
 
 When submitting a bug report, include:
@@ -20,12 +20,12 @@ When submitting a bug report, include:
 - **Clear title** and description
 - **Steps to reproduce** the issue
 - **Expected vs actual** behavior
-- **Environment details** (OS, Python version, Node version)
+- **Environment details** (OS, Docker version, browser)
 - **Logs or screenshots** if applicable
 
 ### Suggesting Features
 
-Open a [Feature Request](https://github.com/YOUR_USERNAME/worklone/issues) with:
+Open a [Feature Request](https://github.com/hritvikgupta/worklone/issues) with:
 
 - **Clear title** and description
 - **Use case** — why this feature would be useful
@@ -54,25 +54,21 @@ Open a [Feature Request](https://github.com/YOUR_USERNAME/worklone/issues) with:
 ### 1. Fork & Clone
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/worklone.git
+git clone https://github.com/hritvikgupta/worklone.git
 cd worklone
 ```
 
-### 2. Backend Setup
+### 2. Configure Environment
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your API keys
 ```
 
-### 3. Frontend Setup
+### 3. Start Stack (Docker)
 
 ```bash
-cd frontend
-npm install
+./scripts/docker-up.sh
 ```
 
 ### 4. Run Tests
@@ -169,8 +165,8 @@ Documentation improvements are always welcome:
 
 ## Community
 
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/worklone/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/worklone/discussions)
+- **Issues**: [GitHub Issues](https://github.com/hritvikgupta/worklone/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/hritvikgupta/worklone/discussions)
 
 ---
 

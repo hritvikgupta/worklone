@@ -37,33 +37,24 @@ Every employee has these attributes:
 
 ---
 
-## Pre-built Employee: Katy
+## Pre-configured Employee Templates
 
-**Katy** is Worklone's flagship AI Product Manager. She comes pre-configured and ready to work.
+Worklone includes example employee configurations you can use as starting points.
 
-### Expertise
+Typical template focus areas:
 
-- Strategic planning and roadmaps
-- Feature prioritization (RICE, MoSCoW)
-- Cross-functional leadership
-- Customer advocacy and user research
-- Data-driven decision making
-- Go-to-market strategy
-- Requirements definition (PRDs, user stories)
+- Product and planning roles
+- Engineering and debugging roles
+- Operations and support roles
+- Research and analysis roles
 
-### Tools
+You can fully customize any template:
 
-Katy has access to PM-specific tools including:
-- Document creation and management
-- Team communication
-- Workflow creation and monitoring
-- User research and analysis tools
-
-### Try Katy
-
-After starting Worklone, open the dashboard and start chatting with Katy immediately. Try:
-
-> "Katy, create a PRD for a new feature that lets users schedule reports"
+- identity and role
+- system prompt
+- allowed tools
+- assigned skills
+- model/provider behavior via LLM settings
 
 ---
 

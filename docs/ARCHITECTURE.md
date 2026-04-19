@@ -1,310 +1,156 @@
-# Architecture Overview
+# Worklone Architecture
 
-Worklone is a full-stack platform for deploying AI employees that reason, act, and learn. This document explains how the system is designed, how components interact, and the principles that guide the architecture.
+Worklone is a Docker-first, self-hosted platform for creating and operating AI employees. This document reflects the current runtime architecture in this repository.
 
----
-
-## System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          Worklone Platform                           │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                    FRONTEND (React 19)                       │   │
-│  │                                                              │   │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────────────┐     │   │
-│  │  │ Dashboard  │  │ Chat UI    │  │ Workflow Builder   │     │   │
-│  │  │ & Analytics│  │ (SSE + WS) │  │ (Drag & Drop)      │     │   │
-│  │  └────────────┘  └────────────┘  └────────────────────┘     │   │
-│  │                                                              │   │
-│  │  Tech: TypeScript · Vite · Tailwind CSS v4 · shadcn/ui      │   │
-│  │        · Recharts · React Router · Framer Motion            │   │
-│  └──────────────────────────┬───────────────────────────────────┘   │
-│                             │ HTTP / SSE / WebSocket                │
-│  ┌──────────────────────────▼───────────────────────────────────┐   │
-│  │                    BACKEND (FastAPI)                         │   │
-│  │                                                              │   │
-│  │  ┌──────────────────────────────────────────────────────┐   │   │
-│  │  │                  API Layer (routers/)                 │   │   │
-│  │  │  Auth · Chat · Employees · Workflows · Teams         │   │   │
-│  │  │  Sprints · Dashboard · Files · Skills · OAuth        │   │   │
-│  │  └──────────────────────────────────────────────────────┘   │   │
-│  │                             │                                │   │
-│  │  ┌──────────────────────────▼───────────────────────────┐   │   │
-│  │  │               Service Layer (services/)               │   │   │
-│  │  │  KatyService · EmployeeService · LLMProvider         │   │   │
-│  │  └──────────────────────────────────────────────────────┘   │   │
-│  │                             │                                │   │
-│  │  ┌──────────────────────────▼───────────────────────────┐   │   │
-│  │  │              Core Engine (core/)                      │   │   │
-│  │  │                                                       │   │   │
-│  │  │  ┌────────────┐  ┌────────────┐  ┌───────────────┐  │   │   │
-│  │  │  │ Agents     │  │ Tools      │  │ Workflows     │  │   │   │
-│  │  │  │ (ReAct)    │  │ (500+)     │  │ (DAG Engine)  │  │   │   │
-│  │  │  └────────────┘  └────────────┘  └───────────────┘  │   │   │
-│  │  │                                                       │   │   │
-│  │  │  ┌───────────────────────────────────────────────┐   │   │   │
-│  │  │  │         Self-Learning System                  │   │   │   │
-│  │  │  │  User Memory · Learned Skills · Evolution     │   │   │   │
-│  │  │  └───────────────────────────────────────────────┘   │   │   │
-│  │  └──────────────────────────────────────────────────────┘   │   │
-│  │                             │                                │   │
-│  │  ┌──────────────────────────▼───────────────────────────┐   │   │
-│  │  │           Data Layer (db/stores/)                     │   │   │
-│  │  │  AuthStore · EmployeeStore · WorkflowStore           │   │   │
-│  │  │  TeamStore · SprintStore · FileStore                 │   │   │
-│  │  └──────────────────────────────────────────────────────┘   │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                  PERSISTENCE (SQLite)                        │   │
-│  │  employees · workflows · skills · memory · auth · files     │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
-```
+![Worklone Self-Learning Employee Architecture](../frontend/public/research/employee-architecture-diagram.png)
 
 ---
 
-## Core Components
+## Runtime Topology
 
-### 1. Agent Engine (`backend/core/agents/`)
+Default `docker compose` stack:
 
-The agent engine implements the **ReAct (Reasoning + Acting)** pattern using native LLM function calling.
+- `frontend` (Vite/React) on `:3000`
+- `backend` (FastAPI/Uvicorn) on `:8000`
+- `redis` on `:6379` (dispatch queues, leases, realtime signals)
 
-#### How It Works
+Persistent state:
 
-```
-User Message
-    │
-    ▼
-┌─────────────────┐
-│ Build Context   │ ← System prompt + tools + memory + learned skills
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  LLM Call       │ ← Streaming response with function calling
-└────────┬────────┘
-         │
-    ┌────┴────┐
-    │         │
-    ▼         ▼
-Content   Tool Calls
- (done)       │
-              ▼
-     ┌─────────────────┐
-     │ Execute Tools   │ ← Run tool, get result
-     └────────┬────────┘
-              │
-              ▼
-     ┌─────────────────┐
-     │ Append Result   │ ← Add as role: "tool" message
-     └────────┬────────┘
-              │
-              ▼
-     ┌─────────────────┐
-     │  Loop to LLM    │ ← LLM decides: more tools or final answer
-     └─────────────────┘
-```
-
-**Key design principles:**
-- **No iteration limits** — the LLM decides when it's done
-- **No keyword matching** — pure function calling, no regex parsing
-- **Streaming support** — real-time token output via SSE/WebSocket
-- **Mandatory planning** — multi-step requests require a plan before execution
-
-#### Agent Types
-
-| Agent | Description | Location |
-|-------|-------------|----------|
-| **Katy** | Pre-built AI Product Manager with PM-specific tools and expertise | `core/agents/product_manager/` |
-| **Generic Employee** | Configurable agent loaded from database with custom role, tools, and skills | `core/agents/employee/` |
-| **Evolution System** | Background learner that reviews conversations and extracts memory/skills | `core/agents/evolution/` |
+- SQLite database at `/app/data/workflows.db` (mounted volume)
+- Redis append-only persistence (`redis-data` volume)
 
 ---
 
-### 2. Tool System (`backend/core/tools/`)
+## Backend Architecture
 
-Every tool implements the `BaseTool` abstract class:
+Backend entrypoint: `backend/api/main.py`
 
-```python
-class BaseTool(ABC):
-    name: str
-    description: str
-    
-    @abstractmethod
-    def get_schema(self) -> dict:
-        """Return OpenAI function-calling schema"""
-    
-    @abstractmethod
-    async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
-        """Execute the tool with given parameters"""
-```
+Main layers:
 
-Tools are organized into categories:
+1. API routers (`backend/api/routers/`)
+- `auth`, `chat`, `employees`, `workflows`, `teams`, `sprints`, `dashboard`
+- `integrations` (OAuth + integration status)
+- `settings` (LLM config, onboarding, password)
+- `files`, `skills`, `dispatch`
 
-| Category | Description | Examples |
-|----------|-------------|----------|
-| **System Tools** | Core utilities | File I/O, HTTP requests, shell commands, memory |
-| **Integration Tools** | External services | GitHub, Slack, Gmail, Jira, Notion, Salesforce, Stripe |
-| **Employee Tools** | Agent collaboration | Task management, messaging coworkers, async tasks |
-| **Workflow Tools** | Workflow management | Create workflows, add blocks, execute, monitor |
-| **Specialized Tools** | Role-specific | PM tools, engineer tools, analyst tools, sales tools |
-| **Run Tools** | LLM & execution | LLM calls, function execution |
-| **Data Tools** | Data operations | SQL queries, data analysis |
+2. Services (`backend/services/`)
+- Employee chat/service orchestration
+- Prompt + skill generation
+- LLM provider/config resolution
 
-The `ToolRegistry` manages all tools, converts them to OpenAI function-calling format, and handles execution with credential injection.
+3. Core engine (`backend/core/`)
+- ReAct employee agents
+- Tool catalog and execution
+- Workflow DAG execution engine
+- Dispatch layer (queueing, leases, worker coordination)
+
+4. Stores (`backend/db/stores/`)
+- `AuthDB`, `EmployeeStore`, `WorkflowStore`, `TeamStore`, `SprintStore`, `FileStore`
+- Shared SQLite database with owner-scoped records
 
 ---
 
-### 3. Workflow Engine (`backend/core/workflows/`)
+## LLM Configuration Model
 
-A DAG-based execution engine that supports complex workflow patterns.
+LLM settings are user-scoped and stored in `credentials`.
 
-#### Block Types
+Key behavior:
 
-| Block | Purpose |
-|-------|---------|
-| `start` | Entry point, receives input data |
-| `agent` | Invokes an AI employee |
-| `tool` | Executes a single tool |
-| `function` | Runs custom Python code |
-| `http` | Makes HTTP requests |
-| `condition` | Branching logic (if/else) |
-| `loop` | Iteration over collections |
-| `parallel` | Concurrent execution |
-| `wait` | Timed delays |
-| `variable` | Data manipulation |
-| `trigger` | External event triggers |
-| `human_approval` | Human-in-the-loop pause |
-| `end` | Workflow completion |
+- Users set provider/API key/model from Settings or onboarding
+- Runtime resolves from per-user credentials first
+- Environment values are fallback/default only
 
-#### Trigger Types
+Supported provider configuration endpoints:
 
-| Trigger | Description |
-|---------|-------------|
-| `api` | Manual API call |
-| `webhook` | External webhook |
-| `schedule` | Cron-based scheduling |
-| `manual` | UI-triggered |
-
-#### Execution Flow
-
-```
-Trigger → Job Queue → DAG Builder → Topological Sort → Execute Blocks → Store Results
-```
-
-The background worker (`worker.py`) polls for scheduled workflows every 5 seconds and executes them with configurable concurrency limits.
+- `GET /api/settings/llm/providers`
+- `GET /api/settings/llm`
+- `PUT /api/settings/llm`
 
 ---
 
-### 4. Self-Learning System (`backend/core/agents/evolution/`)
+## Integration Credential Model
 
-The evolution system makes Worklone employees **adaptive** — they learn and improve over time without manual intervention.
+Deployment mode is controlled by `DEPLOYMENT_MODE`.
 
-#### User Memory
+- `self_hosted`: each user stores provider OAuth client ID/secret in their own credential namespace
+- `cloud`: backend uses server-managed `PROVIDER_*` environment credentials
 
-- **What**: Declarative facts about users (preferences, work style, goals, communication patterns)
-- **When**: Every 8 conversation turns
-- **How**: LLM reviews the conversation and merges new facts into existing memory
-- **Storage**: `employee_user_memory` table in SQLite
-
-#### Learned Skills
-
-- **What**: Procedural knowledge — multi-step procedures discovered through trial-and-error
-- **When**: Every 10 tool iterations
-- **How**: LLM identifies non-trivial procedures and writes them as markdown skill documents
-- **Storage**: `employee_learned_skills` table with versioning
-- **Usage**: Injected into system prompt for future conversations
-
-#### Background Processing
-
-Reviews run in a `ThreadPoolExecutor` (max 2 workers) — fire-and-forget, never blocking the main chat loop.
+This keeps open-source/self-hosted use secure while preserving managed-hosting behavior.
 
 ---
 
-### 5. API Layer (`backend/api/`)
+## Data and File Storage
 
-FastAPI-based REST API with 10 routers:
+Primary DB:
 
-| Router | Base Path | Purpose |
-|--------|-----------|---------|
-| `auth_router` | `/api/auth` | Registration, login, sessions, API keys |
-| `chat_router` | `/api/chat` | Katy chat (streaming + non-streaming) |
-| `employee_router` | `/api/employees` | Employee CRUD, tools, skills, tasks |
-| `workflow_router` | `/api/workflows` | Workflow CRUD, blocks, execution |
-| `team_router` | `/api/teams` | Team management, team runs |
-| `sprint_router` | `/api/sprints` | Sprint management, task runs |
-| `dashboard_router` | `/api/dashboard` | Usage statistics, overview |
-| `file_router` | `/api/files` | File upload, download, tree |
-| `skills_router` | `/api/skills` | Public skills library, generation |
-| `oauth_router` | `/api/oauth` | OAuth connect/disconnect |
+- `workflows.db` (users, sessions, credentials, employees, workflows, teams, sprints, executions, profiles, etc.)
 
-Authentication supports API keys, user ID headers, and bearer tokens.
+Files:
+
+- Metadata in SQLite table `file_metadata`
+- File bytes in `backend/storage/blobs` at runtime path `/app/backend/storage/blobs`
+
+Note: in current compose, DB is volume-mounted; blob directory persistence depends on your compose mount strategy.
 
 ---
 
-### 6. Data Layer (`backend/db/`)
+## Execution Flows
 
-All data is stored in a single SQLite file (`workflows.db` by default).
+### Employee Chat Flow
 
-| Store | Tables | Purpose |
-|-------|--------|---------|
-| `AuthStore` | users, sessions, api_keys | Authentication and authorization |
-| `EmployeeStore` | employees, tools, skills, tasks, memory | Employee management and learning |
-| `WorkflowStore` | workflows, blocks, executions | Workflow definitions and history |
-| `TeamStore` | teams, team_runs | Team collaboration |
-| `SprintStore` | sprints, sprint_runs | Sprint execution |
-| `FileStore` | files | File storage |
-
-**Data isolation**: Every record is scoped to `owner_id` for multi-tenant safety.
-
----
-
-## Data Flow
-
-### Chat Flow
-
-```
-User → Frontend → API → Service → Agent → LLM → (Tools) → Response → Frontend → User
-                              │
-                              ▼
-                         Evolution System
-                         (background review)
-```
+1. Frontend sends chat request to `/api/employees/{id}/chat` (or stream endpoint)
+2. Backend acquires employee lease via Redis dispatch
+3. ReAct loop runs: reasoning → tool calls → observations → final response
+4. Background evolution updates user memory/learned skills asynchronously
+5. Lease released and presence updated
 
 ### Workflow Flow
 
-```
-Trigger → Worker → DAG Builder → Block Handlers → Results → Notification
-```
+1. Trigger/API request creates execution
+2. Worker/engine builds DAG and resolves variables
+3. Blocks execute (agent/tool/function/http/condition/loop/parallel/etc.)
+4. Execution state/results persisted in SQLite
 
-### Learning Flow
+### Presence/Dispatch Flow
 
-```
-Conversation → Background Thread → LLM Review → Memory/Skills → Next Conversation
-```
-
----
-
-## Design Principles
-
-1. **Zero-config persistence** — SQLite, no Redis or PostgreSQL required
-2. **Autonomous agents** — LLM decides everything via function calling, no hardcoded logic
-3. **Extensible tools** — add a new tool in under 50 lines of code
-4. **Self-improving** — employees learn from every interaction
-5. **Self-hosted** — your data never leaves your infrastructure
-6. **Developer-first** — clean APIs, readable code, comprehensive docs
+- Redis stores queue + lease state
+- Presence endpoints read lease snapshots
+- Frontend polls bulk status for live employee state
 
 ---
 
-## Deployment
+## Frontend Architecture
 
-Worklone is designed for self-hosting:
+Frontend root: `frontend/src`
 
-- **Development**: `./start.sh` for local development
-- **Production**: Run with `uvicorn` behind a reverse proxy (nginx/caddy)
-- **Docker**: Coming soon
+- Route shell in `App.tsx`
+- Auth context/session handling
+- Pages for chat, employees, teams, sprints, workflows, integrations, files, research, legal
+- Onboarding flow gates authenticated users until required profile + LLM setup is complete
+
+---
+
+## Security and Isolation
+
+- Owner-scoped records for multi-tenant separation
+- Session token auth + API key support
+- User-scoped credentials for LLM and self-hosted integration secrets
+- CORS controlled via env + defaults
+
+---
+
+## Deployment Notes
+
+Recommended startup:
+
+```bash
+./scripts/docker-up.sh
+```
+
+Manual:
+
+```bash
+docker compose up --build
+```
+
+The root README is the source for installation/run instructions.
