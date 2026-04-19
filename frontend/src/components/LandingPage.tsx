@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Github } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
@@ -141,6 +141,15 @@ export function LandingPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/hritvikgupta/worklone"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Worklone GitHub repository"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+            >
+              <Github className="h-4 w-4" />
+            </a>
             <Link
               to="/waitlist"
               className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
