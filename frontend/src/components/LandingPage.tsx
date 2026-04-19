@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Github } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
@@ -146,9 +146,13 @@ export function LandingPage() {
               target="_blank"
               rel="noreferrer"
               aria-label="Worklone GitHub repository"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
+              className="inline-flex h-10 w-10 items-center justify-center text-zinc-950 transition-opacity hover:opacity-70"
             >
-              <Github className="h-4 w-4" />
+              <img
+                src="https://cdn.simpleicons.org/github/181717"
+                alt="GitHub"
+                className="h-5 w-5"
+              />
             </a>
             <Link
               to="/waitlist"
