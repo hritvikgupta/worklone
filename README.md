@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 
-![Worklone Hero](frontend/public/landinghero.png)
+![Worklone Hero](frontend/public/landinghero1.png)
 
 **Worklone** is a cloud-managed AI employee platform for organizations. It lets you create, manage, and deploy AI employees for your business. These are not static chatbots: they are autonomous agents that reason, use tools, execute workflows, collaborate with each other, and **get smarter over time** through self-learning.
 
