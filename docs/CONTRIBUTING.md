@@ -172,4 +172,4 @@ Documentation improvements are always welcome:
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the Worklone Non-Commercial Research License v1.0.
+By contributing, you agree that your contributions are licensed under the [PolyForm Noncommercial License 1.0.0](../LICENSE).

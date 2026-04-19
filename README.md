@@ -1,12 +1,12 @@
 # Worklone: AI Employees That Learn & Adapt
 
-[![License: Non--Commercial--Research](https://img.shields.io/badge/License-Non--Commercial--Research-red.svg)](LICENSE)
+[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-red.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 
-![Worklone Hero](frontend/public/landinghero1.png)
+![Worklone Hero](frontend/public/readmehero.png)
 
 **Worklone** is a cloud-managed AI employee platform for organizations. It lets you create, manage, and deploy AI employees for your business. These are not static chatbots: they are autonomous agents that reason, use tools, execute workflows, collaborate with each other, and **get smarter over time** through self-learning.
 
@@ -189,7 +189,7 @@ We welcome contributions! Whether it's fixing a bug, adding a tool, or improving
 
 ## License
 
-This project is licensed under the [Worklone Non-Commercial Research License v1.0](LICENSE).
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE) — a standard, lawyer-drafted source-available license that permits use, modification, and distribution **only for noncommercial purposes** (research, evaluation, personal study, education, government, and other noncommercial use). Commercial use of any kind — including reselling, hosting as a paid service, or incorporating into a commercial product — is **not permitted** without a separate commercial license. Contact the maintainers for commercial licensing.
 
 ---
 
