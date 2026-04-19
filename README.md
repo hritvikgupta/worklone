@@ -12,6 +12,8 @@
 
 Think of Worklone as your digital workforce: hire AI employees for product management, engineering, sales, support, operations, or any role you define. Each employee learns your preferences, builds skills from experience, and improves with every interaction.
 
+![Worklone Self-Learning Employee Architecture](frontend/public/research/employee-architecture-diagram.png)
+
 ## Usage Notice
 
 This repository is released for **non-commercial research and evaluation only**.
