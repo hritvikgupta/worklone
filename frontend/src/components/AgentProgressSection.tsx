@@ -73,10 +73,10 @@ export function AgentProgressSection() {
       <div className="max-w-[1100px] mx-auto">
         <div className="text-center mb-20">
           <h2 className="text-[32px] font-medium tracking-tight text-zinc-950 sm:text-[40px] mb-4">
-            Real-time execution telemetry
+            Assign work and train employees inside your workspace
           </h2>
           <p className="text-[16px] text-zinc-600 max-w-2xl mx-auto">
-            Watch as your agents break down natural language requests into executable steps, interact with your tools, and complete work autonomously.
+            Give employees natural-language tasks, let them learn your tools and operating context, and watch execution happen directly inside the systems your team already uses.
           </p>
         </div>
 

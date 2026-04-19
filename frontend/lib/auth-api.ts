@@ -161,9 +161,16 @@ export interface IntegrationStatus {
   connected: boolean;
   connected_at?: string;
   provider_email?: string;
+  client_credentials_required?: boolean;
+  has_client_credentials?: boolean;
 }
 
-export async function getIntegrations(token: string): Promise<IntegrationStatus[]> {
+export interface IntegrationsResponse {
+  integrations: IntegrationStatus[];
+  deployment_mode: 'cloud' | 'self_hosted';
+}
+
+export async function getIntegrations(token: string): Promise<IntegrationsResponse> {
   try {
     const response = await fetch(`${BACKEND_URL}/api/integrations/`, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -172,15 +179,18 @@ export async function getIntegrations(token: string): Promise<IntegrationStatus[
     if (response.status === 401) {
       throw new Error(AUTH_EXPIRED_ERROR);
     }
-    if (!response.ok) return [];
+    if (!response.ok) return { integrations: [], deployment_mode: 'self_hosted' };
     const data = await response.json();
-    return data.integrations || [];
+    return {
+      integrations: data.integrations || [],
+      deployment_mode: data.deployment_mode === 'cloud' ? 'cloud' : 'self_hosted',
+    };
   } catch (error) {
     if (error instanceof Error && error.message === AUTH_EXPIRED_ERROR) {
       throw error;
     }
     console.error('Get integrations error:', error);
-    return [];
+    return { integrations: [], deployment_mode: 'self_hosted' };
   }
 }
 
@@ -203,6 +213,38 @@ export async function disconnectIntegration(token: string, provider: string): Pr
       throw error;
     }
     console.error('Disconnect integration error:', error);
+    return false;
+  }
+}
+
+export async function saveOAuthProviderCredentials(
+  token: string,
+  provider: string,
+  clientId: string,
+  clientSecret: string,
+): Promise<boolean> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/integrations/credentials`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    });
+    if (response.status === 401) {
+      throw new Error(AUTH_EXPIRED_ERROR);
+    }
+    return response.ok;
+  } catch (error) {
+    if (error instanceof Error && error.message === AUTH_EXPIRED_ERROR) {
+      throw error;
+    }
+    console.error('Save OAuth credentials error:', error);
     return false;
   }
 }

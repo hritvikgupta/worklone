@@ -19,18 +19,60 @@ from backend.core.errors import (
     ProviderUnavailableError,
 )
 from backend.core.logging import get_logger
-from backend.core.tools.catalog import list_catalog_tools, OPTIONAL_EMPLOYEE_TOOL_NAMES
+from backend.core.tools.catalog import (
+    list_catalog_tools,
+    list_assignable_employee_tools,
+    OPTIONAL_EMPLOYEE_TOOL_NAMES,
+    _BUNDLE_ALIAS_TO_ROOT,
+    PROVIDER_TOOL_BUNDLES,
+)
 
 logger = get_logger("services.prompt_generator")
 
-KIMI_MODEL = "moonshotai/kimi-k2"
+KIMI_MODEL = "moonshotai/kimi-k2.5"
 DEFAULT_SKILL_MODEL = os.getenv("OPENROUTER_SKILL_MODEL", "minimax/minimax-m2.7")
 
 # Centralized LLM config
-from backend.services.llm_config import get_provider_config, detect_provider, get_headers, get_payload_extras
+from backend.services.llm_config import (
+    get_provider_config,
+    get_user_provider_config,
+    detect_provider,
+    get_headers,
+    get_payload_extras,
+)
 
 # Every optional tool the user can toggle in the UI
 _OPTIONAL_TOOLS: list[dict] | None = None
+
+
+def _get_optional_tools() -> list[dict]:
+    """Return tool choices for the provision LLM.
+
+    Integrations are exposed as bundle ROOTS only (GmailTool, SlackTool, ...),
+    not their granular members. Same list the frontend Tools tab renders — so
+    whatever the LLM picks will round-trip correctly and show as selected.
+    """
+    global _OPTIONAL_TOOLS
+    if _OPTIONAL_TOOLS is None:
+        _OPTIONAL_TOOLS = list_assignable_employee_tools()
+    return _OPTIONAL_TOOLS
+
+
+def _collapse_to_bundle_roots(tool_names: list[str]) -> list[str]:
+    """Collapse any granular bundle-member name to its bundle root, dedupe, preserve order."""
+    out: list[str] = []
+    seen: set[str] = set()
+    for raw in tool_names or []:
+        if not raw:
+            continue
+        name = raw.strip()
+        root = _BUNDLE_ALIAS_TO_ROOT.get(name.lower())
+        canonical = root if (root and root in PROVIDER_TOOL_BUNDLES) else name
+        if canonical in seen:
+            continue
+        seen.add(canonical)
+        out.append(canonical)
+    return out
 
 
 def _truncate(value: str, limit: int | None = None) -> str:
@@ -61,9 +103,10 @@ async def _run_completion_request(
     user_message: str,
     temperature: float,
     max_tokens: int,
+    owner_id: str = "",
 ) -> dict[str, Any]:
-    provider_name = detect_provider(model)
-    llm_config = get_provider_config(model)
+    llm_config = get_user_provider_config(owner_id, model) if owner_id else get_provider_config(model)
+    provider_name = llm_config.get("provider_name") or detect_provider(model)
     api_key = llm_config["api_key"]
     base_url = llm_config["base_url"]
 
@@ -71,7 +114,7 @@ async def _run_completion_request(
         raise ProviderUnavailableError(service_name, provider_name, details={"model": model})
 
     try:
-        async with httpx.AsyncClient(timeout=60.0 if max_tokens <= 2048 else 90.0) as client:
+        async with httpx.AsyncClient(timeout=60.0 if max_tokens <= 2048 else 120.0) as client:
             resp = await client.post(
                 f"{base_url}/chat/completions",
                 headers={
@@ -188,13 +231,8 @@ async def _run_completion_request(
         ) from exc
 
 
-def _get_optional_tools() -> list[dict]:
-    global _OPTIONAL_TOOLS
-    if _OPTIONAL_TOOLS is None:
-        _OPTIONAL_TOOLS = [
-            t for t in list_catalog_tools() if t["is_optional"]
-        ]
-    return _OPTIONAL_TOOLS
+
+
 
 
 SKILL_CATEGORIES = [
@@ -213,7 +251,7 @@ Return ONLY a JSON object (no markdown fences, no explanation, no text outside t
 {{
   "role": "<professional role title — e.g. Senior Data Analyst, Executive Personal Assistant, DevOps Lead>",
   "system_prompt": "<the full role-specific prompt — see structure rules below>",
-  "tools": [<list of tool class-names from AVAILABLE_TOOLS below>],
+  "tools": [<list of tool names from AVAILABLE_TOOLS below — use the exact "name" strings shown; for integrations always pick the provider root (e.g. "GmailTool", "SlackTool", "GoogleCalendarTool"), never individual sub-tools like "GmailSearchTool">],
   "skills": [
     {{
       "skill_name": "<skill name>",
@@ -374,6 +412,7 @@ async def generate_employee_prompt(
     name: str,
     description: str,
     public_skills: list[dict] | None = None,
+    owner_id: str = "",
 ) -> dict[str, Any]:
     """Call Kimi K2.5 to generate a full employee configuration.
 
@@ -408,19 +447,29 @@ async def generate_employee_prompt(
 
     user_message = f"Employee name: {name}\nEmployee description: {description}"
 
-    logger.info("Generating prompt for employee '%s' via %s", name, KIMI_MODEL)
+    # Use user's configured provider if available, else fall back to KIMI_MODEL
+    from backend.services.llm_config import get_user_provider_config
+    user_cfg = get_user_provider_config(owner_id, "") if owner_id else None
+    if user_cfg and user_cfg.get("api_key") and user_cfg.get("model"):
+        use_model = user_cfg["model"]
+    else:
+        use_model = KIMI_MODEL
+    logger.info("Generating prompt for employee '%s' via %s", name, use_model)
     result = await _run_completion_request(
         service_name="Employee prompt generation service",
-        model=KIMI_MODEL,
+        model=use_model,
         system=system,
         user_message=user_message,
         temperature=0.7,
-        max_tokens=2048,
+        max_tokens=8000,
+        owner_id=owner_id,
     )
 
-    # Validate tools — only keep ones that actually exist in our catalog
+    # Validate tools — collapse granular bundle members to their root, then
+    # only keep names that actually exist in our assignable catalog.
     valid_tool_names = {t["name"] for t in optional_tools}
-    result["tools"] = [t for t in result.get("tools", []) if t in valid_tool_names]
+    collapsed = _collapse_to_bundle_roots(result.get("tools", []))
+    result["tools"] = [t for t in collapsed if t in valid_tool_names]
 
     # Validate skill categories and normalize the "new" flag
     valid_cats = set(SKILL_CATEGORIES)
@@ -446,6 +495,7 @@ async def generate_public_skill(
     description: str,
     employee_role: str = "",
     model: str | None = None,
+    owner_id: str = "",
 ) -> dict[str, Any]:
     """Generate a reusable workplace skill in SKILL.md format."""
     optional_tools = _get_optional_tools()
@@ -460,6 +510,14 @@ async def generate_public_skill(
         f"Skill description: {description.strip()}\n"
         f"Reference employee role context: {employee_role.strip() or 'General workplace employee'}"
     )
+
+    # Respect user's configured provider/model unless an explicit model was passed
+    if not model and owner_id:
+        from backend.services.llm_config import get_user_provider_config
+        user_cfg = get_user_provider_config(owner_id, "")
+        if user_cfg and user_cfg.get("api_key") and user_cfg.get("model"):
+            model = user_cfg["model"]
+
     selected_model = model or DEFAULT_SKILL_MODEL
 
     logger.info("Generating public skill '%s' via %s", title, selected_model)
@@ -470,12 +528,12 @@ async def generate_public_skill(
         user_message=user_message,
         temperature=0.7,
         max_tokens=4096,
+        owner_id=owner_id,
     )
 
     valid_tool_names = {t["name"] for t in optional_tools}
-    result["suggested_tools"] = [
-        t for t in result.get("suggested_tools", []) if t in valid_tool_names
-    ]
+    collapsed = _collapse_to_bundle_roots(result.get("suggested_tools", []))
+    result["suggested_tools"] = [t for t in collapsed if t in valid_tool_names]
     result["model"] = selected_model
     # Ensure required keys exist
     result.setdefault("title", title)

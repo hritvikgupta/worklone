@@ -1,6 +1,6 @@
 # Worklone: AI Employees That Learn & Adapt
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: Non--Commercial--Research](https://img.shields.io/badge/License-Non--Commercial--Research-red.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-3776AB.svg?logo=python)](https://www.python.org/downloads/)
 [![Node.js 18+](https://img.shields.io/badge/node-%3E%3D18-339933.svg?logo=node.js)](https://nodejs.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
@@ -10,6 +10,13 @@
 **Worklone** is an open-source platform that lets you create, manage, and deploy AI employees for your business. These aren't static chatbots—they're autonomous agents that reason, use tools, execute workflows, collaborate with each other, and **get smarter over time** through self-learning.
 
 Think of Worklone as your digital workforce: hire AI employees for product management, engineering, sales, support, operations, or any role you define. Each employee learns your preferences, builds skills from experience, and improves with every interaction.
+
+![Worklone Self-Learning Employee Architecture](frontend/public/research/employee-architecture-diagram.png)
+
+## Usage Notice
+
+This repository is released for **non-commercial research and evaluation only**.
+Commercial use, resale, hosted paid offerings, or product monetization are not allowed without prior written permission. See [LICENSE](LICENSE).
 
 ---
 
@@ -21,7 +28,7 @@ Think of Worklone as your digital workforce: hire AI employees for product manag
 | Manual updates required | Self-learning from experience |
 | Single-purpose bots | Multi-tool, multi-skill agents |
 | No memory or context | Remembers users, builds skills |
-| Closed-source, expensive | Open-source, self-hosted, free |
+| Closed-source, expensive | Research-use source available, self-hosted |
 
 ---
 
@@ -34,7 +41,7 @@ Think of Worklone as your digital workforce: hire AI employees for product manag
 
 ### 👥 AI Employee System
 - **Create custom employees** with specific roles, personalities, and capabilities
-- **Pre-built Katy** — an AI Product Manager ready to help with roadmaps, PRDs, and prioritization
+- **Gemenic Workplace self-learning employees** — adaptive employees that improve through production feedback loops
 - **Assign 500+ tools** — from GitHub and Slack to Salesforce and Stripe
 - **Track performance** — monitor tokens, costs, and activity per employee
 - **Team collaboration** — employees can message each other and work together on tasks
@@ -70,23 +77,36 @@ git clone https://github.com/YOUR_USERNAME/worklone.git
 cd worklone
 cp .env.example .env
 # Edit .env and add your OPENROUTER_API_KEY
+# For open-source/self-hosted usage keep: DEPLOYMENT_MODE=self_hosted
+# For managed platform usage set: DEPLOYMENT_MODE=cloud and PROVIDER_* OAuth credentials
 ```
 
-### 2. Start the Platform
+### 2. Start the Platform (Docker, recommended)
 ```bash
-# Start both backend and frontend
-./start.sh
-
-# Or start them separately:
-# Backend
-uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
-
-# Frontend (in another terminal)
-cd frontend && npm install && npm run dev
+# First run (builds images and installs all Python/Node dependencies automatically)
+./scripts/docker-up.sh
 ```
 
-### 3. Meet Your First Employee
-Open `http://localhost:5173` and start chatting with **Katy**, your AI Product Manager. Or create a custom employee for any role you need.
+In detached mode:
+```bash
+docker compose up -d --build
+```
+
+If port `3000` is already in use on your machine, this script auto-cleans it and starts Docker:
+```bash
+./scripts/docker-up.sh
+```
+
+Stop all services:
+```bash
+docker compose down
+```
+
+### 3. Launch Gemenic Workplace
+Open:
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
+- Backend docs: `http://localhost:8000/docs`
 
 ---
 
@@ -143,7 +163,7 @@ See [Architecture Overview](docs/ARCHITECTURE.md) for detailed system design.
 ## Use Cases
 
 ### Product Management
-Katy, your AI PM, can:
+Self-learning product employees can:
 - Write PRDs and user stories
 - Prioritize features using RICE or MoSCoW
 - Plan sprints and roadmaps
@@ -208,7 +228,7 @@ We welcome contributions! Whether it's fixing a bug, adding a tool, or improving
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Worklone Non-Commercial Research License v1.0](LICENSE).
 
 ---
 

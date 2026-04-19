@@ -462,13 +462,15 @@ class KatyPMAgent:
             yield {"type": "error", "message": f"{self.provider_name.upper()}_API_KEY not set"}
             return
 
+        max_token_key = "max_completion_tokens" if self.provider_name == "openai" else "max_tokens"
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": 4096,
+            max_token_key: 4096,
             "stream": True,
         }
+        if self.provider_name != "openai":
+            payload["temperature"] = 0.7
         payload.update(get_payload_extras(self.model))
 
         if tools:

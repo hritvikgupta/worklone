@@ -2,6 +2,8 @@
 
 This guide covers every way to get Worklone running — from local development to production deployment.
 
+> License notice: Worklone is released for non-commercial research/evaluation use only. See [../LICENSE](../LICENSE).
+
 ---
 
 ## Prerequisites
@@ -32,13 +34,23 @@ Edit `.env` and add your API key:
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
 ```
 
-### 2. Launch Everything
+### 2. Launch (Docker-assisted local setup)
 
 ```bash
-./start.sh
-```
+# Optional infra
+docker compose up -d redis
 
-This script starts both the backend (port 8000) and frontend (port 5173) simultaneously.
+# Backend (terminal 1)
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Frontend (terminal 2)
+cd frontend
+npm install
+npm run dev
+```
 
 ### 3. Verify
 
@@ -241,12 +253,12 @@ Open `http://localhost:5173` and register a new account. You should see the Work
 
 ### 4. Test Chat
 
-Try chatting with Katy (the AI Product Manager) to verify LLM connectivity:
+Try chatting with a self-learning employee to verify LLM connectivity:
 
 ```bash
 curl -X POST http://localhost:8000/api/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "Hello Katy, introduce yourself"}'
+  -d '{"message": "Introduce your role and capabilities"}'
 ```
 
 ---

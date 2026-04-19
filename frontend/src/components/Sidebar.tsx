@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserRound, BookOpen, MessageSquare, Zap, Github, CalendarClock, FolderOpen, LogOut, Sun, Moon, Briefcase, ChevronDown, Coins, DollarSign, Clock } from 'lucide-react';
+import { LayoutDashboard, Users, UserRound, BookOpen, MessageSquare, Zap, Github, CalendarClock, FolderOpen, LogOut, Sun, Moon, Briefcase, ChevronDown, Coins, DollarSign, Clock, Settings } from 'lucide-react';
+import { SettingsModal } from '@/src/components/SettingsModal';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ export function Sidebar() {
     "Total Uptime": Clock
   };
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const isCollapsed = location.pathname === '/chat';
 
   useEffect(() => {
@@ -84,7 +86,10 @@ export function Sidebar() {
         <div className="px-2 pb-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between h-9 px-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent font-medium group">
+              <Button
+                variant="outline"
+                className="w-full justify-between h-9 px-2 border-sidebar-border/70 bg-sidebar-accent/30 text-sidebar-foreground hover:bg-sidebar-accent font-medium group"
+              >
                 <div className="flex items-center gap-2">
                   <LayoutDashboard className="w-4 h-4 shrink-0 text-sidebar-foreground/50 group-hover:text-sidebar-foreground transition-colors" />
                   <span>Project Stats</span>
@@ -152,6 +157,14 @@ export function Sidebar() {
       <div className="p-2 mt-auto">
         <Separator className="mb-2 opacity-50" />
         <button
+          onClick={() => setSettingsOpen(true)}
+          title={isCollapsed ? 'Settings' : undefined}
+          className={cn("w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors", isCollapsed && "justify-center px-0")}
+        >
+          <Settings className="w-4 h-4 shrink-0 text-sidebar-foreground/50" />
+          {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">Settings</span>}
+        </button>
+        <button
           onClick={toggleTheme}
           title={isCollapsed ? (isDark ? 'Light Mode' : 'Dark Mode') : undefined}
           className={cn("w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors", isCollapsed && "justify-center px-0")}
@@ -171,6 +184,7 @@ export function Sidebar() {
           {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">Logout</span>}
         </button>
       </div>
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }

@@ -107,7 +107,7 @@ export async function updateTaskColumn(taskId: string, columnId: string): Promis
   }, 'The task column could not be updated.');
 }
 
-export async function updateTaskDetails(taskId: string, data: { title: string; description: string; requirements: string }): Promise<void> {
+export async function updateTaskDetails(taskId: string, data: { title: string; description: string; requirements: string; priority?: string }): Promise<void> {
   await requestJson<{ status: string }>(`/api/sprints/tasks/${taskId}/details`, {
     method: 'PATCH',
     headers: {
@@ -129,8 +129,8 @@ export async function updateTaskAssignment(taskId: string, employeeId: string): 
   }, 'The task assignment could not be updated.');
 }
 
-export async function runTask(sprintId: string, taskId: string): Promise<{ run_id: string; status: string }> {
-  return requestJson<{ run_id: string; status: string }>(`/api/sprints/${sprintId}/tasks/${taskId}/run`, {
+export async function runTask(sprintId: string, taskId: string): Promise<{ run_id?: string; status: string; job_id?: string; employee_id?: string }> {
+  return requestJson<{ run_id?: string; status: string; job_id?: string; employee_id?: string }>(`/api/sprints/${sprintId}/tasks/${taskId}/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

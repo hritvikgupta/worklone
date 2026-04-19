@@ -70,16 +70,15 @@ function TreeFlow({ flow, index }: { flow: typeof flows[0], index: number }) {
         {/* SVG Connecting Paths */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
           {flow.lines.map((linePath, i) => (
-            <motion.path 
+            <motion.path
               key={i}
               initial={{ pathLength: 0, opacity: 0 }}
-              whileInView={{ pathLength: 1, opacity: 0.5 }}
+              whileInView={{ pathLength: 1, opacity: 0.9 }}
               viewport={{ once: true }}
               transition={{ duration: 1, delay: index * 0.2 + 0.2 + (i * 0.2) }}
               d={linePath}
-              stroke="white" strokeWidth="1.5" strokeDasharray="4 4" fill="none" 
-            />
-          ))}
+              stroke="white" strokeWidth="2.5" strokeDasharray="4 4" fill="none"
+            />          ))}
         </svg>
 
         {/* Nodes */}
@@ -113,32 +112,39 @@ function TreeFlow({ flow, index }: { flow: typeof flows[0], index: number }) {
 
 export function AgentNetworkSection() {
   return (
-    <section className="relative py-32 px-4 sm:px-8 lg:px-10 overflow-hidden bg-[#111111] border-t border-white/5">
-      <div className="relative max-w-[1400px] mx-auto z-10">
-        <div className="text-center mb-24">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-[32px] font-normal tracking-tight text-white sm:text-[40px] mb-4"
-          >
-            Multi-agent collaboration
-          </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-[16px] text-zinc-400 max-w-2xl mx-auto font-light"
-          >
-            Deploy coordinated teams of specialized agents. They break down tasks, delegate work, and collaborate to deliver complete features autonomously.
-          </motion.p>
+    <section className="bg-white py-16 sm:py-24 border-t border-black/[0.04]">
+      <div className="mx-auto max-w-3xl text-center mb-12 px-6">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mb-4 text-[32px] font-medium tracking-tight text-zinc-950 sm:text-[40px]"
+        >
+          Multi-agent collaboration
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          className="mx-auto max-w-2xl text-[16px] text-zinc-600"
+        >
+          Deploy coordinated teams of specialized agents. They break down tasks, delegate work, and collaborate to deliver complete features autonomously.
+        </motion.p>
+      </div>
+
+      <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] px-4 py-16 sm:px-8 lg:px-12 sm:py-24">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/bg2.png" alt="" className="h-full w-full object-cover object-center" />
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm"></div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-4 justify-items-center">
-          {flows.map((flow, index) => (
-            <TreeFlow key={flow.title} flow={flow} index={index} />
-          ))}
+        <div className="relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-4 justify-items-center">
+            {flows.map((flow, index) => (
+              <TreeFlow key={flow.title} flow={flow} index={index} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

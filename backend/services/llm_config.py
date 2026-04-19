@@ -114,3 +114,45 @@ def is_provider_available(provider_name: str) -> bool:
     """Check if a specific provider is configured."""
     config = PROVIDERS.get(provider_name)
     return bool(config) and bool(config.get("api_key"))
+
+
+def get_user_provider_config(owner_id: str, model: str, force_provider: str = "") -> Dict[str, Any]:
+    """Like get_provider_config but checks DB for per-user overrides first.
+
+    If force_provider is set, uses that provider's saved credentials instead of the user's global setting.
+    Falls back to the global config when no user override exists.
+    """
+    if not owner_id:
+        return get_provider_config(model)
+
+    try:
+        from backend.db.stores.workflow_store import WorkflowStore
+        store = WorkflowStore()
+        user_provider = force_provider or store.get_credential(owner_id, "llm_provider") or ""
+        # Per-provider key first, then legacy single-key fallback
+        user_api_key = (
+            store.get_credential(owner_id, f"llm_api_key_{user_provider}") if user_provider else None
+        ) or store.get_credential(owner_id, "llm_api_key") or ""
+        user_model = (
+            store.get_credential(owner_id, f"llm_default_model_{user_provider}") if user_provider else None
+        ) or store.get_credential(owner_id, "llm_default_model") or ""
+
+        # Resolve which model to use: caller-supplied > user default > fallback
+        resolved_model = model or user_model or "openai/gpt-4o"
+
+        # If user has configured a provider, build config from it
+        if user_provider and user_api_key:
+            from backend.api.routers.settings import SUPPORTED_PROVIDERS
+            provider_meta = SUPPORTED_PROVIDERS.get(user_provider, {})
+            return {
+                "provider_name": user_provider,
+                "api_key": user_api_key,
+                "base_url": provider_meta.get("base_url", "https://openrouter.ai/api/v1"),
+                "headers": provider_meta.get("headers", {}),
+                "payload_defaults": {},
+                "model": resolved_model,
+            }
+    except Exception:
+        pass
+
+    return get_provider_config(model)

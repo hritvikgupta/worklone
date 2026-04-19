@@ -6,8 +6,12 @@ import os
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
+from backend.core.config import get_settings
 from backend.db.stores.auth_store import AuthDB
+from backend.db.stores.workflow_store import WorkflowStore
 from backend.lib.oauth.providers import OAUTH_PROVIDERS
+
+HIDDEN_AVAILABLE_PROVIDERS = {"salesforce"}
 
 
 class AuthService:
@@ -15,6 +19,7 @@ class AuthService:
 
     def __init__(self):
         self.db = AuthDB()
+        self.workflow_store = WorkflowStore()
 
     @staticmethod
     def _is_placeholder_secret(value: str) -> bool:
@@ -126,6 +131,64 @@ class AuthService:
                 return value, key
         return "", candidates[0]
 
+    @staticmethod
+    def _provider_credential_namespace(provider: str) -> str:
+        normalized = provider.strip().lower().replace("-", "_")
+        if normalized in {"google_calendar", "google_drive"}:
+            return "google"
+        return normalized
+
+    @classmethod
+    def _oauth_cred_key(cls, provider: str, suffix: str) -> str:
+        return f"oauth_{suffix.lower()}_{cls._provider_credential_namespace(provider)}"
+
+    def _get_provider_user_value(self, user_id: str, provider: str, suffix: str) -> tuple[str, str]:
+        cred_key = self._oauth_cred_key(provider, suffix)
+        value = (self.workflow_store.get_credential(user_id, cred_key) or "").strip()
+        return value, cred_key
+
+    def _resolve_provider_client_value(self, user_id: str, provider: str, suffix: str) -> tuple[str, str]:
+        mode = get_settings().deployment_mode
+        if mode == "self_hosted":
+            return self._get_provider_user_value(user_id, provider, suffix)
+        return self._get_provider_env_value(provider, suffix)
+
+    def set_oauth_provider_credentials(
+        self,
+        *,
+        user_id: str,
+        provider: str,
+        client_id: str,
+        client_secret: str,
+    ) -> Dict[str, Any]:
+        if provider not in OAUTH_PROVIDERS:
+            return {"success": False, "error": f"Unknown provider: {provider}"}
+        if self._is_placeholder_secret(client_id) or self._is_placeholder_secret(client_secret):
+            return {"success": False, "error": "Client ID and secret must be real values, not placeholders"}
+
+        client_id_key = self._oauth_cred_key(provider, "client_id")
+        client_secret_key = self._oauth_cred_key(provider, "client_secret")
+        self.workflow_store.set_credential(user_id, client_id_key, client_id.strip(), f"OAuth client ID for {provider}")
+        self.workflow_store.set_credential(
+            user_id,
+            client_secret_key,
+            client_secret.strip(),
+            f"OAuth client secret for {provider}",
+        )
+        return {"success": True}
+
+    def get_oauth_provider_credentials_status(self, user_id: str, provider: str) -> Dict[str, Any]:
+        if provider not in OAUTH_PROVIDERS:
+            return {"success": False, "error": f"Unknown provider: {provider}"}
+        mode = get_settings().deployment_mode
+        if mode == "self_hosted":
+            client_id, _ = self._get_provider_user_value(user_id, provider, "client_id")
+            client_secret, _ = self._get_provider_user_value(user_id, provider, "client_secret")
+            return {"success": True, "has_credentials": bool(client_id and client_secret)}
+        client_id, _ = self._get_provider_env_value(provider, "CLIENT_ID")
+        client_secret, _ = self._get_provider_env_value(provider, "CLIENT_SECRET")
+        return {"success": True, "has_credentials": bool(client_id and client_secret)}
+
     def get_oauth_url(self, provider: str, frontend_url: str, user_id: str) -> Dict[str, Any]:
         """Generate OAuth authorization URL with explicit error context."""
         import urllib.parse
@@ -141,12 +204,14 @@ class AuthService:
         # Embed user_id in state so we know who is connecting
         full_state = self._encode_state(state, user_id, provider)
 
-        # Get credentials from environment
-        client_id, client_id_key = self._get_provider_env_value(provider, "CLIENT_ID")
+        # Resolve credentials by deployment mode.
+        client_id, client_id_key = self._resolve_provider_client_value(user_id, provider, "CLIENT_ID")
         if not client_id:
+            mode = get_settings().deployment_mode
+            source = "saved key" if mode == "self_hosted" else "env"
             return {
                 "success": False,
-                "error": f"Missing OAuth client id for {provider} (expected env: {client_id_key})",
+                "error": f"Missing OAuth client id for {provider} (expected {source}: {client_id_key})",
             }
         if self._is_placeholder_secret(client_id):
             return {
@@ -208,19 +273,22 @@ class AuthService:
         if not provider_config:
             return {"success": False, "error": "Unknown provider"}
 
-        # Get client credentials from environment
-        client_id, client_id_key = self._get_provider_env_value(provider, "CLIENT_ID")
-        client_secret, client_secret_key = self._get_provider_env_value(provider, "CLIENT_SECRET")
+        # Resolve client credentials by deployment mode.
+        client_id, client_id_key = self._resolve_provider_client_value(user_id, provider, "CLIENT_ID")
+        client_secret, client_secret_key = self._resolve_provider_client_value(user_id, provider, "CLIENT_SECRET")
+        mode = get_settings().deployment_mode
 
         if self._is_placeholder_secret(client_id):
+            source = "saved key" if mode == "self_hosted" else "env"
             return {
                 "success": False,
-                "error": f"OAuth client id not configured for {provider} (env: {client_id_key})",
+                "error": f"OAuth client id not configured for {provider} ({source}: {client_id_key})",
             }
         if self._is_placeholder_secret(client_secret):
+            source = "saved key" if mode == "self_hosted" else "env"
             return {
                 "success": False,
-                "error": f"OAuth client secret not configured for {provider} (env: {client_secret_key})",
+                "error": f"OAuth client secret not configured for {provider} ({source}: {client_secret_key})",
             }
 
         callback_url = redirect_uri or f"{self._get_provider_frontend_url(provider)}/integrations/callback"
@@ -363,15 +431,20 @@ class AuthService:
 
     def get_integration_status(self, user_id: str) -> Dict[str, Any]:
         """Get status of all integrations for a user"""
+        deployment_mode = get_settings().deployment_mode
         integrations = self.db.get_user_integrations(user_id)
         provider_list = []
 
         for key, config in OAUTH_PROVIDERS.items():
+            if key in HIDDEN_AVAILABLE_PROVIDERS:
+                continue
             integration = next((i for i in integrations if i["provider"] == key), None)
             has_token = bool(
                 integration
                 and str(integration.get("access_token") or "").strip()
             )
+            cred_status = self.get_oauth_provider_credentials_status(user_id, key)
+            has_client_credentials = bool(cred_status.get("has_credentials"))
             provider_list.append({
                 "id": key,
                 "name": config["name"],
@@ -379,9 +452,11 @@ class AuthService:
                 "connected": has_token,
                 "connected_at": integration.get("connected_at") if has_token else None,
                 "provider_email": integration.get("provider_email") if has_token else None,
+                "client_credentials_required": deployment_mode == "self_hosted",
+                "has_client_credentials": has_client_credentials,
             })
 
-        return {"integrations": provider_list}
+        return {"integrations": provider_list, "deployment_mode": deployment_mode}
 
     def disconnect_integration(self, user_id: str, provider: str) -> Dict[str, Any]:
         """Disconnect an integration"""

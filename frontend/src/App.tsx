@@ -8,6 +8,9 @@ import { LoginPage } from './components/LoginPage';
 import { WaitlistPage } from './components/WaitlistPage';
 import { LandingPage } from './components/LandingPage';
 import { WhatIsWorklonePage } from './components/WhatIsWorklonePage';
+import { ResearchArticlePage } from './components/ResearchArticlePage';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { ContactPage } from './components/ContactPage';
 import { IntegrationCallback } from './components/IntegrationCallback';
 import { Sidebar } from './components/Sidebar';
 import { AIAssistant } from './components/AIAssistant';
@@ -20,6 +23,8 @@ import { ScheduledWorkflowsPage } from './components/pages/ScheduledWorkflowsPag
 import { AgentFilesPage } from './components/pages/AgentFilesPage';
 import { AgentsPage } from './components/pages/AgentsPage';
 import { SkillLibraryPage } from './components/pages/SkillLibraryPage';
+import { OnboardingPage } from './components/OnboardingPage';
+import { getOnboardingStatus } from '@/src/api/onboarding';
 
 function AuthenticatedShell() {
   const location = useLocation();
@@ -103,7 +108,9 @@ function AuthenticatedShell() {
 }
 
 export default function App() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, token } = useAuth();
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const [onboardingRequired, setOnboardingRequired] = useState(false);
 
   // Centralize dark-mode toggling. Unauthenticated routes (landing, login,
   // waitlist) always render light so theme-variable classes inside embedded
@@ -122,7 +129,20 @@ export default function App() {
     }
   }, [isAuthenticated]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setOnboardingRequired(false);
+      setOnboardingLoading(false);
+      return;
+    }
+    setOnboardingLoading(true);
+    getOnboardingStatus()
+      .then((status) => setOnboardingRequired(!status.onboarded))
+      .catch(() => setOnboardingRequired(false))
+      .finally(() => setOnboardingLoading(false));
+  }, [isAuthenticated, token]);
+
+  if (isLoading || (isAuthenticated && onboardingLoading)) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
@@ -139,11 +159,27 @@ export default function App() {
     <Routes>
       <Route path="/integrations/callback" element={<IntegrationCallback />} />
       {isAuthenticated ? (
-        <Route path="/*" element={<AuthenticatedShell />} />
+        <>
+          <Route
+            path="/onboarding"
+            element={
+              onboardingRequired
+                ? <OnboardingPage onCompleted={() => setOnboardingRequired(false)} />
+                : <Navigate to="/chat" replace />
+            }
+          />
+          <Route
+            path="/*"
+            element={onboardingRequired ? <Navigate to="/onboarding" replace /> : <AuthenticatedShell />}
+          />
+        </>
       ) : (
         <>
           <Route path="/" element={<LandingPage />} />
           <Route path="/what-is-worklone" element={<WhatIsWorklonePage />} />
+          <Route path="/research/:slug" element={<ResearchArticlePage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/waitlist" element={<WaitlistPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

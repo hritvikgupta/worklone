@@ -178,11 +178,10 @@ class CoWorkerAgent:
     def __init__(
         self,
         owner_id: str,
-        model: str = "google/gemma-4-31b-it",
+        model: str = "",
     ):
         self.owner_id = owner_id
         self.user_id = owner_id  # owner IS the user — needed for OAuth
-        self.model = model
         self.tool_registry = ToolRegistry()
         self.store = WorkflowStore()
 
@@ -190,9 +189,13 @@ class CoWorkerAgent:
         self.messages: List[ContextMessage] = []
         self.steps: List[ReActStep] = []
 
-        # LLM provider config from centralized service
-        self.provider_name = detect_provider(self.model)
-        llm_config = get_provider_config(self.model)
+        # LLM provider config — user's settings take full precedence.
+        # Pass "" so get_user_provider_config resolves the user's saved model
+        # rather than treating the hardcoded default as an override.
+        from backend.services.llm_config import get_user_provider_config
+        llm_config = get_user_provider_config(self.owner_id, model)
+        self.model = llm_config.get("model") or model or "google/gemma-4-31b-it"
+        self.provider_name = llm_config.get("provider_name") or detect_provider(self.model)
         self.api_key = llm_config["api_key"]
         self.base_url = llm_config["base_url"]
 
@@ -549,13 +552,15 @@ Start executing the tasks now. For each task, call the real tools. Report final 
             f"Messages: {len(messages)} | Tools: {len(tools) if tools else 0}"
         )
 
+        max_token_key = "max_completion_tokens" if self.provider_name == "openai" else "max_tokens"
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0.7,
-            "max_tokens": 4096,
+            max_token_key: 4096,
             "stream": True,
         }
+        if self.provider_name != "openai":
+            payload["temperature"] = 0.7
         payload.update(get_payload_extras(self.model))
 
         if tools:

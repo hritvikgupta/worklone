@@ -3,11 +3,13 @@ import { ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
+import { LandingChatDemoSection } from './LandingChatDemoSection';
+import { LandingEmployeeOverviewRow } from './LandingEmployeeOverviewRow';
 import { AgentProgressSection } from './AgentProgressSection';
 import { CreateWorkflowSection } from './CreateWorkflowSection';
-import { WorkforceStickySection } from './WorkforceStickySection';
 import { AgentNetworkSection } from './AgentNetworkSection';
 import { HowItWorksSection } from './HowItWorksSection';
+import { researchArticles } from './ResearchArticlePage';
 
 // Integration icon component - uses simple SVG icons from public CDN
 const IntegrationIcon: React.FC<{ name: string }> = ({ name }) => {
@@ -63,30 +65,30 @@ const integrationRows = [
   ['Snowflake', 'Postgres', 'BigQuery', 'ClickUp', 'Intercom', 'Dropbox', 'Trello', 'Zapier'],
 ];
 
-const pricingPlans = [
-  {
-    name: 'Starter',
-    price: '$2',
-    detail: 'per employee hour',
-    description: 'For small teams proving out one or two AI employees.',
-    features: ['Core workspace', 'Chat, files, and workflows', 'Standard integrations', 'Claude Haiku, GPT-4o mini, Gemini Flash'],
-  },
-  {
-    name: 'Team',
-    price: '$5',
-    detail: 'per employee hour',
-    description: 'For operating multiple employees across product, ops, and GTM.',
-    features: ['Everything in Starter', 'Advanced integrations', 'Priority execution and audit trails', 'Access to WhatsApp, Telegram, or email messaging to employee', 'Claude Sonnet, GPT-4.1, Gemini Pro, Minimax'],
-    featured: true,
-  },
-  {
-    name: 'Enterprise',
-    price: 'Custom',
-    detail: 'volume-based hourly pricing',
-    description: 'For companies standardizing AI employees across the organization.',
-    features: ['Custom deployment', 'Security review and SSO', 'Dedicated support and onboarding', 'Claude, OpenAI, Gemini, Minimax, Grok, custom routing'],
-  },
-];
+  const pricingPlans = [
+    {
+      name: 'Starter',
+      price: '$2',
+      detail: 'per employee hour',
+      description: 'For small teams proving out one or two AI employees.',
+      features: ['Core workspace', 'Chat, files, and workflows', 'Standard integrations', 'Claude Haiku, GPT-4o mini, Gemini Flash'],
+    },
+    {
+      name: 'Team',
+      price: '$5',
+      detail: 'per employee hour',
+      description: 'For operating multiple employees across product, ops, and GTM.',
+      features: ['Everything in Starter', 'Advanced integrations', 'Priority execution and audit trails', 'Access to WhatsApp, Telegram, or email messaging to employee', 'Claude Sonnet, GPT-4.1, Gemini Pro, Minimax'],
+      featured: true,
+    },
+    {
+      name: 'Enterprise',
+      price: 'Custom',
+      detail: 'volume-based hourly pricing',
+      description: 'For companies standardizing AI employees across the organization.',
+      features: ['Custom deployment', 'Security review and SSO', 'Dedicated support and onboarding', 'Claude, OpenAI, Gemini, Minimax, Grok, custom routing'],
+    },
+  ];
 
 export function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -123,13 +125,31 @@ export function LandingPage() {
             <div className="text-[18px] font-normal tracking-[-0.02em] text-[#0F172A] font-['Lato']">Worklone</div>
           </div>
 
-          <Link
-            to="/waitlist"
-            className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-          >
-            Join Waitlist
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="hidden md:flex flex-1 items-center justify-center gap-8">
+            <Link
+              to="/what-is-worklone"
+              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+            >
+              What is Worklone
+            </Link>
+            <Link
+              to={researchArticles[0] ? `/research/${researchArticles[0].slug}` : '/research/self-learning-employee'}
+              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+            >
+              Research
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              to="/waitlist"
+              className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+            >
+              <span className="hidden sm:inline">Join Waitlist</span>
+              <span className="sm:hidden">Waitlist</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -146,7 +166,7 @@ export function LandingPage() {
             </motion.h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-7 text-zinc-600 sm:text-[18px]">
-              Hire specialized AI employees for real work across your business. One operating system for AI coworkers that actually do the work.
+              Deploy self-adaptive AI employees that learn your workspace and master your workflows. An autonomous team that continuously improves and never makes the same mistake twice.
             </p>
 
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
@@ -176,21 +196,28 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="workspace-preview" className="bg-white px-6 py-10 sm:px-8 lg:px-10">
-        <div className="space-y-6">
-          <LandingPageDashboard />
+      <section id="workspace-preview" className="bg-white py-16 sm:py-24">
+        <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] px-4 py-16 sm:px-8 lg:px-12">
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <img src="/bg.png" alt="" className="h-full w-full object-cover object-center" />
+          </div>
+          <div className="relative z-10 space-y-6">
+            <LandingPageDashboard />
+          </div>
         </div>
       </section>
+
+      <LandingChatDemoSection />
+
+      <LandingEmployeeOverviewRow />
 
       <HowItWorksSection />
 
       <AgentNetworkSection />
 
-      <WorkforceStickySection />
+      <AgentProgressSection />
 
       <CreateWorkflowSection />
-
-      <AgentProgressSection />
 
       <section className="overflow-hidden bg-white px-6 py-16 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-4xl text-center">
@@ -278,7 +305,7 @@ export function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.07),transparent_35%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent_25%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.08)),linear-gradient(135deg,#171717_0%,#111111_28%,#1a1a1a_50%,#0f0f0f_72%,#171717_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.22))]" />
         <div className="relative mx-auto max-w-6xl">
-          <div className="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:gap-12">
+          <div className="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))] lg:gap-12">
             <div className="max-w-sm">
               <div className="flex items-center gap-3">
                 <img
@@ -294,20 +321,41 @@ export function LandingPage() {
             </div>
 
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Product</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Company</div>
               <div className="mt-4 space-y-2.5 text-base text-white/72">
-                <Link to="/what-is-worklone" className="block transition-colors hover:text-white">
-                  What is Worklone
+                <Link to="/privacy-policy" className="block transition-colors hover:text-white">
+                  Privacy Policy
                 </Link>
+                <Link to="/contact" className="block transition-colors hover:text-white">
+                  Contact
+                </Link>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Research</div>
+              <div className="mt-4 space-y-2.5 text-base text-white/72">
+                {researchArticles.map((article) => (
+                  <Link 
+                    key={article.slug} 
+                    to={`/research/${article.slug}`} 
+                    className="block transition-colors hover:text-white"
+                  >
+                    {article.title}
+                  </Link>
+                ))}
               </div>
             </div>
 
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Company</div>
               <div className="mt-4 space-y-2.5 text-base text-white/72">
-                <span className="block">Privacy Policy</span>
-                <span className="block">Terms</span>
-                <span className="block">Contact</span>
+                <Link to="/privacy-policy" className="block transition-colors hover:text-white">
+                  Privacy Policy
+                </Link>
+                <Link to="/contact" className="block transition-colors hover:text-white">
+                  Contact
+                </Link>
               </div>
             </div>
 
@@ -331,9 +379,8 @@ export function LandingPage() {
           <div className="mt-8 flex flex-col gap-4 text-xs text-white/58 md:flex-row md:items-center md:justify-between">
             <span>© 2026 Worklone. All rights reserved.</span>
             <div className="flex flex-wrap items-center gap-4 md:justify-end md:gap-6">
-              <span>Privacy Policy</span>
-              <span>Terms</span>
-              <span>Contact</span>
+              <Link to="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
+              <Link to="/contact" className="transition-colors hover:text-white">Contact</Link>
             </div>
           </div>
         </div>

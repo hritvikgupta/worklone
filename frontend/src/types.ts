@@ -5,6 +5,7 @@ export interface Agent {
   name: string;
   role?: string;
   avatar: string;
+  cover?: string;
   status: AgentStatus;
   description: string;
   systemPrompt: string;

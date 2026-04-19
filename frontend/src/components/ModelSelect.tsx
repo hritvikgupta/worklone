@@ -75,12 +75,18 @@ export function ModelSelect({
         )}
       >
         <div className="min-w-0">
-          <div className="truncate text-sm font-medium text-foreground">
-            {selectedModel?.name || value}
-          </div>
-          <div className="truncate text-xs text-muted-foreground">
-            {selectedModel?.id || value}
-          </div>
+          {value ? (
+            <>
+              <div className="truncate text-sm font-medium text-foreground">
+                {selectedModel?.name || value}
+              </div>
+              <div className="truncate text-xs text-muted-foreground">
+                {selectedModel?.id || value}
+              </div>
+            </>
+          ) : (
+            <div className="truncate text-sm text-muted-foreground">Select a model…</div>
+          )}
         </div>
         <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>

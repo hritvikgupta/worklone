@@ -309,7 +309,6 @@ class GenericEmployeeAgent:
         self.employee_tools = full["tools"]
         self.employee_skills = full["skills"]
 
-        self.model = model or self.employee.model or "openai/gpt-4o"
         self.tool_registry = ToolRegistry()
         self.tool_configs: Dict[str, dict] = {}
         self.missing_tools: List[str] = []
@@ -328,9 +327,13 @@ class GenericEmployeeAgent:
         self._turns_since_memory_review: int = 0
         self._tool_iters_since_skill_review: int = 0
 
-        # LLM provider config from centralized service
-        self.provider_name = detect_provider(self.model)
-        llm_config = get_provider_config(self.model)
+        # Model priority: explicit param > employee's own config > user's LLM setting > hardcoded default
+        from backend.services.llm_config import get_user_provider_config
+        _employee_model = model or self.employee.model or ""
+        _employee_provider = self.employee.provider or ""
+        llm_config = get_user_provider_config(self.user_id, _employee_model, force_provider=_employee_provider)
+        self.model = llm_config.get("model") or _employee_model or "openai/gpt-4o"
+        self.provider_name = llm_config.get("provider_name") or detect_provider(self.model)
         self.api_key = llm_config["api_key"]
         self.base_url = llm_config["base_url"]
 
@@ -1304,13 +1307,15 @@ class GenericEmployeeAgent:
             f"Max Tokens: {self.employee.max_tokens or 4096}"
         )
 
+        max_token_key = "max_completion_tokens" if self.provider_name == "openai" else "max_tokens"
         payload = {
             "model": self.model,
             "messages": messages,
-            "temperature": self.employee.temperature if self.employee.temperature is not None else 0.7,
-            "max_tokens": self.employee.max_tokens or 4096,
+            max_token_key: self.employee.max_tokens or 4096,
             "stream": True,
         }
+        if self.provider_name != "openai":
+            payload["temperature"] = self.employee.temperature if self.employee.temperature is not None else 0.7
         payload.update(get_payload_extras(self.model))
 
         # Request usage stats in streaming mode

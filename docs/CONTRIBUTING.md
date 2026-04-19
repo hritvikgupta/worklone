@@ -2,6 +2,8 @@
 
 Thank you for considering contributing to Worklone! We welcome contributions of all kinds — bug fixes, new features, documentation improvements, and tool additions.
 
+> License notice: this project is non-commercial research-use only. Contributions remain under the repository license in [../LICENSE](../LICENSE).
+
 ---
 
 ## How to Contribute
@@ -174,4 +176,4 @@ Documentation improvements are always welcome:
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions are licensed under the Worklone Non-Commercial Research License v1.0.

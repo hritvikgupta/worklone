@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ChevronDown, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
+import { researchArticles } from './ResearchArticlePage';
 
 type ParsedSection = {
   title: string;
@@ -91,7 +92,7 @@ function SiteFooter() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.07),transparent_35%),radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent_25%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(0,0,0,0.08)),linear-gradient(135deg,#171717_0%,#111111_28%,#1a1a1a_50%,#0f0f0f_72%,#171717_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-[linear-gradient(180deg,transparent,rgba(0,0,0,0.22))]" />
       <div className="relative mx-auto max-w-6xl">
-        <div className="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] lg:gap-12">
+        <div className="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))] lg:gap-12">
           <div className="max-w-sm">
             <div className="flex items-center gap-3">
               <img src="/brand/worklone-mark-white.png" alt="Worklone" className="h-7 w-auto" />
@@ -103,20 +104,41 @@ function SiteFooter() {
           </div>
 
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Product</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Company</div>
             <div className="mt-4 space-y-2.5 text-base text-white/72">
-              <Link to="/what-is-worklone" className="block transition-colors hover:text-white">
-                What is Worklone
+              <Link to="/privacy-policy" className="block transition-colors hover:text-white">
+                Privacy Policy
               </Link>
+              <Link to="/contact" className="block transition-colors hover:text-white">
+                Contact
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Research</div>
+            <div className="mt-4 space-y-2.5 text-base text-white/72">
+              {researchArticles.map((article) => (
+                <Link 
+                  key={article.slug} 
+                  to={`/research/${article.slug}`} 
+                  className="block transition-colors hover:text-white"
+                >
+                  {article.title}
+                </Link>
+              ))}
             </div>
           </div>
 
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/88">Company</div>
             <div className="mt-4 space-y-2.5 text-base text-white/72">
-              <span className="block">Privacy Policy</span>
-              <span className="block">Terms</span>
-              <span className="block">Contact</span>
+              <Link to="/privacy-policy" className="block transition-colors hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link to="/contact" className="block transition-colors hover:text-white">
+                Contact
+              </Link>
             </div>
           </div>
 
@@ -297,6 +319,56 @@ export function WhatIsWorklonePage() {
 
   const article = useMemo(() => parseArticle(markdownContent), [markdownContent]);
 
+  // Research Dropdown Component
+  function ResearchDropdown() {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      function handleClickOutside(event: MouseEvent) {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      }
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-1 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+        >
+          <BookOpen className="h-4 w-4" />
+          Research
+          <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-zinc-200 bg-white p-2 shadow-lg">
+            <div className="px-3 py-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">Articles</div>
+            </div>
+            <div className="space-y-1">
+              {researchArticles.map((article) => (
+                <Link
+                  key={article.slug}
+                  to={`/research/${article.slug}`}
+                  onClick={() => setIsOpen(false)}
+                  className="block rounded-xl px-3 py-3 transition-colors hover:bg-zinc-50"
+                >
+                  <div className="text-sm font-medium text-zinc-900">{article.title}</div>
+                  <div className="mt-1 text-xs text-zinc-500 line-clamp-1">{article.subtitle}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-zinc-950">
       <header className="fixed inset-x-0 top-0 z-40 bg-white/94 backdrop-blur">
@@ -306,10 +378,11 @@ export function WhatIsWorklonePage() {
             <div className="text-lg font-semibold tracking-tight">Worklone</div>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 sm:block">
               Home
             </Link>
+            <ResearchDropdown />
             <Link
               to="/waitlist"
               className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"

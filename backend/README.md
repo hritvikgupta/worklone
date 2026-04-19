@@ -1,194 +1,64 @@
-# Backend - CEO Agent
+# Backend - Worklone API
 
-Backend API for the CEO Agent application, featuring Katy - the AI Product Manager.
+Backend API for Gemenic Workplace self-learning employees.
+
+> License notice: non-commercial research and evaluation only. See [../LICENSE](../LICENSE).
 
 ## Structure
 
 ```
 backend/
 ├── api/                    # FastAPI application
-│   ├── main.py            # Main FastAPI app
-│   └── routes.py          # Route aggregation
-├── routers/               # API route handlers
-│   └── chat.py           # Chat endpoints
-├── services/              # Business logic
-│   └── katy_service.py   # Katy agent service
-├── store/                 # Centralized persistence layer and shared DB config
-│   ├── auth_store.py     # Auth, sessions, integrations, chat storage
-│   ├── employee_store.py # Employee storage
-│   ├── workflow_store.py # Workflow storage
-│   └── database.py       # Shared DB path + connection helpers
-├── product_manager/       # Katy PM Agent
-│   ├── katy.py           # Main agent implementation
-│   ├── types.py          # Type definitions
-│   └── README.md
-├── tools/                 # Centralized shared tools for employee, PM, and workflows
-│   ├── system_tools/     # Base tool types, registry, file/http/shell/memory
-│   ├── integration_tools/# Slack, Gmail, Jira, Notion, Analytics, Research, GitHub
-│   ├── run_tools/        # LLM and function execution tools
-│   ├── workflow_tools/   # Workflow creation and approval tools
-│   └── specialized_tools/# PM, engineering, analyst, designer, ops, sales, recruiter
-├── workflows/             # Workflow engine
-│   ├── engine/           # Execution engine
-│   └── ...
-├── models/                # Pydantic models
-└── config/                # Configuration
+├── services/               # Business logic
+├── core/                   # Agents, tools, workflows
+├── db/                     # Shared SQLite stores
+├── lib/                    # Auth/OAuth helpers
+└── ...
 ```
 
 ## Setup
 
-### Prerequisites
-
-- Python 3.9+
-- pip
-
-### Installation
-
-1. **Navigate to project root:**
-   ```bash
-   cd /Users/hritvik/Downloads/ceo-agent
-   ```
-
-2. **Create virtual environment (if not exists):**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your API keys
-   ```
-
-## Running the Backend
-
-### Option 1: Using the startup script
-
 ```bash
-chmod +x scripts/start-backend.sh
-./scripts/start-backend.sh
+cd /Users/hritvik/Downloads/ceo-agent
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-### Option 2: Manual start
+## Run
 
 ```bash
 source venv/bin/activate
 uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The server will start at `http://localhost:8000`
+Server: `http://localhost:8000`
 
-## API Endpoints
+## API
 
-### Health Check
-```
-GET /health
-```
-Returns server status.
+- Health: `GET /health`
+- Chat: `POST /api/chat/`
+- Streaming chat: `POST /api/chat/stream`
 
-### Chat
-```
-POST /api/chat/
-```
-Send a message to Katy and get a response.
+## Frontend Integration
 
-**Request:**
-```json
-{
-  "message": "Help me prioritize my backlog",
-  "user_id": "anonymous",
-  "conversation_history": [
-    {"role": "user", "content": "Previous message"},
-    {"role": "assistant", "content": "Previous response"}
-  ]
-}
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-**Response:**
-```json
-{
-  "response": "Katy's full response text",
-  "success": true
-}
-```
+## Notes
 
-### Chat (Streaming)
-```
-POST /api/chat/stream
-```
-Stream Katy's response using Server-Sent Events (SSE).
-
-## Integration with Frontend
-
-1. **Start the backend:**
-   ```bash
-   ./scripts/start-backend.sh
-   ```
-
-2. **Start the frontend:**
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-3. **Configure frontend:**
-   - The frontend will automatically connect to `http://localhost:8000`
-   - To change the backend URL, update `VITE_BACKEND_URL` in `frontend/.env`
-
-## Features
-
-### Katy PM Agent
-- **Strategic Planning**: Vision, roadmap, competitive analysis
-- **Feature Prioritization**: Backlog management, trade-offs
-- **Cross-functional Leadership**: Team coordination
-- **Customer Advocacy**: Feedback gathering, user research
-- **Data-Driven Decisions**: Metrics, A/B tests
-- **Go-to-Market**: Launches, positioning
-- **Requirements Definition**: PRDs, user stories
-
-### External Integrations
-- **Jira**: Backlog and sprint management
-- **Notion**: Documentation and PRDs
-- **Analytics**: Product metrics tracking
-- **Research**: Market and competitor analysis
-- **Slack**: Team communication
-- **Gmail**: Stakeholder communication
-
-## Development
-
-### Adding New Endpoints
-
-1. Create a new router in `backend/api/routers/`
-2. Include it in `backend/api/routes.py`
-3. Create corresponding service in `backend/services/`
-
-### Adding New Tools
-
-1. Create tool class in `backend/core/tools/` under the appropriate tool category
-2. Inherit from `BaseTool`
-3. Implement the `execute` method
-4. Register or import it where needed
+- This backend supports adaptive, self-learning employee execution loops.
+- Integration endpoints and workflow orchestration are exposed through FastAPI routers.
+- Storage defaults to shared SQLite for local/self-hosted operation.
 
 ## Troubleshooting
 
-### Backend won't start
-- Check if port 8000 is already in use
-- Ensure virtual environment is activated
-- Verify all dependencies are installed
-
-### Frontend can't connect to backend
-- Check `VITE_BACKEND_URL` in `.env`
-- Ensure backend is running on correct port
-- Check CORS settings in `backend/api/main.py`
-
-### Import errors
-- Make sure you're running from project root
-- Check that `backend/` is in Python path
-- Verify all imports use `backend.` prefix
+- Ensure `venv` is activated.
+- Ensure port `8000` is free.
+- Ensure `.env` keys are set.
+- Ensure frontend `VITE_BACKEND_URL` points to `http://localhost:8000`.

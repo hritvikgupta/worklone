@@ -12,7 +12,9 @@ from typing import Any, Callable, Optional
 
 import httpx
 
+from backend.core.config import get_settings
 from backend.db.stores.auth_store import AuthDB
+from backend.db.stores.workflow_store import WorkflowStore
 
 
 def _get_provider_env_value(provider: str, suffix: str) -> str:
@@ -29,6 +31,30 @@ def _get_provider_env_value(provider: str, suffix: str) -> str:
         if value:
             return value
     return ""
+
+
+def _provider_credential_namespace(provider: str) -> str:
+    normalized = provider.strip().lower().replace("-", "_")
+    if normalized in {"google_calendar", "google_drive"}:
+        return "google"
+    return normalized
+
+
+def _oauth_cred_key(provider: str, suffix: str) -> str:
+    return f"oauth_{suffix.lower()}_{_provider_credential_namespace(provider)}"
+
+
+def _get_provider_user_value(user_id: str, provider: str, suffix: str) -> str:
+    if not user_id:
+        return ""
+    store = WorkflowStore()
+    return (store.get_credential(user_id, _oauth_cred_key(provider, suffix)) or "").strip()
+
+
+def _resolve_provider_client_value(user_id: str, provider: str, suffix: str) -> str:
+    if get_settings().deployment_mode == "self_hosted":
+        return _get_provider_user_value(user_id, provider, suffix)
+    return _get_provider_env_value(provider, suffix)
 
 
 def _normalize_expiry(raw_expires_in: Any) -> Optional[str]:
@@ -120,8 +146,8 @@ class OAuthConnection:
 async def refresh_oauth_access_token(connection: OAuthConnection) -> str:
     provider = connection.provider
     refresh_token = connection.refresh_token.strip()
-    client_id = _get_provider_env_value(provider, "CLIENT_ID")
-    client_secret = _get_provider_env_value(provider, "CLIENT_SECRET")
+    client_id = _resolve_provider_client_value(connection.user_id, provider, "CLIENT_ID")
+    client_secret = _resolve_provider_client_value(connection.user_id, provider, "CLIENT_SECRET")
     if not refresh_token or not client_id or not client_secret:
         return ""
 

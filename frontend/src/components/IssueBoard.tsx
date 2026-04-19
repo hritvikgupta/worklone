@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Issue, IssueStatus } from '@/src/types';
+import { useEmployeePresence } from '@/src/hooks/usePresence';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -80,7 +81,7 @@ interface IssueBoardProps {
   issues: Issue[];
   setIssues: (issues: Issue[]) => void;
   onAddIssue: (status: string) => void;
-  onUpdateIssueDetails?: (issueId: string, details: { title: string; description: string; requirements: string; agentId?: string }) => void;
+  onUpdateIssueDetails?: (issueId: string, details: { title: string; description: string; requirements: string; priority: Issue['priority']; agentId?: string }) => void;
   onRunTask?: (issueId: string) => Promise<void> | void;
 }
 
@@ -405,13 +406,18 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
     return () => { mounted = false; };
   }, []);
 
+  // Live presence so the dropdown disables busy employees.
+  const employeeIds = useMemo(() => employees.map(e => e.id), [employees]);
+  const employeePresence = useEmployeePresence(employeeIds);
+
   // Editable state
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editRequirements, setEditRequirements] = useState('');
+  const [editPriority, setEditPriority] = useState<Issue['priority']>('medium');
   const [editAgentId, setEditAgentId] = useState<string | undefined>('');
   // Baseline snapshot of the last saved values — used to compute the dirty flag.
-  const [savedSnapshot, setSavedSnapshot] = useState<{ title: string; description: string; requirements: string; agentId?: string } | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState<{ title: string; description: string; requirements: string; priority: Issue['priority']; agentId?: string } | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
   // When the user opens a different issue, initialize edit fields + baseline snapshot.
@@ -426,11 +432,13 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
     setEditTitle(fresh.title || '');
     setEditDescription(fresh.description || '');
     setEditRequirements(fresh.requirements || '');
+    setEditPriority(fresh.priority || 'medium');
     setEditAgentId(fresh.agentId);
     setSavedSnapshot({
       title: fresh.title || '',
       description: fresh.description || '',
       requirements: fresh.requirements || '',
+      priority: fresh.priority || 'medium',
       agentId: fresh.agentId,
     });
     // Intentionally only re-runs when the selected id changes — we don't want
@@ -453,6 +461,7 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
     editTitle !== savedSnapshot.title ||
     editDescription !== savedSnapshot.description ||
     editRequirements !== savedSnapshot.requirements ||
+    editPriority !== savedSnapshot.priority ||
     (editAgentId || '') !== (savedSnapshot.agentId || '')
   );
 
@@ -462,13 +471,14 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
     if (!selectedIssue) return;
 
     // Optimistic update — keep the panel open so the user can click Run next.
-    const updatedIssue = { ...selectedIssue, title: editTitle, description: editDescription, requirements: editRequirements, agentId: editAgentId };
+    const updatedIssue = { ...selectedIssue, title: editTitle, description: editDescription, requirements: editRequirements, priority: editPriority, agentId: editAgentId };
     setIssues(issues.map(i => i.id === selectedIssue.id ? updatedIssue : i));
     setSelectedIssue(updatedIssue);
     setSavedSnapshot({
       title: editTitle,
       description: editDescription,
       requirements: editRequirements,
+      priority: editPriority,
       agentId: editAgentId,
     });
 
@@ -477,6 +487,7 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
         title: editTitle,
         description: editDescription,
         requirements: editRequirements,
+        priority: editPriority,
         agentId: editAgentId
       });
     }
@@ -925,6 +936,24 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-3">
                           <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            <Tag className="h-3 w-3" /> Priority
+                          </Label>
+                          <Select
+                            value={editPriority}
+                            onValueChange={(val) => setEditPriority(val as Issue['priority'])}
+                          >
+                            <SelectTrigger className="w-full bg-background border-border shadow-sm h-[42px]">
+                              <SelectValue placeholder="Select Priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="high">High</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="low">Low</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                             <Bot className="h-3 w-3" /> Agent Lead
                           </Label>
                           <Select 
@@ -951,17 +980,26 @@ export function IssueBoard({ issues, setIssues, onAddIssue, onUpdateIssueDetails
                                   <span className="text-sm font-medium text-foreground">Unassigned</span>
                                 </div>
                               </SelectItem>
-                              {employees.map(agent => (
-                                <SelectItem key={agent.id} value={agent.id}>
+                              {employees.map(agent => {
+                                const busy = employeePresence.isBusy(agent.id);
+                                const ctx = employeePresence.busyIn(agent.id);
+                                return (
+                                <SelectItem key={agent.id} value={agent.id} disabled={busy}>
                                   <div className="flex items-center gap-2.5">
                                     <Avatar className="h-6 w-6">
                                       <AvatarImage src={agent.avatar_url} />
                                       <AvatarFallback className="bg-muted text-[10px] text-muted-foreground">{agent.name[0]}</AvatarFallback>
                                     </Avatar>
                                     <span className="text-sm font-medium text-foreground">{agent.name}</span>
+                                    {busy && (
+                                      <span className="ml-auto inline-flex items-center gap-1 text-[10px] text-amber-600">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                        Busy{ctx?.kind ? ` · ${ctx.kind}` : ''}
+                                      </span>
+                                    )}
                                   </div>
                                 </SelectItem>
-                              ))}
+                              );})}
                             </SelectContent>
                           </Select>
                         </div>

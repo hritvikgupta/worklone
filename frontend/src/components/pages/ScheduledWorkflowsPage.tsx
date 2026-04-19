@@ -30,7 +30,6 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { ModelDropdown } from '@/components/ModelDropdown';
 import { ScheduleEditor } from '@/src/components/ScheduleEditor';
 import {
   cancelPausedExecution,
@@ -113,7 +112,6 @@ export function ScheduledWorkflowsPage() {
   // Prompt input states
   const [promptValue, setPromptValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedModel, setSelectedModel] = useState("qwen/qwen3-max-thinking");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -143,7 +141,7 @@ export function ScheduledWorkflowsPage() {
     if (!promptValue.trim()) return;
     setIsGenerating(true);
     try {
-      await generateWorkflow(promptValue, selectedModel);
+      await generateWorkflow(promptValue);
       setPromptValue('');
       const data = await listWorkflows();
       setWorkflows(data);
@@ -447,15 +445,8 @@ export function ScheduledWorkflowsPage() {
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center justify-between p-4 pt-2">
-            <div className="flex items-center gap-1">
-              <ModelDropdown 
-                value={selectedModel}
-                onChange={setSelectedModel}
-              />
-            </div>
-
-            <Button 
+          <div className="flex items-center justify-end p-4 pt-2">
+            <Button
               size="icon" 
               onClick={handleGenerate}
               className={cn(

@@ -39,6 +39,7 @@ class EmployeeStore:
                 name TEXT NOT NULL,
                 role TEXT DEFAULT '',
                 avatar_url TEXT DEFAULT '',
+                cover_url TEXT DEFAULT '',
                 status TEXT DEFAULT 'idle',
                 description TEXT DEFAULT '',
                 system_prompt TEXT DEFAULT '',
@@ -58,7 +59,16 @@ class EmployeeStore:
             conn.execute("ALTER TABLE employees ADD COLUMN memory TEXT DEFAULT '[]'")
             conn.commit()
         except Exception:
-            # Column already exists
+            pass
+        try:
+            conn.execute("ALTER TABLE employees ADD COLUMN provider TEXT DEFAULT ''")
+            conn.commit()
+        except Exception:
+            pass
+        try:
+            conn.execute("ALTER TABLE employees ADD COLUMN cover_url TEXT DEFAULT ''")
+            conn.commit()
+        except Exception:
             pass
 
         conn.executescript("""
@@ -158,14 +168,14 @@ class EmployeeStore:
     def create_employee(self, employee: Employee) -> Employee:
         conn = self._get_conn()
         conn.execute("""
-            INSERT INTO employees (id, name, role, avatar_url, status, description,
-                                   system_prompt, model, owner_id, is_active,
+            INSERT INTO employees (id, name, role, avatar_url, cover_url, status, description,
+                                   system_prompt, model, provider, owner_id, is_active,
                                    temperature, max_tokens, memory, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            employee.id, employee.name, employee.role, employee.avatar_url,
+            employee.id, employee.name, employee.role, employee.avatar_url, employee.cover_url,
             employee.status.value, employee.description, employee.system_prompt,
-            employee.model, employee.owner_id, int(employee.is_active),
+            employee.model, employee.provider, employee.owner_id, int(employee.is_active),
             employee.temperature, employee.max_tokens,
             json.dumps(employee.memory),
             employee.created_at.isoformat(), employee.updated_at.isoformat()
@@ -211,8 +221,8 @@ class EmployeeStore:
         fields = []
         values = []
         for key, value in updates.items():
-            if key in ("name", "role", "avatar_url", "description",
-                       "system_prompt", "model", "status", "temperature",
+            if key in ("name", "role", "avatar_url", "cover_url", "description",
+                       "system_prompt", "model", "provider", "status", "temperature",
                        "max_tokens", "is_active", "memory"):
                 if key == "is_active":
                     fields.append(f"{key} = ?")
@@ -714,10 +724,12 @@ class EmployeeStore:
             name=row["name"],
             role=row["role"],
             avatar_url=row["avatar_url"],
+            cover_url=row["cover_url"] if "cover_url" in row.keys() else "",
             status=status,
             description=row["description"],
             system_prompt=row["system_prompt"],
             model=row["model"],
+            provider=row["provider"] if "provider" in row.keys() else "",
             owner_id=row["owner_id"],
             is_active=bool(row["is_active"]),
             temperature=row["temperature"],

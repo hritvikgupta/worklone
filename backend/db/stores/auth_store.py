@@ -427,6 +427,20 @@ class AuthDB:
         finally:
             conn.close()
 
+    def change_password(self, user_id: str, current_password: str, new_password: str) -> bool:
+        """Verify current password then update to new one. Returns False if current is wrong."""
+        conn = self._get_conn()
+        try:
+            row = conn.execute("SELECT password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not row or not self.verify_password(row["password_hash"], current_password):
+                return False
+            new_hash = self._hash_password(new_password)
+            conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user_id))
+            conn.commit()
+            return True
+        finally:
+            conn.close()
+
     # ─── Utility Methods ────────────────────────────────────────────
 
     @staticmethod

@@ -127,6 +127,8 @@ interface FullMessengerProps {
   composerClassName?: string
   onCreateConversation?: () => void
   hideConversationTabs?: boolean
+  composerDisabled?: boolean
+  composerPlaceholder?: string
 }
 
 function FullMessenger({
@@ -149,6 +151,8 @@ function FullMessenger({
   composerClassName,
   onCreateConversation,
   hideConversationTabs = false,
+  composerDisabled = false,
+  composerPlaceholder,
 }: FullMessengerProps) {
   const activeConvo = conversations.find((c) => c.id === activeConversationId)
 
@@ -246,7 +250,12 @@ function FullMessenger({
               />
               <ChatMessages messages={messages} typingUsers={typingUsers} className={messagesClassName} />
               {beforeComposer}
-              <ChatComposer onSend={onSend} className={composerClassName} />
+              <ChatComposer
+                onSend={onSend}
+                className={composerClassName}
+                disabled={composerDisabled}
+                placeholder={composerPlaceholder}
+              />
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center">

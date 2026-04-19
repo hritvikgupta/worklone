@@ -13,6 +13,8 @@ from backend.api.routers.workflows import router as workflows_router
 from backend.api.routers.teams import router as teams_router
 from backend.api.routers.sprints import router as sprints_router
 from backend.api.routers.dashboard import router as dashboard_router
+from backend.api.routers.dispatch import router as dispatch_router
+from backend.api.routers.settings import router as settings_router
 
 router = APIRouter()
 
@@ -27,3 +29,5 @@ router.include_router(workflows_router, tags=["workflows"])
 router.include_router(teams_router, tags=["teams"])
 router.include_router(sprints_router, tags=["sprints"])
 router.include_router(dashboard_router, tags=["dashboard"])
+router.include_router(dispatch_router, tags=["dispatch"])
+router.include_router(settings_router, tags=["settings"])

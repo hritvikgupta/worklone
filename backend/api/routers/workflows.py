@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from backend.core.errors import AppError
 from backend.core.logging import get_logger
+from backend.core.dispatch.jobs import enqueue_job, QueueFullError
 from backend.db.stores.workflow_store import WorkflowStore
 from backend.lib.auth.session import get_current_user
 from backend.core.workflows.engine.executor import WorkflowExecutor
@@ -24,7 +25,11 @@ logger = get_logger("api.routers.workflows")
 
 def _get_owner_id(authorization: Optional[str] = Header(None)) -> str:
     if authorization and authorization.startswith("Bearer "):
-        return ""
+        from backend.db.stores.auth_store import AuthDB
+        token = authorization.split(" ", 1)[1]
+        user = AuthDB().validate_session(token)
+        if user and user.get("id"):
+            return str(user["id"])
     return ""
 
 
@@ -253,19 +258,24 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
     """Generate a workflow from a natural language prompt."""
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
-        
+
     from backend.core.tools.run_tools.llm_tool import LLMTool
     from backend.core.workflows.utils import generate_id
+    from backend.services.llm_config import get_user_provider_config
     import json
-    
+
+    # Use the user's configured model from Settings > LLM, falling back to request or default
+    user_cfg = get_user_provider_config(user["id"], "")
+    resolved_model = user_cfg.get("model") or request.model or "qwen/qwen3-max-thinking"
+
     llm = LLMTool()
-    
+
     sys_prompt = f"""
     You are an expert workflow architect. Parse the user's prompt into a JSON workflow definition.
     The user's current timezone is {request.timezone} and their current time is {request.current_time}.
-    If the user asks for a specific time of day (e.g. "every morning at 9am"), you MUST construct the cron schedule 
+    If the user asks for a specific time of day (e.g. "every morning at 9am"), you MUST construct the cron schedule
     relative to {request.timezone}, taking into account the current time context if needed.
-    
+
     Return ONLY valid JSON matching this structure:
     {{
         "name": "Short descriptive name",
@@ -277,11 +287,11 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
         ]
     }}
     """
-    
+
     response = await llm.execute({
         "prompt": request.prompt,
         "system_prompt": sys_prompt,
-        "model": request.model,
+        "model": resolved_model,
         "response_format": {"type": "json_object"}
     })
     
@@ -348,11 +358,12 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
 
 @router.post("/workflows/{workflow_id}/execute")
 async def execute_workflow(workflow_id: str, user=Depends(get_current_user)):
-    """Execute a workflow manually — streams SSE events live like the employee chat."""
-    from fastapi.responses import StreamingResponse
-    from backend.core.workflows.engine.coworker import CoWorkerAgent
-    import json as _json
+    """Execute a workflow manually.
 
+    Enqueues a dispatch job and returns immediately. Live progress reaches the
+    frontend via socket.io `run.progress` / `run.completed` events published by
+    the worker — same transport sprint/team runs use.
+    """
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -362,75 +373,34 @@ async def execute_workflow(workflow_id: str, user=Depends(get_current_user)):
 
     executor._cleanup_stale_executions(workflow_id, user["id"])
 
-    exec_id = generate_id("exec")
-    exec_result = ExecutionResult(
-        execution_id=exec_id,
-        workflow_id=workflow_id,
-        owner_id=user["id"],
-        status=WorkflowStatus.RUNNING,
-        trigger_type="manual",
-        trigger_input={},
-        started_at=datetime.now(),
-    )
-    store.save_execution(exec_result)
-    store.update_workflow_status(workflow_id, WorkflowStatus.RUNNING.value)
+    try:
+        job = await enqueue_job(
+            kind="workflow",
+            lane="workflow",
+            user_id=user["id"] or "anonymous",
+            owner_id=user["id"] or "",
+            required_employee_ids=[],
+            payload={
+                "workflow_id": workflow_id,
+                "trigger_type": "manual",
+            },
+        )
+    except QueueFullError as e:
+        raise AppError(
+            code="WORKFLOW_EXECUTE_QUEUE_FULL",
+            message=str(e),
+            status_code=429,
+            retryable=True,
+            details={"workflow_id": workflow_id},
+        ) from e
 
-    async def event_generator():
-        agent = CoWorkerAgent(owner_id=user["id"])
-        success = True
-        try:
-            async for event in agent.execute_workflow(
-                workflow_id, trigger_input={}, stream=True, emit_events=True
-            ):
-                if isinstance(event, dict):
-                    yield f"data: {_json.dumps(event)}\n\n"
-                    if event.get("type") == "error":
-                        success = False
-                        exec_result.error = event.get("message", "")
-                else:
-                    yield f"data: {_json.dumps({'type': 'content', 'token': str(event)})}\n\n"
-        except Exception as e:
-            success = False
-            exec_result.error = str(e)
-            logger.exception("Workflow stream execution failed workflow_id=%s user_id=%s", workflow_id, user["id"])
-            err = AppError(
-                code="WORKFLOW_EXECUTION_FAILED",
-                message="The workflow execution failed.",
-                status_code=500,
-                retryable=False,
-                details={"workflow_id": workflow_id},
-            )
-            yield f"data: {_json.dumps({'type': 'error', 'error': err.to_payload()['error']})}\n\n"
+    return {
+        "success": True,
+        "job_id": job.id,
+        "status": "queued",
+        "workflow_id": workflow_id,
+    }
 
-        now = datetime.now()
-        exec_result.completed_at = now
-        exec_result.execution_time = (now - exec_result.started_at).total_seconds()
-
-        final_wf = store.get_workflow(workflow_id) or store.get_workflow(workflow_id, user["id"])
-        if final_wf:
-            if success and final_wf.status != WorkflowStatus.FAILED:
-                final_wf.status = WorkflowStatus.ACTIVE
-                exec_result.status = WorkflowStatus.COMPLETED
-                exec_result.output = {"message": "Workflow completed successfully"}
-                # Ensure tasks are marked completed
-                for t in final_wf.tasks:
-                    if t.status.value == "running":
-                        t.status = WorkflowTaskStatus.COMPLETED
-                        if not t.result:
-                            t.result = "Completed."
-            else:
-                final_wf.status = WorkflowStatus.FAILED
-                exec_result.status = WorkflowStatus.FAILED
-                for t in final_wf.tasks:
-                    if t.status.value == "running":
-                        t.status = WorkflowTaskStatus.FAILED
-            store.save_workflow(final_wf)
-
-        store.save_execution(exec_result)
-        yield f"data: {_json.dumps({'type': 'done', 'execution_id': exec_id, 'status': exec_result.status.value})}\n\n"
-        yield "data: [DONE]\n\n"
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 class UpdateWorkflowRequest(BaseModel):
     schedule: Optional[str] = None

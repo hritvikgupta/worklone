@@ -1,5 +1,6 @@
 import React from 'react';
 import { Agent } from '@/src/types';
+import { useEmployeePresence } from '@/src/hooks/usePresence';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,6 +41,7 @@ interface AgentDetailProps {
   agent: Agent;
   onBack: () => void;
   onConfigure?: () => void;
+  onCoverUpdate?: (coverUrl: string) => Promise<void> | void;
   tools?: EmployeeTool[];
   skills?: EmployeeSkill[];
   tasks?: EmployeeTask[];
@@ -102,8 +104,17 @@ const markdownComponents = {
   ),
 };
 
-export function AgentDetail({ agent, onBack, onConfigure, tools = [], skills = [], tasks = [], activity = [] }: AgentDetailProps) {
+export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools = [], skills = [], tasks = [], activity = [] }: AgentDetailProps) {
+  const { statuses, busyIn } = useEmployeePresence([agent.id]);
+  const livePresence = {
+    status: (statuses[agent.id]?.status as Agent['status']) || agent.status,
+    busyIn: busyIn(agent.id),
+  };
   const [selectedActivity, setSelectedActivity] = React.useState<EmployeeActivity | null>(null);
+  const [showFullPrompt, setShowFullPrompt] = React.useState(false);
+  const [isUploadingCover, setIsUploadingCover] = React.useState(false);
+  const [coverError, setCoverError] = React.useState<string | null>(null);
+  const coverInputRef = React.useRef<HTMLInputElement | null>(null);
   const getStatusColor = (status: Agent['status']) => {
     switch (status) {
       case 'working': return 'bg-blue-400';
@@ -169,58 +180,124 @@ export function AgentDetail({ agent, onBack, onConfigure, tools = [], skills = [
     return <div className="h-2.5 w-2.5 rounded-full border-2 border-primary bg-background transition-transform group-hover:scale-125" />;
   };
 
-  return (
-    <div className="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border pb-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0 -ml-2">
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
-          <div className="relative">
-            <Avatar className="h-16 w-16 rounded-2xl border-2 border-border shadow-sm">
-              <AvatarImage src={agent.avatar} alt={agent.name} />
-              <AvatarFallback className="text-xl">{agent.name[0]}</AvatarFallback>
-            </Avatar>
-            <div className={cn(
-              "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-background",
-              getStatusColor(agent.status)
-            )} />
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">{agent.name}</h1>
-              <Badge variant="secondary" className="bg-secondary/50 text-muted-foreground font-mono text-[10px]">
-                {agent.model}
-              </Badge>
-            </div>
-            {agent.role && (
-              <div className="text-sm text-muted-foreground">{agent.role}</div>
-            )}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5 capitalize">
-                <span className={cn("w-1.5 h-1.5 rounded-full", getStatusColor(agent.status))} />
-                {agent.status}
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5" />
-                {agent.skills.length} Skills Active
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 gap-2 font-medium" onClick={onConfigure}>
-            <Settings className="w-4 h-4" />
-            Configure
-          </Button>
-        </div>
-      </div>
+  const handleCoverFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setCoverError(null);
+    setIsUploadingCover(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Failed to read image"));
+        reader.readAsDataURL(file);
+      });
+      await onCoverUpdate?.(dataUrl);
+    } catch (err) {
+      setCoverError(err instanceof Error ? err.message : "Failed to upload cover image");
+    } finally {
+      setIsUploadingCover(false);
+      event.target.value = '';
+    }
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1 min-h-0">
-        {/* Left Column: Overview & Prompt */}
-        <div className="lg:col-span-2 space-y-8">
+  const normalizedPrompt = normalizeSystemPrompt(agent.systemPrompt || '');
+  const promptParagraphs = normalizedPrompt
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const promptPreview = promptParagraphs.slice(0, 2).join('\n\n');
+
+  return (
+    <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-6">
+          <Card className="overflow-hidden border-border pt-0 pb-0 gap-0">
+            <div
+              className="relative h-36 bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200"
+              style={agent.cover ? { backgroundImage: `url(${agent.cover})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+            >
+              <div className="absolute inset-0 bg-black/10" />
+              <div className="absolute right-3 top-3 z-10">
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleCoverFileChange}
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 bg-white/90 text-xs hover:bg-white"
+                  disabled={isUploadingCover}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {isUploadingCover ? 'Uploading...' : 'Change Cover'}
+                </Button>
+              </div>
+            </div>
+            <CardContent className="relative px-6 pb-6 pt-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="relative -mt-12">
+                  <Avatar className="h-24 w-24 rounded-full border-2 border-background shadow-sm">
+                    <AvatarImage src={agent.avatar} alt={agent.name} />
+                    <AvatarFallback className="text-2xl">{agent.name[0]}</AvatarFallback>
+                  </Avatar>
+                  <div
+                    className={cn(
+                      'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-background',
+                      getStatusColor(livePresence.status as Agent['status']),
+                    )}
+                  />
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onBack}>
+                    <ChevronLeft className="h-4 w-4" />
+                    Back
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={onConfigure}>
+                    <Settings className="h-4 w-4" />
+                    Configure
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-3xl font-semibold tracking-tight">{agent.name}</h1>
+                  <Badge variant="secondary" className="font-mono text-[10px]">
+                    {agent.model}
+                  </Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {livePresence.status}
+                  </Badge>
+                </div>
+                {agent.role && <div className="text-lg text-muted-foreground">{agent.role}</div>}
+                {agent.description && (
+                  <p className="max-w-3xl text-sm leading-6 text-foreground/90">{agent.description}</p>
+                )}
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Cpu className="h-4 w-4" />
+                    {skills.length} skills
+                  </span>
+                  <span>•</span>
+                  <span>{tools.length} tools</span>
+                  {livePresence.busyIn?.run_id && (
+                    <>
+                      <span>•</span>
+                      <span className="font-mono text-xs">{livePresence.busyIn.run_id}</span>
+                    </>
+                  )}
+                </div>
+                {coverError && <div className="text-xs text-rose-600">{coverError}</div>}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Left Feed: Overview & Prompt */}
+          <div className="space-y-6">
           {/* Current Task Section */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
@@ -322,32 +399,39 @@ export function AgentDetail({ agent, onBack, onConfigure, tools = [], skills = [
                 </div>
                 <div className="max-w-none">
                   <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {normalizeSystemPrompt(agent.systemPrompt)}
+                    {promptPreview || normalizedPrompt}
                   </ReactMarkdown>
                 </div>
+                {promptParagraphs.length > 2 && (
+                  <div className="mt-4 border-t border-border pt-3">
+                    <Button variant="outline" size="sm" onClick={() => setShowFullPrompt(true)}>
+                      Show full
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </section>
+          </div>
         </div>
 
-        {/* Right Column: Stats & History */}
-        <div className="space-y-8">
-          {/* Agent Info Card */}
+        {/* Right Sidebar */}
+        <div className="space-y-6">
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Profile Language</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">English</CardContent>
+          </Card>
+
           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 <Bot className="w-4 h-4" />
-                Profile
+                Capabilities
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-muted-foreground">About</h4>
-                <p className="text-sm leading-relaxed">
-                  {agent.description}
-                </p>
-              </div>
-              
+            <CardContent className="space-y-5">
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground">Capabilities</h4>
                 <div className="flex flex-wrap gap-2">
@@ -378,13 +462,12 @@ export function AgentDetail({ agent, onBack, onConfigure, tools = [], skills = [
             </CardContent>
           </Card>
 
-          {/* Activity Timeline */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
               <ActivityIcon className="w-4 h-4" />
-              Recent Edits & History
+              Recent Activity
             </div>
-            <div className="relative space-y-6 before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-px before:bg-border/60">
+            <div className="relative space-y-4 before:absolute before:bottom-2 before:left-[17px] before:top-2 before:w-px before:bg-border/60">
               {activity.length > 0 ? (
                 activity.map((activity) => {
                   const { base, detail, linkedTask } = describeActivity(activity);
@@ -398,7 +481,7 @@ export function AgentDetail({ agent, onBack, onConfigure, tools = [], skills = [
                     <div className="absolute left-0 top-1 w-9 h-9 flex items-center justify-center">
                       {historyMarker(linkedTask?.status)}
                     </div>
-                    <div className="space-y-1.5 p-3 rounded-lg hover:bg-secondary/30 transition-colors border border-transparent hover:border-border">
+                    <div className="space-y-1.5 rounded-lg border border-transparent p-3 transition-colors hover:border-border hover:bg-secondary/30">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold capitalize text-foreground/90">
                           {formatActivityType(activity.activity_type)}
@@ -489,6 +572,22 @@ export function AgentDetail({ agent, onBack, onConfigure, tools = [], skills = [
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showFullPrompt} onOpenChange={setShowFullPrompt}>
+        <DialogContent className="w-[96vw] !max-w-[96vw] sm:!max-w-6xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>System Instructions</DialogTitle>
+            <DialogDescription>Complete prompt for {agent.name}</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {normalizedPrompt}
+              </ReactMarkdown>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -6,10 +6,12 @@ export interface EmployeeDetail {
   name: string;
   role: string;
   avatar_url: string;
+  cover_url: string;
   status: string;
   description: string;
   system_prompt: string;
   model: string;
+  provider: string;
   is_active: boolean;
   temperature: number;
   max_tokens: number;
@@ -100,9 +102,11 @@ export async function createEmployee(form: EmployeeFormData): Promise<EmployeeDe
       name: form.name,
       role: form.role,
       avatar_url: form.avatar_url,
+      cover_url: form.cover_url || '',
       description: form.description,
       system_prompt: form.system_prompt,
       model: form.model,
+      provider: form.provider || '',
       temperature: form.temperature,
       max_tokens: form.max_tokens,
       tools: form.tools,
@@ -119,9 +123,11 @@ export async function updateEmployee(employeeId: string, form: Partial<EmployeeF
   if (form.name !== undefined) body.name = form.name;
   if (form.role !== undefined) body.role = form.role;
   if (form.avatar_url !== undefined) body.avatar_url = form.avatar_url;
+  if (form.cover_url !== undefined) body.cover_url = form.cover_url;
   if (form.description !== undefined) body.description = form.description;
   if (form.system_prompt !== undefined) body.system_prompt = form.system_prompt;
   if (form.model !== undefined) body.model = form.model;
+  if (form.provider !== undefined) body.provider = form.provider;
   if (form.temperature !== undefined) body.temperature = form.temperature;
   if (form.max_tokens !== undefined) body.max_tokens = form.max_tokens;
   if (form.tools !== undefined) body.tools = form.tools;

@@ -46,6 +46,7 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
         description: description.trim(),
         system_prompt: result.system_prompt,
         model: 'openai/gpt-4o',
+        provider: '',
         temperature: 0.7,
         max_tokens: 4096,
         tools: result.tools,
@@ -197,7 +198,7 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-medium text-foreground">Crafting employee persona...</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">Kimi K2.5 is generating the system prompt, tools, and skills</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">Generating system prompt, tools, and skills using your configured LLM settings</p>
                   </div>
                 </div>
               </div>

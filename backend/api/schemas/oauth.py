@@ -12,11 +12,14 @@ class IntegrationStatus(BaseModel):
     connected: bool
     connected_at: Optional[str] = None
     provider_email: Optional[str] = None
+    client_credentials_required: bool = False
+    has_client_credentials: bool = False
 
 
 class IntegrationsResponse(BaseModel):
     success: bool
     integrations: List[IntegrationStatus]
+    deployment_mode: str = "self_hosted"
     error: Optional[str] = None
 
 

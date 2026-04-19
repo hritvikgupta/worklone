@@ -24,6 +24,7 @@ import {
 } from '@/lib/api';
 import { listEmployees, EmployeeDetail } from '@/src/api/employees';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { useEmployeePresence } from '@/src/hooks/usePresence';
 
 function humanizeToken(value: string): string {
   return value
@@ -525,6 +526,7 @@ export function ChatView() {
     if (!employeeId) return;
     const employee = employees.find((item) => item.id === employeeId);
     if (!employee) return;
+    if (chatPanes.some((pane) => pane.employeeId === employeeId)) return;
 
     try {
       let sessionList = sessions[employeeId];
@@ -564,9 +566,14 @@ export function ChatView() {
     setChatPanes((prev) => (prev.length <= 1 ? prev : prev.filter((pane) => pane.id !== paneId)));
   };
 
+  const paneEmployeeIds = chatPanes.map((p) => p.employeeId).filter(Boolean);
+  const openEmployeeIds = new Set(paneEmployeeIds);
+  const addableEmployees = employees.filter((employee) => !openEmployeeIds.has(employee.id));
+  const { isBusy, busyIn } = useEmployeePresence(paneEmployeeIds, user?.id);
+
   return (
     <div className="flex-1 h-full w-full overflow-hidden">
-      <div className="flex h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [--chat-bg-app:#f8fafc] [--chat-bg-sidebar:#f8fafc] [--chat-bg-main:#ffffff] [--chat-bg-header:rgba(255,255,255,0.95)] [--chat-bg-composer:rgba(255,255,255,0.96)] [--chat-bubble-outgoing:#334155] [--chat-bubble-outgoing-text:#f8fafc] [--chat-bubble-incoming:#f1f5f9] [--chat-bubble-incoming-text:#0f172a] [--chat-text-primary:#0f172a] [--chat-text-secondary:#475569] [--chat-text-tertiary:#64748b] [--chat-border:rgba(15,23,42,0.08)] [--chat-border-strong:rgba(15,23,42,0.12)] [--chat-accent:#334155] [--chat-accent-soft:rgba(51,65,85,0.08)] dark:[--chat-bg-app:#0b1220] dark:[--chat-bg-sidebar:#0f172a] dark:[--chat-bg-main:#0b1220] dark:[--chat-bg-header:rgba(15,23,42,0.9)] dark:[--chat-bg-composer:rgba(15,23,42,0.92)] dark:[--chat-bubble-outgoing:#334155] dark:[--chat-bubble-outgoing-text:#f8fafc] dark:[--chat-bubble-incoming:#1e293b] dark:[--chat-bubble-incoming-text:#e2e8f0] dark:[--chat-text-primary:#e2e8f0] dark:[--chat-text-secondary:#cbd5e1] dark:[--chat-text-tertiary:#94a3b8] dark:[--chat-border:rgba(148,163,184,0.22)] dark:[--chat-border-strong:rgba(148,163,184,0.34)] dark:[--chat-accent:#64748b] dark:[--chat-accent-soft:rgba(148,163,184,0.16)]">
         {chatPanes.map((pane) => {
           const employeeId = pane.employeeId;
           const activeEmployee = employees.find((employee) => employee.id === employeeId);
@@ -625,7 +632,7 @@ export function ChatView() {
 
               <button
                 onClick={() => void handleStartNewSession(employeeId)}
-                className="flex size-7 items-center justify-center rounded-md bg-[var(--chat-accent)] text-white transition-transform active:scale-95"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
                 title="New Session"
               >
                 <Plus className="size-3.5" />
@@ -735,10 +742,32 @@ export function ChatView() {
             </div>
           ) : null;
 
+          const paneBusy = !!employeeId && isBusy(employeeId);
+          const paneBusyCtx = employeeId ? busyIn(employeeId) : null;
+          const busyLabel = paneBusyCtx
+            ? `${activeEmployee?.name || 'Employee'} is busy on ${paneBusyCtx.kind}${paneBusyCtx.run_id ? ` · ${paneBusyCtx.run_id}` : ''} — please wait`
+            : `${activeEmployee?.name || 'Employee'} is busy — please wait`;
+
+          const composerBanner = paneBusy ? (
+            <div className="shrink-0 border-t border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-medium text-amber-800">
+              <div className="mx-auto flex max-w-3xl items-center gap-2">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+                <span>{busyLabel}</span>
+              </div>
+            </div>
+          ) : null;
+
+          const composerSlot = (
+            <>
+              {composerBanner}
+              {planPanel}
+            </>
+          );
+
           return (
             <div
               key={pane.id}
-              className="flex h-full min-h-0 w-[460px] shrink-0 flex-col overflow-hidden border-r border-r-[#e8edf3] bg-[var(--chat-bg-app)]"
+              className="flex h-full min-h-0 w-[460px] shrink-0 flex-col overflow-hidden border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-main)]"
             >
               <div className="min-h-0 flex-1">
                 <FullMessenger
@@ -747,12 +776,17 @@ export function ChatView() {
                   activeConversationId={employeeId}
                   onSelectConversation={() => {}}
                   messages={messages[employeeId] || []}
-                  onSend={(text) => void handleSend(employeeId, text)}
+                  onSend={(text) => {
+                    if (paneBusy) return;
+                    void handleSend(employeeId, text);
+                  }}
+                  composerDisabled={paneBusy}
+                  composerPlaceholder={paneBusy ? busyLabel : undefined}
                   title="Employees"
                   theme="lunar"
-                  className="h-full w-full [--chat-bg-app:#f8fafc] [--chat-bg-sidebar:#f8fafc] [--chat-bg-main:#ffffff] [--chat-bg-header:rgba(255,255,255,0.95)] [--chat-bg-composer:rgba(255,255,255,0.96)] [--chat-bubble-outgoing:#334155] [--chat-bubble-outgoing-text:#f8fafc] [--chat-bubble-incoming:#f1f5f9] [--chat-bubble-incoming-text:#0f172a] [--chat-text-primary:#0f172a] [--chat-text-secondary:#475569] [--chat-text-tertiary:#64748b] [--chat-border:rgba(15,23,42,0.08)] [--chat-border-strong:rgba(15,23,42,0.12)] [--chat-accent:#334155] [--chat-accent-soft:rgba(51,65,85,0.08)]"
+                  className="h-full w-full"
                   headerActions={headerActions}
-                  beforeComposer={planPanel}
+                  beforeComposer={composerSlot}
                   conversationStyle="tabs"
                   hideConversationTabs
                   messagesClassName="px-2"
@@ -762,7 +796,7 @@ export function ChatView() {
             </div>
           );
         })}
-        <div className="flex h-full min-h-0 w-[460px] shrink-0 items-center justify-center border-r border-r-[#e8edf3] bg-[var(--chat-bg-app)]">
+        <div className="flex h-full min-h-0 w-[460px] shrink-0 items-center justify-center border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-main)]">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -777,10 +811,10 @@ export function ChatView() {
             <DropdownMenuContent align="center" className="w-64">
               <DropdownMenuLabel>Select Employee</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {employees.length === 0 ? (
+              {addableEmployees.length === 0 ? (
                 <DropdownMenuItem disabled>No employees available</DropdownMenuItem>
               ) : (
-                employees.map((employee) => (
+                addableEmployees.map((employee) => (
                   <DropdownMenuItem
                     key={employee.id}
                     onClick={() => void addPaneForEmployee(employee.id)}

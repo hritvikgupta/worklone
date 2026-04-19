@@ -23,6 +23,7 @@ function toAgent(emp: EmployeeDetailType, skills: string[] = [], currentTask?: s
     name: emp.name,
     role: emp.role,
     avatar: emp.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name.toLowerCase()}`,
+    cover: emp.cover_url || '',
     status: emp.status as Agent['status'],
     description: emp.description,
     systemPrompt: emp.system_prompt,
@@ -190,9 +191,11 @@ export function AgentsPage() {
       name: selectedEmployee.employee.name,
       role: selectedEmployee.employee.role,
       avatar_url: selectedEmployee.employee.avatar_url,
+      cover_url: selectedEmployee.employee.cover_url || '',
       description: selectedEmployee.employee.description,
       system_prompt: selectedEmployee.employee.system_prompt,
       model: selectedEmployee.employee.model,
+      provider: selectedEmployee.employee.provider || '',
       temperature: selectedEmployee.employee.temperature,
       max_tokens: selectedEmployee.employee.max_tokens,
       tools: selectedEmployee.tools.filter((tool) => tool.is_enabled).map((tool) => tool.tool_name),
@@ -219,6 +222,7 @@ export function AgentsPage() {
         name: employee.employee.name,
         role: employee.employee.role,
         avatar_url: employee.employee.avatar_url,
+        cover_url: employee.employee.cover_url || '',
         description: employee.employee.description,
         system_prompt: employee.employee.system_prompt,
         model: employee.employee.model,
@@ -232,6 +236,7 @@ export function AgentsPage() {
           description: skill.description,
         })),
         memory: employee.employee.memory || [],
+        provider: employee.employee.provider || '',
       });
       setConfigPanelOpen(false);
     } catch (err) {
@@ -255,6 +260,13 @@ export function AgentsPage() {
               agent={selectedAgent}
               onBack={handleBack}
               onConfigure={handleConfigure}
+              onCoverUpdate={async (coverUrl) => {
+                if (!selectedEmployee) return;
+                await updateEmployee(selectedEmployee.employee.id, { cover_url: coverUrl });
+                const refreshed = await getEmployee(selectedEmployee.employee.id);
+                setSelectedEmployee(refreshed);
+                await handleRefresh();
+              }}
               skills={selectedEmployee?.skills || []}
               tools={selectedEmployee?.tools || []}
               tasks={selectedEmployee?.tasks || []}

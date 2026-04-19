@@ -67,7 +67,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import * as TeamAPI from '@/src/api/teams';
+import { getDispatchJob } from '@/src/api/dispatch';
 import { listEmployees, EmployeeDetail } from '@/src/api/employees';
+import { BusyDot } from '@/src/components/BusyDot';
 import { getMarkdownTree, MarkdownTreeNode } from '@/lib/api';
 
 // --- TYPES ---
@@ -283,7 +285,10 @@ function SortableMember({ member, index, total, onTaskChange }: SortableMemberPr
           <AvatarFallback className="text-[10px]">{member.name[0]}</AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground truncate">{member.name}</p>
+          <p className="text-xs font-medium text-foreground truncate flex items-center gap-1.5">
+            {member.name}
+            <BusyDot employeeId={member.id} />
+          </p>
           <p className="text-[10px] text-muted-foreground truncate">{member.role}</p>
         </div>
         {index < total - 1 && (
@@ -549,17 +554,30 @@ function TopologyConfig({
 }
 
 // --- TEAM CARD COMPONENT ---
-function TeamCard({ team, onConfigure, onChat, onRun, isRunning }: {
+function TeamCard({ team, onConfigure, onChat, onRun, isRunning, waitingInfo }: {
   team: Team;
   onConfigure: () => void;
   onChat: () => void;
   onRun: () => void;
   isRunning?: boolean;
+  waitingInfo?: { status: string; empIds: string[] } | null;
 }) {
   return (
     <Card 
       className="group relative flex flex-col h-full transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
     >
+      {waitingInfo && (
+        <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-medium text-amber-800">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+            <span>
+              {waitingInfo.status === 'admitting'
+                ? 'Admitting run — leasing employees…'
+                : `Waiting for ${waitingInfo.empIds.length} employee${waitingInfo.empIds.length === 1 ? '' : 's'} to be free…`}
+            </span>
+          </div>
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1.5 flex-1 min-w-0">
@@ -1867,6 +1885,7 @@ export function TeamsPage() {
   const [error, setError] = useState<string | null>(null);
   const [runningTeamIds, setRunningTeamIds] = useState<Set<string>>(new Set());
   const [openTabOnSelect, setOpenTabOnSelect] = useState<string | null>(null);
+  const [waitingTeams, setWaitingTeams] = useState<Record<string, { jobId: string; status: string; empIds: string[] }>>({});
 
   useEffect(() => {
     async function loadData() {
@@ -1936,6 +1955,42 @@ export function TeamsPage() {
     try {
       const result = await TeamAPI.startRun(team.id, team.goal, memberTasks);
       console.log('[handleRunTeam] run started:', result);
+
+      // If the dispatcher queued the job (not yet admitted), poll until it
+      // transitions so we can show a "waiting for employees" banner.
+      if (result.job_id && result.status && result.status !== 'running') {
+        setWaitingTeams(prev => ({
+          ...prev,
+          [team.id]: {
+            jobId: result.job_id!,
+            status: result.status!,
+            empIds: result.employee_ids || [],
+          },
+        }));
+        const jobId = result.job_id;
+        const poll = async () => {
+          try {
+            const job = await getDispatchJob(jobId);
+            if (['running', 'completed', 'failed', 'cancelled'].includes(job.status)) {
+              setWaitingTeams(prev => {
+                const next = { ...prev };
+                delete next[team.id];
+                return next;
+              });
+              return;
+            }
+            setWaitingTeams(prev => ({
+              ...prev,
+              [team.id]: { jobId, status: job.status, empIds: job.required_employee_ids },
+            }));
+            setTimeout(poll, 1500);
+          } catch (err) {
+            console.warn('[handleRunTeam] dispatch poll failed', err);
+          }
+        };
+        setTimeout(poll, 1500);
+      }
+
       // Auto-open Configure panel on Activity tab so user can watch
       const fullTeam = await TeamAPI.getTeam(team.id);
       setSelectedTeam(fullTeam);
@@ -2005,6 +2060,7 @@ export function TeamsPage() {
                 onChat={() => setActiveChatTeam(team)}
                 onRun={() => handleRunTeam(team)}
                 isRunning={runningTeamIds.has(team.id)}
+                waitingInfo={waitingTeams[team.id] ? { status: waitingTeams[team.id].status, empIds: waitingTeams[team.id].empIds } : null}
               />
             ))}
           </div>

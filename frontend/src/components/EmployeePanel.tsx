@@ -8,7 +8,8 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getModelsCatalog, getToolsCatalog, EmployeeModelOption, getAvailableProviders, ProviderInfo } from '@/src/api/employees';
+import { getToolsCatalog, EmployeeModelOption } from '@/src/api/employees';
+import { listLLMProviders, fetchModelsForProvider } from '@/src/api/settings';
 import { ModelSelect } from '@/src/components/ModelSelect';
 import { FileTree } from '@/src/components/FileTree';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,9 +29,11 @@ export interface EmployeeFormData {
   name: string;
   role: string;
   avatar_url: string;
+  cover_url?: string;
   description: string;
   system_prompt: string;
   model: string;
+  provider: string;
   temperature: number;
   max_tokens: number;
   tools: string[];
@@ -43,6 +46,76 @@ interface AvailableTool {
   runtime_name?: string;
   description: string;
   category: string;
+}
+
+const TOOL_PROVIDER_ICON_ID: Record<string, string> = {
+  gmailtool: "google",
+  slacktool: "slack",
+  notiontool: "notion",
+  githubtool: "github",
+  jiratool: "jira",
+  salesforcetool: "salesforce",
+  lineartool: "linear",
+  hubspottool: "hubspot",
+  stripetool: "stripe",
+  google_drivetool: "google_drive",
+  googlecalendartool: "google_calendar",
+  googlecalendartooltool: "google_calendar",
+};
+
+function getSimpleIconUrl(id: string): string {
+  const overrides: Record<string, string> = {
+    google: "gmail/EA4333",
+    slack: "/slackicon.png",
+    notion: "notion/000000",
+    github: "github/181717",
+    jira: "jira/0052CC",
+    salesforce: "salesforce/00A1E0",
+    linear: "linear/5E6AD2",
+    hubspot: "hubspot/FF7A59",
+    stripe: "stripe/635BFF",
+    google_drive: "googledrive/4285F4",
+    google_calendar: "googlecalendar/4285F4",
+  };
+  if (overrides[id]) {
+    return overrides[id].startsWith("/") ? overrides[id] : `https://cdn.simpleicons.org/${overrides[id]}`;
+  }
+  return `https://cdn.simpleicons.org/${id.replace(/_/g, "")}/71717A`;
+}
+
+function toToolDisplayName(rawName: string): string {
+  const withoutSuffix = rawName.replace(/tool$/i, "");
+  const spaced = withoutSuffix
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .trim();
+  return spaced || rawName;
+}
+
+function resolveProviderIconId(tool: AvailableTool): string | null {
+  const key = (tool.name || "").toLowerCase();
+  const runtime = (tool.runtime_name || "").toLowerCase();
+  return TOOL_PROVIDER_ICON_ID[key] || TOOL_PROVIDER_ICON_ID[runtime] || null;
+}
+
+function ToolIcon({ tool, label }: { tool: AvailableTool; label: string }) {
+  const providerId = resolveProviderIconId(tool);
+  const [error, setError] = useState(false);
+  if (!providerId || error) {
+    return (
+      <div className="h-8 w-8 rounded-md border border-border bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground">
+        {label.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={getSimpleIconUrl(providerId)}
+      alt={`${label} icon`}
+      className="h-8 w-8 rounded-md object-contain"
+      onError={() => setError(true)}
+    />
+  );
 }
 
 export interface FileItem {
@@ -67,9 +140,11 @@ const emptyForm: EmployeeFormData = {
   name: '',
   role: '',
   avatar_url: '',
+  cover_url: '',
   description: '',
   system_prompt: '',
   model: 'openai/gpt-4o',
+  provider: '',
   temperature: 0.7,
   max_tokens: 4096,
   tools: [],
@@ -124,39 +199,28 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
       setModelsLoading(true);
       setModelsError(null);
       try {
-        const models = await getModelsCatalog(selectedProvider);
-        if (!cancelled) {
-          setAvailableModels(models);
-        }
+        const models = await fetchModelsForProvider(selectedProvider);
+        if (!cancelled) setAvailableModels(models.map(m => ({ id: m.id, name: m.name, description: '', context_length: 0 })));
       } catch (error) {
-        if (!cancelled) {
-          setModelsError(error instanceof Error ? error.message : 'Failed to load models');
-        }
+        if (!cancelled) setModelsError(error instanceof Error ? error.message : 'Failed to load models');
       } finally {
-        if (!cancelled) {
-          setModelsLoading(false);
-        }
+        if (!cancelled) setModelsLoading(false);
       }
     }
 
     async function loadProviders() {
       setProvidersLoading(true);
       try {
-        const providers = await getAvailableProviders();
+        const providers = await listLLMProviders();
         if (!cancelled) {
-          setAvailableProviders(providers);
-          // Auto-select first available provider
-          const available = providers.find(p => p.available);
-          if (available && !cancelled) {
-            setSelectedProvider(available.id);
-          }
+          const mapped = providers.map(p => ({ id: p.id, name: p.name, description: p.name, available: true }));
+          setAvailableProviders(mapped);
+          if (!selectedProvider && mapped.length > 0) setSelectedProvider(mapped[0].id);
         }
       } catch (error) {
         console.error('Failed to load providers:', error);
       } finally {
-        if (!cancelled) {
-          setProvidersLoading(false);
-        }
+        if (!cancelled) setProvidersLoading(false);
       }
     }
 
@@ -194,28 +258,28 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
 
   useEffect(() => {
     if (employee) {
+      const savedProvider = employee.provider || '';
       setForm({
         name: employee.name || '',
         role: employee.role || '',
         avatar_url: employee.avatar_url || '',
+        cover_url: (employee as any).cover_url || '',
         description: employee.description || '',
         system_prompt: employee.system_prompt || '',
         model: employee.model || 'openai/gpt-4o',
+        provider: savedProvider,
         temperature: employee.temperature ?? 0.7,
         max_tokens: employee.max_tokens ?? 4096,
         tools: employee.tools || [],
         skills: employee.skills || [],
         memory: employee.memory || [],
       });
-      
-      // Detect provider from saved model name
-      if (employee.model) {
+
+      if (savedProvider) {
+        setSelectedProvider(savedProvider);
+      } else if (employee.model) {
         const modelPrefix = employee.model.split('/')[0].toLowerCase();
-        if (['minimaxai', 'meta'].includes(modelPrefix)) {
-          setSelectedProvider('nvidia');
-        } else {
-          setSelectedProvider('openrouter');
-        }
+        setSelectedProvider(['minimaxai', 'meta'].includes(modelPrefix) ? 'nvidia' : 'openrouter');
       }
     } else {
       setForm(emptyForm);
@@ -228,8 +292,8 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
     if (open) {
       setModelsLoading(true);
       setModelsError(null);
-      getModelsCatalog(selectedProvider)
-        .then((models) => setAvailableModels(models))
+      fetchModelsForProvider(selectedProvider)
+        .then((models) => setAvailableModels(models.map(m => ({ id: m.id, name: m.name, description: '', context_length: 0 }))))
         .catch((error) => setModelsError(error instanceof Error ? error.message : 'Failed to load models'))
         .finally(() => setModelsLoading(false));
     }
@@ -277,7 +341,7 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
     await onSave(form);
   };
 
-  const modelOptions = availableModels.some((model) => model.id === form.model)
+  const modelOptions = !form.model || availableModels.some((model) => model.id === form.model)
     ? availableModels
     : [{ id: form.model, name: form.model, description: 'Currently selected model', context_length: 0 }, ...availableModels];
 
@@ -396,6 +460,7 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                         onProviderChange={(provider) => {
                           setSelectedProvider(provider);
                           updateField('model', '');
+                          updateField('provider', provider);
                         }}
                         availableProviders={availableProviders}
                       />
@@ -481,13 +546,19 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                     )}
                     <div className="grid gap-2">
                       {availableTools
-                        .filter((tool) =>
-                          tool.name.toLowerCase().includes(toolSearch.toLowerCase()) ||
-                          tool.description.toLowerCase().includes(toolSearch.toLowerCase()) ||
-                          tool.category.toLowerCase().includes(toolSearch.toLowerCase())
-                        )
+                        .filter((tool) => {
+                          const displayName = toToolDisplayName(tool.name).toLowerCase();
+                          return (
+                            displayName.includes(toolSearch.toLowerCase()) ||
+                            (tool.runtime_name || "").toLowerCase().includes(toolSearch.toLowerCase()) ||
+                            tool.name.toLowerCase().includes(toolSearch.toLowerCase()) ||
+                            tool.description.toLowerCase().includes(toolSearch.toLowerCase()) ||
+                            tool.category.toLowerCase().includes(toolSearch.toLowerCase())
+                          );
+                        })
                         .map((tool) => {
                         const isSelected = form.tools.includes(tool.name);
+                        const displayName = toToolDisplayName(tool.name);
                         return (
                           <button
                             key={tool.name}
@@ -501,7 +572,12 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving }: Emp
                             )}
                           >
                             <div className="flex items-center justify-between">
-                              <div className="text-sm font-semibold text-foreground">{tool.name}</div>
+                              <div className="flex items-center gap-3 min-w-0">
+                                <ToolIcon tool={tool} label={displayName} />
+                                <div className="min-w-0">
+                                  <div className="text-sm font-semibold text-foreground truncate">{displayName}</div>
+                                </div>
+                              </div>
                               {isSelected && <Check className="h-4 w-4 text-primary" />}
                             </div>
                             <div className="text-xs leading-relaxed opacity-70">{tool.description}</div>

@@ -8,6 +8,8 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/ad08df6b-74ef-414b-a8de-726cd325fa6e
 
+> License notice: this repository is non-commercial research-use only. See [../LICENSE](../LICENSE).
+
 ## Run Locally
 
 **Prerequisites:**  Node.js

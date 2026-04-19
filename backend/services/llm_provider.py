@@ -51,9 +51,9 @@ class LLMProvider(ABC):
 
 class OpenRouterProvider(LLMProvider):
     """OpenRouter API provider"""
-    
-    def __init__(self):
-        self.api_key = os.getenv("OPENROUTER_API_KEY", "")
+
+    def __init__(self, api_key: str = ""):
+        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY", "")
         self.base_url = "https://openrouter.ai/api/v1"
         self.provider_name = "openrouter"
     
@@ -296,6 +296,68 @@ class NVIDIAProvider(LLMProvider):
         ]
 
 
+class OpenAIProvider(LLMProvider):
+    """OpenAI API provider"""
+
+    def __init__(self, api_key: str = ""):
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
+        self.base_url = "https://api.openai.com/v1"
+        self.provider_name = "openai"
+
+    def get_provider_name(self) -> str:
+        return self.provider_name
+
+    async def chat_completion_stream(self, model, messages, temperature=0.7, max_tokens=4096, tools=None, **kwargs):
+        yield {"type": "error", "message": "use react_agent directly"}
+
+    async def chat_completion(self, model, messages, temperature=0.7, max_tokens=4096, tools=None, **kwargs):
+        return {}
+
+    async def get_models(self) -> List[Dict[str, Any]]:
+        if not self.api_key:
+            return []
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.base_url}/models",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+            )
+            response.raise_for_status()
+            data = response.json().get("data", [])
+            # Only return chat-capable models
+            chat = [m for m in data if "gpt" in m.get("id", "").lower() or "o1" in m.get("id", "").lower() or "o3" in m.get("id", "").lower()]
+            return [{"id": m["id"], "name": m["id"], "provider": "openai"} for m in sorted(chat, key=lambda x: x["id"])]
+
+
+class GroqProvider(LLMProvider):
+    """Groq API provider"""
+
+    def __init__(self, api_key: str = ""):
+        self.api_key = api_key or os.getenv("GROQ_API_KEY", "")
+        self.base_url = "https://api.groq.com/openai/v1"
+        self.provider_name = "groq"
+
+    def get_provider_name(self) -> str:
+        return self.provider_name
+
+    async def chat_completion_stream(self, model, messages, temperature=0.7, max_tokens=4096, tools=None, **kwargs):
+        yield {"type": "error", "message": "use react_agent directly"}
+
+    async def chat_completion(self, model, messages, temperature=0.7, max_tokens=4096, tools=None, **kwargs):
+        return {}
+
+    async def get_models(self) -> List[Dict[str, Any]]:
+        if not self.api_key:
+            return []
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{self.base_url}/models",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+            )
+            response.raise_for_status()
+            data = response.json().get("data", [])
+            return [{"id": m["id"], "name": m.get("id", ""), "provider": "groq"} for m in sorted(data, key=lambda x: x.get("id", ""))]
+
+
 class LLMProviderFactory:
     """Factory for creating and managing LLM providers"""
     
@@ -307,6 +369,8 @@ class LLMProviderFactory:
         cls._providers = {
             "openrouter": OpenRouterProvider(),
             "nvidia": NVIDIAProvider(),
+            "openai": OpenAIProvider(),
+            "groq": GroqProvider(),
         }
     
     @classmethod

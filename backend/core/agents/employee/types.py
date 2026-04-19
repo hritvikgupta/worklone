@@ -110,10 +110,12 @@ class Employee:
     name: str
     role: str = ""
     avatar_url: str = ""
+    cover_url: str = ""
     status: EmployeeStatus = EmployeeStatus.IDLE
     description: str = ""
     system_prompt: str = ""
     model: str = "openai/gpt-4o"
+    provider: str = ""
     owner_id: str = ""
     is_active: bool = True
     temperature: float = 0.7

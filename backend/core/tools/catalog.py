@@ -1791,6 +1791,23 @@ def _build_catalog() -> dict[str, ToolFactory]:
 TOOL_CATALOG = _build_catalog()
 
 
+# Augment the bundle alias map with the Python CLASS NAMES of each bundle
+# member, not just the runtime name. `employee_tools.tool_name` can store
+# either form ("gmail_search" or "GmailSearchTool"), and prompt-generator /
+# migration code needs both to resolve to the bundle root.
+for _root_name, _bundle in PROVIDER_TOOL_BUNDLES.items():
+    for _member_runtime in _bundle["members"]:
+        _factory = TOOL_CATALOG.get(_member_runtime.lower())
+        if _factory is None:
+            continue
+        try:
+            _inst = _factory()
+        except Exception:
+            continue
+        _class_name = type(_inst).__name__
+        _BUNDLE_ALIAS_TO_ROOT.setdefault(_class_name.lower(), _root_name)
+
+
 def list_catalog_tools() -> list[dict]:
     """Return canonical tool metadata for UI and runtime use."""
     tools = []
@@ -1843,6 +1860,10 @@ _BUNDLE_DESCRIPTION: dict[str, str] = {
     "StripeTool": "Full Stripe integration: customers, invoices, subscriptions, and payment intents.",
 }
 
+HIDDEN_PROVIDER_BUNDLE_ROOTS: set[str] = {
+    "SalesforceTool",
+}
+
 
 def list_assignable_employee_tools() -> list[dict]:
     """Return employee tool choices for UI assignment.
@@ -1855,6 +1876,8 @@ def list_assignable_employee_tools() -> list[dict]:
 
     # Emit one entry per provider bundle
     for root_name, bundle in PROVIDER_TOOL_BUNDLES.items():
+        if root_name in HIDDEN_PROVIDER_BUNDLE_ROOTS:
+            continue
         if root_name in seen:
             continue
         seen.add(root_name)

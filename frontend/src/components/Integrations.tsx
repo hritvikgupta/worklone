@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Search, CheckCircle2, Loader2, LogOut, Plus } from 'lucide-react';
+import { Search, CheckCircle2, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   getIntegrations,
   disconnectIntegration,
   getOAuthUrl,
+  saveOAuthProviderCredentials,
   AUTH_EXPIRED_ERROR,
   type IntegrationStatus,
 } from '@/lib/auth-api';
@@ -96,19 +97,29 @@ function IntegrationIcon({ id, name, className }: { id: string; name: string; cl
 }
 
 const COMING_SOON_INTEGRATIONS = [{"id": "a2a", "name": "A2A"}, {"id": "agentmail", "name": "Agentmail"}, {"id": "ahrefs", "name": "Ahrefs"}, {"id": "airtable", "name": "Airtable"}, {"id": "airweave", "name": "Airweave"}, {"id": "algolia", "name": "Algolia"}, {"id": "amplitude", "name": "Amplitude"}, {"id": "apify", "name": "Apify"}, {"id": "apollo", "name": "Apollo"}, {"id": "arxiv", "name": "Arxiv"}, {"id": "asana", "name": "Asana"}, {"id": "ashby", "name": "Ashby"}, {"id": "attio", "name": "Attio"}, {"id": "box", "name": "Box"}, {"id": "box_sign", "name": "Box Sign"}, {"id": "brandfetch", "name": "Brandfetch"}, {"id": "browser_use", "name": "Browser Use"}, {"id": "calcom", "name": "Calcom"}, {"id": "calendly", "name": "Calendly"}, {"id": "clay", "name": "Clay"}, {"id": "clerk", "name": "Clerk"}, {"id": "cloudflare", "name": "Cloudflare"}, {"id": "cloudformation", "name": "Cloudformation"}, {"id": "cloudwatch", "name": "Cloudwatch"}, {"id": "confluence", "name": "Confluence"}, {"id": "cursor", "name": "Cursor"}, {"id": "databricks", "name": "Databricks"}, {"id": "datadog", "name": "Datadog"}, {"id": "devin", "name": "Devin"}, {"id": "discord", "name": "Discord"}, {"id": "docusign", "name": "Docusign"}, {"id": "dropbox", "name": "Dropbox"}, {"id": "dspy", "name": "Dspy"}, {"id": "dub", "name": "Dub"}, {"id": "duckduckgo", "name": "Duckduckgo"}, {"id": "dynamodb", "name": "Dynamodb"}, {"id": "elasticsearch", "name": "Elasticsearch"}, {"id": "elevenlabs", "name": "Elevenlabs"}, {"id": "enrich", "name": "Enrich"}, {"id": "evernote", "name": "Evernote"}, {"id": "exa", "name": "Exa"}, {"id": "extend", "name": "Extend"}, {"id": "fathom", "name": "Fathom"}, {"id": "file", "name": "File"}, {"id": "firecrawl", "name": "Firecrawl"}, {"id": "fireflies", "name": "Fireflies"}, {"id": "function", "name": "Function"}, {"id": "gamma", "name": "Gamma"}, {"id": "gitlab", "name": "GitLab"}, {"id": "gong", "name": "Gong"}, {"id": "grafana", "name": "Grafana"}, {"id": "grain", "name": "Grain"}, {"id": "granola", "name": "Granola"}, {"id": "greenhouse", "name": "Greenhouse"}, {"id": "greptile", "name": "Greptile"}, {"id": "guardrails", "name": "Guardrails"}, {"id": "hex", "name": "Hex"}, {"id": "http", "name": "Http"}, {"id": "huggingface", "name": "Huggingface"}, {"id": "hunter", "name": "Hunter"}, {"id": "incidentio", "name": "Incidentio"}, {"id": "infisical", "name": "Infisical"}, {"id": "intercom", "name": "Intercom"}, {"id": "jina", "name": "Jina"}, {"id": "jsm", "name": "Jsm"}, {"id": "kalshi", "name": "Kalshi"}, {"id": "ketch", "name": "Ketch"}, {"id": "knowledge", "name": "Knowledge"}, {"id": "langsmith", "name": "Langsmith"}, {"id": "launchdarkly", "name": "Launchdarkly"}, {"id": "lemlist", "name": "Lemlist"}, {"id": "linkedin", "name": "Linkedin"}, {"id": "linkup", "name": "Linkup"}, {"id": "llm", "name": "Llm"}, {"id": "loops", "name": "Loops"}, {"id": "luma", "name": "Luma"}, {"id": "mailchimp", "name": "Mailchimp"}, {"id": "mailgun", "name": "Mailgun"}, {"id": "mem0", "name": "Mem0"}, {"id": "memory", "name": "Memory"}, {"id": "microsoft_ad", "name": "Microsoft Ad"}, {"id": "microsoft_dataverse", "name": "Microsoft Dataverse"}, {"id": "microsoft_excel", "name": "Microsoft Excel"}, {"id": "microsoft_planner", "name": "Microsoft Planner"}, {"id": "microsoft_teams", "name": "Microsoft Teams"}, {"id": "mistral", "name": "Mistral"}, {"id": "mongodb", "name": "Mongodb"}, {"id": "mysql", "name": "Mysql"}, {"id": "neo4j", "name": "Neo4J"}, {"id": "obsidian", "name": "Obsidian"}, {"id": "okta", "name": "Okta"}, {"id": "onedrive", "name": "Onedrive"}, {"id": "onepassword", "name": "Onepassword"}, {"id": "openai", "name": "Openai"}, {"id": "outlook", "name": "Outlook"}, {"id": "pagerduty", "name": "Pagerduty"}, {"id": "parallel", "name": "Parallel"}, {"id": "perplexity", "name": "Perplexity"}, {"id": "pinecone", "name": "Pinecone"}, {"id": "pipedrive", "name": "Pipedrive"}, {"id": "polymarket", "name": "Polymarket"}, {"id": "postgresql", "name": "Postgresql"}, {"id": "posthog", "name": "Posthog"}, {"id": "profound", "name": "Profound"}, {"id": "pulse", "name": "Pulse"}, {"id": "qdrant", "name": "Qdrant"}, {"id": "quiver", "name": "Quiver"}, {"id": "rds", "name": "Rds"}, {"id": "reddit", "name": "Reddit"}, {"id": "redis", "name": "Redis"}, {"id": "reducto", "name": "Reducto"}, {"id": "resend", "name": "Resend"}, {"id": "response", "name": "Response"}, {"id": "revenuecat", "name": "Revenuecat"}, {"id": "rippling", "name": "Rippling"}, {"id": "rootly", "name": "Rootly"}, {"id": "s3", "name": "S3"}, {"id": "search", "name": "Search"}, {"id": "secrets_manager", "name": "Secrets Manager"}, {"id": "sendgrid", "name": "Sendgrid"}, {"id": "sentry", "name": "Sentry"}, {"id": "serper", "name": "Serper"}, {"id": "servicenow", "name": "Servicenow"}, {"id": "sftp", "name": "Sftp"}, {"id": "shared", "name": "Shared"}, {"id": "sharepoint", "name": "Sharepoint"}, {"id": "shopify", "name": "Shopify"}, {"id": "similarweb", "name": "Similarweb"}, {"id": "sixtyfour", "name": "Sixtyfour"}, {"id": "sms", "name": "Sms"}, {"id": "smtp", "name": "Smtp"}, {"id": "spotify", "name": "Spotify"}, {"id": "sqs", "name": "Sqs"}, {"id": "ssh", "name": "Ssh"}, {"id": "stagehand", "name": "Stagehand"}, {"id": "stt", "name": "Stt"}, {"id": "supabase", "name": "Supabase"}, {"id": "table", "name": "Table"}, {"id": "tailscale", "name": "Tailscale"}, {"id": "tavily", "name": "Tavily"}, {"id": "telegram", "name": "Telegram"}, {"id": "textract", "name": "Textract"}, {"id": "thinking", "name": "Thinking"}, {"id": "tinybird", "name": "Tinybird"}, {"id": "trello", "name": "Trello"}, {"id": "tts", "name": "Tts"}, {"id": "twilio", "name": "Twilio"}, {"id": "twilio_voice", "name": "Twilio Voice"}, {"id": "typeform", "name": "Typeform"}, {"id": "upstash", "name": "Upstash"}, {"id": "vercel", "name": "Vercel"}, {"id": "video", "name": "Video"}, {"id": "vision", "name": "Vision"}, {"id": "wealthbox", "name": "Wealthbox"}, {"id": "webflow", "name": "Webflow"}, {"id": "whatsapp", "name": "Whatsapp"}, {"id": "wikipedia", "name": "Wikipedia"}, {"id": "wordpress", "name": "Wordpress"}, {"id": "workday", "name": "Workday"}, {"id": "workflow", "name": "Workflow"}, {"id": "x", "name": "X"}, {"id": "youtube", "name": "Youtube"}, {"id": "zendesk", "name": "Zendesk"}, {"id": "zep", "name": "Zep"}, {"id": "zoom", "name": "Zoom"}];
+const COMING_SOON_PRIORITY = [{ id: "salesforce", name: "Salesforce" }];
 
 export function Integrations() {
   const { token, logout } = useAuth();
   const [integrations, setIntegrations] = useState<IntegrationStatus[]>([]);
+  const [deploymentMode, setDeploymentMode] = useState<'cloud' | 'self_hosted'>('self_hosted');
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [credentialModalOpen, setCredentialModalOpen] = useState(false);
+  const [pendingProvider, setPendingProvider] = useState<IntegrationStatus | null>(null);
+  const [clientIdInput, setClientIdInput] = useState('');
+  const [clientSecretInput, setClientSecretInput] = useState('');
+  const [savingCredentials, setSavingCredentials] = useState(false);
 
   useEffect(() => {
     if (token) {
       getIntegrations(token)
-        .then(setIntegrations)
+        .then((data) => {
+          setIntegrations(data.integrations);
+          setDeploymentMode(data.deployment_mode);
+        })
         .catch((error) => {
           if (error instanceof Error && error.message === AUTH_EXPIRED_ERROR) {
             logout();
@@ -118,9 +129,8 @@ export function Integrations() {
     }
   }, [token, logout]);
 
-  const handleConnect = async (provider: string) => {
+  const startOAuthConnect = async (provider: string) => {
     setConnecting(provider);
-    setConnectError(null);
     const frontendUrl = window.location.origin;
     try {
       const authUrl = await getOAuthUrl(token!, provider, frontendUrl);
@@ -135,6 +145,74 @@ export function Integrations() {
       setConnectError(error instanceof Error ? error.message : `Failed to connect ${provider}`);
     } finally {
       setConnecting(null);
+    }
+  };
+
+  const handleConnect = async (provider: string) => {
+    setConnectError(null);
+    const integration = integrations.find((item) => item.id === provider);
+    if (!integration) {
+      setConnectError(`Unknown integration provider: ${provider}`);
+      return;
+    }
+
+    if (
+      deploymentMode === 'self_hosted'
+      && integration.client_credentials_required
+      && !integration.has_client_credentials
+    ) {
+      setPendingProvider(integration);
+      setClientIdInput('');
+      setClientSecretInput('');
+      setCredentialModalOpen(true);
+      return;
+    }
+
+    await startOAuthConnect(provider);
+  };
+
+  const closeCredentialModal = () => {
+    if (savingCredentials) return;
+    setCredentialModalOpen(false);
+    setPendingProvider(null);
+    setClientIdInput('');
+    setClientSecretInput('');
+  };
+
+  const handleSaveCredentialsAndConnect = async () => {
+    if (!pendingProvider || !token) return;
+    const clientId = clientIdInput.trim();
+    const clientSecret = clientSecretInput.trim();
+    if (!clientId) {
+      setConnectError(`OAuth client ID is required for ${pendingProvider.name}.`);
+      return;
+    }
+    if (!clientSecret) {
+      setConnectError(`OAuth client secret is required for ${pendingProvider.name}.`);
+      return;
+    }
+
+    setSavingCredentials(true);
+    setConnectError(null);
+    try {
+      const saved = await saveOAuthProviderCredentials(token, pendingProvider.id, clientId, clientSecret);
+      if (!saved) {
+        setConnectError(`Failed to save OAuth credentials for ${pendingProvider.name}.`);
+        return;
+      }
+      setIntegrations((prev) =>
+        prev.map((item) =>
+          item.id === pendingProvider.id ? { ...item, has_client_credentials: true } : item,
+        ),
+      );
+      setCredentialModalOpen(false);
+      const providerId = pendingProvider.id;
+      setPendingProvider(null);
+      setClientIdInput('');
+      setClientSecretInput('');
+      await startOAuthConnect(providerId);
+    } finally {
+      setSavingCredentials(false);
     }
   };
 
@@ -158,12 +236,70 @@ export function Integrations() {
     (PROVIDER_DESCRIPTIONS[int.id] || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredComingSoon = COMING_SOON_INTEGRATIONS.filter(int => 
+  const mergedComingSoon = [...COMING_SOON_PRIORITY, ...COMING_SOON_INTEGRATIONS.filter((int) => int.id !== "salesforce")];
+  const filteredComingSoon = mergedComingSoon.filter(int => 
     int.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="h-full overflow-y-auto bg-[#FAFAFA]">
+      {credentialModalOpen && pendingProvider && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Add OAuth Keys</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {pendingProvider.name}: enter your OAuth client ID and client secret.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={closeCredentialModal}
+                disabled={savingCredentials}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-foreground">Client ID</label>
+                <input
+                  type="text"
+                  value={clientIdInput}
+                  onChange={(e) => setClientIdInput(e.target.value)}
+                  placeholder={`Paste ${pendingProvider.name} OAuth client ID`}
+                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  disabled={savingCredentials}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-foreground">Client Secret</label>
+                <input
+                  type="password"
+                  value={clientSecretInput}
+                  onChange={(e) => setClientSecretInput(e.target.value)}
+                  placeholder={`Paste ${pendingProvider.name} OAuth client secret`}
+                  className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                  disabled={savingCredentials}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="outline" onClick={closeCredentialModal} disabled={savingCredentials}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveCredentialsAndConnect} disabled={savingCredentials}>
+                {savingCredentials ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Connect'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-300">
         
         {/* Header & Search */}
@@ -171,6 +307,9 @@ export function Integrations() {
           <div className="space-y-1.5">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Integrations</h1>
             <p className="text-sm text-muted-foreground">Connect external tools to give Katy the ability to execute work seamlessly.</p>
+            <p className="text-xs text-muted-foreground">
+              Mode: <span className="font-medium text-foreground">{deploymentMode === 'cloud' ? 'Cloud (managed keys)' : 'Self-hosted (bring your own OAuth keys)'}</span>
+            </p>
           </div>
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -225,6 +364,11 @@ export function Integrations() {
                           ) : (
                             <p className="text-[11px] text-muted-foreground truncate mt-0.5">
                               {integration.connected ? 'Connected' : 'Not connected'}
+                            </p>
+                          )}
+                          {deploymentMode === 'self_hosted' && integration.client_credentials_required && !integration.has_client_credentials && (
+                            <p className="text-[11px] text-amber-600 truncate mt-0.5">
+                              OAuth app keys required before connect
                             </p>
                           )}
                         </div>

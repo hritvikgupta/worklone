@@ -73,6 +73,13 @@ class SprintStore:
                     conn.execute("ALTER TABLE task_messages ADD COLUMN run_id TEXT")
             except Exception:
                 pass
+            # Add owner_id to sprints for per-user isolation
+            try:
+                sprint_cols = [row[1] for row in conn.execute("PRAGMA table_info(sprints)").fetchall()]
+                if "owner_id" not in sprint_cols:
+                    conn.execute("ALTER TABLE sprints ADD COLUMN owner_id TEXT NOT NULL DEFAULT ''")
+            except Exception:
+                pass
 
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS sprint_runs (
@@ -107,17 +114,12 @@ class SprintStore:
                 )
             ''')
 
-            # Check if default sprint exists
-            cur = conn.execute("SELECT id FROM sprints LIMIT 1")
-            if not cur.fetchone():
-                self._seed_default_data(conn)
-
-    def _seed_default_data(self, conn):
+    def _seed_default_data(self, conn, owner_id: str = ""):
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         sprint_id = generate_id("spr")
         conn.execute(
-            "INSERT INTO sprints (id, name, goal, status, created_at) VALUES (?, ?, ?, ?, ?)",
-            (sprint_id, "Sprint 1", "Initial project setup", "active", now)
+            "INSERT INTO sprints (id, name, goal, status, owner_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (sprint_id, "Sprint 1", "Initial project setup", "active", owner_id, now)
         )
         
         columns = ["To Do", "In Progress", "In Review", "Done"]
@@ -129,10 +131,26 @@ class SprintStore:
             )
 
     # --- Sprints ---
-    def get_active_sprint(self) -> Optional[Dict[str, Any]]:
+    def get_active_sprint(self, owner_id: str = "") -> Optional[Dict[str, Any]]:
         with get_connection(self.db_path) as conn:
-            cur = conn.execute("SELECT * FROM sprints WHERE status = 'active' ORDER BY created_at DESC LIMIT 1")
-            row = cur.fetchone()
+            if owner_id:
+                cur = conn.execute(
+                    "SELECT * FROM sprints WHERE status = 'active' AND owner_id = ? ORDER BY created_at DESC LIMIT 1",
+                    (owner_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    # First access for this user — seed a personal sprint
+                    self._seed_default_data(conn, owner_id)
+                    conn.commit()
+                    cur = conn.execute(
+                        "SELECT * FROM sprints WHERE status = 'active' AND owner_id = ? ORDER BY created_at DESC LIMIT 1",
+                        (owner_id,),
+                    )
+                    row = cur.fetchone()
+            else:
+                cur = conn.execute("SELECT * FROM sprints WHERE status = 'active' ORDER BY created_at DESC LIMIT 1")
+                row = cur.fetchone()
             return dict(row) if row else None
 
     def get_sprint(self, sprint_id: str) -> Optional[Dict[str, Any]]:
@@ -163,13 +181,19 @@ class SprintStore:
             )
         return task_id
 
-    def update_task_details(self, task_id: str, title: str, description: str, requirements: str) -> None:
+    def update_task_details(self, task_id: str, title: str, description: str, requirements: str, priority: Optional[str] = None) -> None:
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         with get_connection(self.db_path) as conn:
-            conn.execute(
-                "UPDATE sprint_tasks SET title = ?, description = ?, requirements = ?, updated_at = ? WHERE id = ?",
-                (title, description, requirements, now, task_id)
-            )
+            if priority is None:
+                conn.execute(
+                    "UPDATE sprint_tasks SET title = ?, description = ?, requirements = ?, updated_at = ? WHERE id = ?",
+                    (title, description, requirements, now, task_id)
+                )
+            else:
+                conn.execute(
+                    "UPDATE sprint_tasks SET title = ?, description = ?, requirements = ?, priority = ?, updated_at = ? WHERE id = ?",
+                    (title, description, requirements, priority, now, task_id)
+                )
 
     def update_task_column(self, task_id: str, new_column_id: str) -> None:
         now = datetime.datetime.now(datetime.timezone.utc).isoformat()

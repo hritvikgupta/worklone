@@ -21,6 +21,7 @@ export function CurrentSprintPage() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [sprintData, setSprintData] = useState<SprintData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [waitingTasks, setWaitingTasks] = useState<Record<string, string>>({});
 
   const fetchSprint = async () => {
     try {
@@ -150,9 +151,14 @@ export function CurrentSprintPage() {
     }
   };
 
-  const handleUpdateIssueDetails = async (issueId: string, details: { title: string; description: string; requirements: string; agentId?: string }) => {
+  const handleUpdateIssueDetails = async (issueId: string, details: { title: string; description: string; requirements: string; priority: 'low' | 'medium' | 'high'; agentId?: string }) => {
     try {
-      await updateTaskDetails(issueId, { title: details.title, description: details.description, requirements: details.requirements });
+      await updateTaskDetails(issueId, {
+        title: details.title,
+        description: details.description,
+        requirements: details.requirements,
+        priority: details.priority,
+      });
       if (details.agentId !== undefined) {
         await updateTaskAssignment(issueId, details.agentId);
       }
@@ -164,7 +170,7 @@ export function CurrentSprintPage() {
   const handleRunTask = async (issueId: string) => {
     if (!sprintData) return;
     try {
-      await runTask(sprintData.sprint.id, issueId);
+      const result = await runTask(sprintData.sprint.id, issueId);
       activeRunsRef.current.add(issueId);
       startPolling();
       // Auto-expire the active run flag after 5 minutes even if the stream never
@@ -172,6 +178,29 @@ export function CurrentSprintPage() {
       window.setTimeout(() => {
         activeRunsRef.current.delete(issueId);
       }, 5 * 60 * 1000);
+
+      // If dispatcher queued the job, surface a toast-style alert so the user
+      // knows the task is waiting for the assignee to free up.
+      if (result.job_id && result.status && result.status !== 'running') {
+        setWaitingTasks(prev => ({ ...prev, [issueId]: result.status! }));
+        const jobId = result.job_id;
+        const { getDispatchJob } = await import('@/src/api/dispatch');
+        const poll = async () => {
+          try {
+            const job = await getDispatchJob(jobId);
+            if (['running', 'completed', 'failed', 'cancelled'].includes(job.status)) {
+              setWaitingTasks(prev => { const next = { ...prev }; delete next[issueId]; return next; });
+              return;
+            }
+            setWaitingTasks(prev => ({ ...prev, [issueId]: job.status }));
+            setTimeout(poll, 1500);
+          } catch (err) {
+            console.warn('sprint dispatch poll failed', err);
+          }
+        };
+        setTimeout(poll, 1500);
+      }
+
       // Fetch immediately so the "started" marker appears without waiting 2s.
       fetchSprint();
     } catch (e) {
@@ -193,6 +222,16 @@ export function CurrentSprintPage() {
           <h2 className="text-2xl font-semibold tracking-tight">{displaySprintTitle}</h2>
           <p className="text-muted-foreground text-sm">{sprintData?.sprint.goal || 'Active tasks and agent assignments for the current cycle.'}</p>
         </div>
+        {Object.keys(waitingTasks).length > 0 && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-medium text-amber-800">
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+              <span>
+                {Object.keys(waitingTasks).length} task{Object.keys(waitingTasks).length === 1 ? '' : 's'} waiting for the assigned employee to be free…
+              </span>
+            </div>
+          </div>
+        )}
         <div className="flex-1 min-h-0">
           <IssueBoard issues={issues} setIssues={handleUpdateIssues} onAddIssue={handleAddIssue} onUpdateIssueDetails={handleUpdateIssueDetails} onRunTask={handleRunTask} />
         </div>

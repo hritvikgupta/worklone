@@ -83,14 +83,17 @@ export async function generateWorkflow(prompt: string, model?: string): Promise<
 }
 
 /**
- * Execute a workflow manually — returns an SSE stream.
- * The caller provides an onEvent callback to receive live events.
- * Returns when the stream finishes.
+ * Execute a workflow manually.
+ *
+ * Now enqueues a dispatch job and returns immediately. Live progress arrives
+ * via socket.io `run.progress` / `run.completed` events — the caller should
+ * subscribe to those keyed by the returned run id (currently the job id until
+ * the worker assigns one). See `subscribeToWorkflowRun` below.
  */
 export async function executeWorkflow(
   workflowId: string,
   onEvent?: (event: Record<string, unknown>) => void,
-): Promise<{ success: boolean }> {
+): Promise<{ success: boolean; job_id?: string; status?: string }> {
   const res = await fetch(`${BACKEND_URL}/api/workflows/${workflowId}/execute`, {
     method: 'POST',
     headers: {
@@ -99,34 +102,41 @@ export async function executeWorkflow(
     },
   });
   await throwIfErrorResponse(res, 'The workflow execution could not be started.');
-  if (!res.body) return { success: true };
+  const data = await res.json().catch(() => ({} as any));
 
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let success = true;
+  const jobId: string | undefined = data.job_id;
+  if (!jobId) return { success: true };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+  // Wait for completion using socket.io events — falls back to polling the
+  // dispatch job if the socket is unavailable so callers still resolve.
+  const done = await new Promise<boolean>(async (resolve) => {
+    const { io } = await import('socket.io-client');
+    const { SOCKET_URL } = await import('./_base');
+    const socket = io(SOCKET_URL, { path: '/socket.io', transports: ['websocket', 'polling'] });
 
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+    const handleProgress = (evt: any) => {
+      if (evt?.job_id !== jobId) return;
+      if (onEvent && evt?.data) onEvent(evt.data);
+    };
+    const handleCompleted = (evt: any) => {
+      if (evt?.job_id !== jobId) return;
+      const ok = evt?.status === 'completed';
+      cleanup();
+      resolve(ok);
+    };
+    const cleanup = () => {
+      socket.off('run.progress', handleProgress);
+      socket.off('run.completed', handleCompleted);
+      socket.disconnect();
+    };
+    socket.on('run.progress', handleProgress);
+    socket.on('run.completed', handleCompleted);
 
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const data = line.slice(6).trim();
-      if (data === '[DONE]') break;
-      try {
-        const event = JSON.parse(data);
-        if (event.type === 'error') success = false;
-        if (onEvent) onEvent(event);
-      } catch {}
-    }
-  }
+    // Fallback timeout — give up after 10 min.
+    setTimeout(() => { cleanup(); resolve(false); }, 10 * 60 * 1000);
+  });
 
-  return { success };
+  return { success: done, job_id: jobId, status: data.status };
 }
 
 export async function updateWorkflow(workflowId: string, updates: { name?: string; description?: string; schedule?: string; timezone?: string; tasks?: Partial<WorkflowTask>[] }): Promise<{ success: boolean }> {

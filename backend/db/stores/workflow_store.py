@@ -71,6 +71,34 @@ class WorkflowStore:
                 updated_at TEXT,
                 FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
             );
+
+            -- Legacy graph tables retained for compatibility with existing
+            -- code paths and indexes.
+            CREATE TABLE IF NOT EXISTS blocks (
+                id TEXT PRIMARY KEY,
+                workflow_id TEXT NOT NULL,
+                block_type TEXT DEFAULT '',
+                name TEXT DEFAULT '',
+                description TEXT DEFAULT '',
+                config TEXT DEFAULT '{}',
+                created_at TEXT,
+                updated_at TEXT,
+                FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS connections (
+                id TEXT PRIMARY KEY,
+                workflow_id TEXT NOT NULL,
+                from_block_id TEXT NOT NULL,
+                to_block_id TEXT NOT NULL,
+                condition TEXT DEFAULT '',
+                from_handle TEXT DEFAULT '',
+                to_handle TEXT DEFAULT '',
+                created_at TEXT,
+                FOREIGN KEY (workflow_id) REFERENCES workflows(id) ON DELETE CASCADE,
+                FOREIGN KEY (from_block_id) REFERENCES blocks(id) ON DELETE CASCADE,
+                FOREIGN KEY (to_block_id) REFERENCES blocks(id) ON DELETE CASCADE
+            );
             
             CREATE TABLE IF NOT EXISTS workflow_tasks (
                 id TEXT PRIMARY KEY,

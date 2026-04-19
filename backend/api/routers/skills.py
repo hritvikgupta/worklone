@@ -96,6 +96,7 @@ async def create_public_skill(
         title=title,
         description=description,
         employee_role=employee_role,
+        owner_id=user["id"],
     )
 
     now = datetime.now()

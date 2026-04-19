@@ -1,28 +1,17 @@
-from typing import Optional
 from datetime import datetime
-from fastapi import APIRouter, Header
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.db.database import get_connection, get_shared_db_path
 from backend.db.stores.employee_store import EmployeeStore
-from backend.db.stores.auth_store import AuthDB
+from backend.lib.auth.session import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
-_auth_db = AuthDB()
 
 def get_db():
     return get_connection(get_shared_db_path())
 
 def get_store():
     return EmployeeStore()
-
-def _get_owner_id(authorization: Optional[str] = None) -> str:
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ", 1)[1]
-        user = _auth_db.validate_session(token)
-        if user and user.get("id"):
-            return str(user["id"])
-    return ""
-
 
 def _compute_employee_run_time(conn, employee_id: str) -> int:
     """
@@ -92,9 +81,13 @@ def _format_duration(seconds: int) -> str:
 
 
 @router.get("/stats")
-async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
+async def get_dashboard_stats(
+    user=Depends(get_current_user),
+):
     """Get global dashboard stats (tokens, expenditure, uptime) from real data."""
-    owner_id = _get_owner_id(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    owner_id = str(user["id"])
     store = get_store()
     conn = get_db()
 
@@ -161,9 +154,13 @@ async def get_dashboard_stats(authorization: Optional[str] = Header(None)):
 
 
 @router.get("/usage")
-async def get_dashboard_usage(authorization: Optional[str] = Header(None)):
+async def get_dashboard_usage(
+    user=Depends(get_current_user),
+):
     """Get per-employee usage breakdown: tokens, cost, and run time."""
-    owner_id = _get_owner_id(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    owner_id = str(user["id"])
     store = get_store()
     conn = get_db()
 
@@ -231,9 +228,13 @@ async def get_dashboard_usage(authorization: Optional[str] = Header(None)):
 
 
 @router.get("/activity")
-async def get_dashboard_activity(authorization: Optional[str] = Header(None)):
+async def get_dashboard_activity(
+    user=Depends(get_current_user),
+):
     """Get real-time multi-source activity feed."""
-    owner_id = _get_owner_id(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    owner_id = str(user["id"])
     conn = get_db()
     activities = []
 

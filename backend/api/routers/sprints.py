@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 
 from backend.core.errors import AppError
 from backend.db.stores.sprint_store import SprintStore
 from backend.lib.auth.session import get_current_user
+from backend.core.dispatch.jobs import enqueue_job, QueueFullError
 
 router = APIRouter(prefix="/sprints")
 
@@ -26,6 +27,7 @@ class UpdateTaskDetailsRequest(BaseModel):
     title: str
     description: str
     requirements: str
+    priority: Optional[str] = None
 
 class UpdateTaskAssignmentRequest(BaseModel):
     employee_id: str
@@ -39,14 +41,15 @@ class AddMessageRequest(BaseModel):
 
 
 @router.get("/active")
-def get_active_sprint(store: SprintStore = Depends(get_store)):
-    sprint = store.get_active_sprint()
+async def get_active_sprint(store: SprintStore = Depends(get_store), user=Depends(get_current_user)):
+    owner_id = (user or {}).get("id", "") if isinstance(user, dict) else ""
+    sprint = store.get_active_sprint(owner_id)
     if not sprint:
         raise HTTPException(status_code=404, detail="No active sprint found")
-    
+
     columns = store.get_sprint_columns(sprint["id"])
     tasks = store.get_sprint_tasks(sprint["id"])
-    
+
     for task in tasks:
         task["messages"] = store.get_task_messages(task["id"])
         task["runs"] = store.list_runs_for_task(task["id"])
@@ -58,7 +61,11 @@ def get_active_sprint(store: SprintStore = Depends(get_store)):
     }
 
 @router.post("/{sprint_id}/tasks")
-def create_task(sprint_id: str, req: CreateTaskRequest, store: SprintStore = Depends(get_store)):
+async def create_task(sprint_id: str, req: CreateTaskRequest, store: SprintStore = Depends(get_store), user=Depends(get_current_user)):
+    owner_id = (user or {}).get("id", "") if isinstance(user, dict) else ""
+    sprint = store.get_sprint(sprint_id)
+    if not sprint or (owner_id and sprint.get("owner_id", "") not in (owner_id, "")):
+        raise HTTPException(status_code=404, detail="Sprint not found")
     task_id = store.create_task(
         sprint_id=sprint_id,
         column_id=req.column_id,
@@ -71,17 +78,17 @@ def create_task(sprint_id: str, req: CreateTaskRequest, store: SprintStore = Dep
     return {"task_id": task_id}
 
 @router.patch("/tasks/{task_id}/column")
-def update_task_column(task_id: str, req: UpdateTaskColumnRequest, store: SprintStore = Depends(get_store)):
+async def update_task_column(task_id: str, req: UpdateTaskColumnRequest, store: SprintStore = Depends(get_store), user=Depends(get_current_user)):
     store.update_task_column(task_id, req.column_id)
     return {"status": "success"}
 
 @router.patch("/tasks/{task_id}/details")
-def update_task_details(task_id: str, req: UpdateTaskDetailsRequest, store: SprintStore = Depends(get_store)):
-    store.update_task_details(task_id, req.title, req.description, req.requirements)
+async def update_task_details(task_id: str, req: UpdateTaskDetailsRequest, store: SprintStore = Depends(get_store), user=Depends(get_current_user)):
+    store.update_task_details(task_id, req.title, req.description, req.requirements, req.priority)
     return {"status": "success"}
 
 @router.patch("/tasks/{task_id}/assignment")
-def update_task_assignment(task_id: str, req: UpdateTaskAssignmentRequest, store: SprintStore = Depends(get_store)):
+async def update_task_assignment(task_id: str, req: UpdateTaskAssignmentRequest, store: SprintStore = Depends(get_store), user=Depends(get_current_user)):
     store.update_task_assignment(task_id, req.employee_id)
     return {"status": "success"}
 
@@ -92,8 +99,6 @@ async def run_task(
     store: SprintStore = Depends(get_store),
     user=Depends(get_current_user),
 ):
-    from backend.core.agents.employee.sprint_runner import SprintRunner
-
     sprint = store.get_sprint(sprint_id)
     if not sprint:
         raise HTTPException(status_code=404, detail=f"Sprint {sprint_id} not found")
@@ -102,24 +107,32 @@ async def run_task(
     task = next((t for t in tasks if t["id"] == task_id), None)
     if not task:
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    if not (task.get("employee_id") or "").strip():
+    employee_id = (task.get("employee_id") or "").strip()
+    if not employee_id:
         raise HTTPException(status_code=400, detail="Task has no assigned employee")
 
     user_id = (user or {}).get("id") if isinstance(user, dict) else "anonymous"
     owner_id = user_id or ""
 
-    runner = SprintRunner(sprint_id=sprint_id, owner_id=owner_id)
     try:
-        run_id = await runner.start(task_id=task_id, user_id=user_id or "anonymous")
-    except ValueError as e:
+        job = await enqueue_job(
+            kind="sprint",
+            lane="sprint",
+            user_id=user_id or "anonymous",
+            owner_id=owner_id,
+            required_employee_ids=[employee_id],
+            payload={"sprint_id": sprint_id, "task_id": task_id},
+        )
+    except QueueFullError as e:
         raise AppError(
-            code="SPRINT_TASK_RUN_INVALID",
+            code="SPRINT_TASK_RUN_QUEUE_FULL",
             message=str(e),
-            status_code=400,
-            retryable=False,
+            status_code=429,
+            retryable=True,
             details={"task_id": task_id, "sprint_id": sprint_id},
         ) from e
-    return {"run_id": run_id, "status": "started"}
+
+    return {"job_id": job.id, "status": "queued", "employee_id": employee_id}
 
 
 @router.post("/tasks/{task_id}/messages")

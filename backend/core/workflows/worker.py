@@ -15,6 +15,7 @@ from backend.db.stores.workflow_store import WorkflowStore
 from backend.core.workflows.schedules.normalize import next_run_from_cron, normalize_schedule_config
 from backend.core.workflows.engine.executor import WorkflowExecutor
 from backend.core.logging import get_logger
+from backend.core.dispatch.jobs import enqueue_job, QueueFullError
 
 logger = get_logger("worker")
 
@@ -79,14 +80,16 @@ class BackgroundWorker:
         self._tasks = [t for t in self._tasks if not t.done()]
 
     async def _execute_workflow(self, workflow: dict):
-        """Execute a workflow via the DAG executor."""
+        """Enqueue the workflow into the dispatch layer. The dispatcher admits
+        it (respecting per-user concurrency) and the worker pool actually runs
+        the DAG via WorkflowExecutor — no more inline execution in this process.
+        """
         workflow_id = workflow["id"]
         workflow_name = workflow.get("name", workflow_id)
         owner_id = workflow.get("owner_id", "")
 
-        logger.info(f"[Worker] Starting workflow: {workflow_name} ({workflow_id})")
-
         try:
+            # Advance next_run_at so we don't re-enqueue the same schedule tick.
             workflow_def = self.store.get_workflow(workflow_id, owner_id or None)
             if workflow_def:
                 now = datetime.now()
@@ -98,28 +101,19 @@ class BackgroundWorker:
                     next_run = next_run_from_cron(cron_expression) if cron_expression else now + timedelta(minutes=5)
                     self.store.update_schedule(trigger.id, now, next_run)
 
-            self.store.update_workflow_status(workflow_id, "running")
-
-            result = await self.executor.execute_workflow(
-                workflow_id=workflow_id,
+            await enqueue_job(
+                kind="workflow",
+                lane="workflow",
+                user_id=owner_id or "anonymous",
                 owner_id=owner_id,
-                trigger_type="schedule",
+                required_employee_ids=[],  # Harry is shared; concurrency cap gates us
+                payload={"workflow_id": workflow_id, "trigger_type": "schedule"},
             )
+            logger.info(f"[Worker] Enqueued workflow: {workflow_name} ({workflow_id})")
 
-            if result.status.value == "paused":
-                logger.info(f"[Worker] Workflow paused (human approval needed): {workflow_name}")
-            elif result.status.value == "completed":
-                self.store.update_workflow_status(workflow_id, "active")
-                logger.info(f"[Worker] Completed workflow: {workflow_name}")
-            else:
-                self.store.update_workflow_status(workflow_id, "active")
-                logger.warning(f"[Worker] Workflow {workflow_name} ended with status: {result.status.value}")
-
+        except QueueFullError as e:
+            logger.warning(f"[Worker] Queue full, deferring workflow {workflow_id}: {e}")
         except Exception as e:
-            logger.exception(f"[Worker] Failed to execute workflow {workflow_id}: {e}")
-            try:
-                self.store.update_workflow_status(workflow_id, "failed", error=str(e))
-            except Exception:
-                pass
+            logger.exception(f"[Worker] Failed to enqueue workflow {workflow_id}: {e}")
         finally:
             self._active_workflow_ids.discard(workflow_id)

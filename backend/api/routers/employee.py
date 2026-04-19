@@ -6,7 +6,9 @@ This is separate from workflows (Harry) — employees are the chat-based agents 
 """
 
 import json
+import random
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, List
 import httpx
 
@@ -18,6 +20,7 @@ from backend.core.logging import get_logger
 from backend.core.tools.catalog import list_assignable_employee_tools
 from backend.services.employee_service import EmployeeService
 from backend.lib.auth.session import get_current_user
+from backend.db.stores.workflow_store import WorkflowStore
 from backend.core.agents.employee.types import (
     Employee, EmployeeTool, EmployeeSkill, EmployeeTask, EmployeeActivity,
     EmployeeStatus, TaskStatus, TaskPriority, SkillCategory, ActivityType
@@ -25,11 +28,17 @@ from backend.core.agents.employee.types import (
 from backend.core.workflows.utils import generate_id
 from backend.services.prompt_generator import generate_employee_prompt, generate_public_skill
 from backend.db.stores.auth_store import AuthDB
+from backend.core.dispatch import presence as dispatch_presence
+from backend.core.dispatch.leases import acquire_all, release_all
+from backend.core.dispatch.events import employee_status_changed
+from backend.core.dispatch.config import DEFAULT_USER_CONCURRENCY
+from backend.core.dispatch.jobs import enqueue_job as _enqueue_job  # reuse shapes
 
 router = APIRouter()
 store = EmployeeStore()
 employee_service = EmployeeService()
 chat_db = AuthDB()
+workflow_store = WorkflowStore()
 logger = get_logger("api.routers.employee")
 
 
@@ -60,29 +69,102 @@ def _get_employee_full_with_legacy_fallback(employee_id: str, owner_id: str = ""
     return store.get_employee_full(employee_id, "")
 
 
+def _infer_gender_bucket(name: str) -> str:
+    """Best-effort gender bucket for avatar assignment: 'men' or 'women'."""
+    first = (name or "").strip().split(" ")[0].lower()
+    if not first:
+        return random.choice(["men", "women"])
+
+    female_names = {
+        "ava", "mia", "emma", "olivia", "sophia", "isabella", "amelia",
+        "charlotte", "harper", "evelyn", "abigail", "ella", "scarlett",
+        "grace", "chloe", "lily", "zoe", "hannah", "nora", "layla",
+        "aria", "riley", "victoria", "stella", "aubrey", "aurora", "hazel",
+        "bella", "penelope", "lucy", "madison", "ellie", "camila", "leah",
+        "anya", "anika", "nina", "maya", "priya", "sarah", "julia", "anna",
+    }
+    male_names = {
+        "liam", "noah", "oliver", "elijah", "james", "william", "benjamin",
+        "lucas", "henry", "alexander", "mason", "michael", "ethan", "daniel",
+        "jacob", "logan", "jackson", "levi", "sebastian", "mateo", "jack",
+        "owen", "theodore", "aiden", "samuel", "joseph", "john", "david",
+        "wyatt", "matthew", "luke", "asher", "carter", "julian", "grayson",
+        "leo", "jayden", "gabriel", "isaac", "lincoln", "anthony", "hudson",
+        "jordan", "alex", "hritvik", "rohan",
+    }
+
+    if first in female_names:
+        return "women"
+    if first in male_names:
+        return "men"
+
+    # Heuristic fallback when the name is unknown.
+    if first.endswith(("a", "ia", "na", "la", "sa", "ie")):
+        return "women"
+    if first.endswith(("o", "n", "r", "d", "k", "m", "s", "t")):
+        return "men"
+    return random.choice(["men", "women"])
+
+
+def _auto_avatar_url(name: str, owner_id: str) -> str:
+    """Assign random avatar from frontend/public/employees with unused-first policy."""
+    repo_root = Path(__file__).resolve().parents[3]
+    employees_dir = repo_root / "frontend" / "public" / "employees"
+    if not employees_dir.exists():
+        return ""
+    gender = _infer_gender_bucket(name)
+
+    # Only consider curated gendered files: men_*.png / women_*.png
+    pool = sorted(
+        p.name
+        for p in employees_dir.iterdir()
+        if p.is_file() and p.name.lower().startswith(f"{gender}_")
+    )
+    if not pool:
+        return ""
+
+    current = store.list_employees(owner_id)
+    used = set()
+    for emp in current:
+        avatar = (emp.avatar_url or "").strip()
+        if not avatar:
+            continue
+        basename = avatar.split("?", 1)[0].rstrip("/").split("/")[-1]
+        if basename.lower().startswith(f"{gender}_"):
+            used.add(basename)
+
+    available = [name for name in pool if name not in used]
+    chosen = random.choice(available if available else pool)
+    return f"/employees/{chosen}"
+
+
 # ─── Request/Response Schemas ───
 
 class CreateEmployeeRequest(BaseModel):
     name: str
     role: str = ""
     avatar_url: str = ""
+    cover_url: str = ""
     description: str = ""
     system_prompt: str = ""
     model: str = "openai/gpt-4o"
+    provider: str = ""
     temperature: float = 0.7
     max_tokens: int = 4096
-    tools: List[str] = []  # tool names to assign
-    skills: List[dict] = []  # {skill_name, category, proficiency_level, description}
-    memory: List[str] = []  # file paths/names to attach
+    tools: List[str] = []
+    skills: List[dict] = []
+    memory: List[str] = []
 
 
 class UpdateEmployeeRequest(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None
     avatar_url: Optional[str] = None
+    cover_url: Optional[str] = None
     description: Optional[str] = None
     system_prompt: Optional[str] = None
     model: Optional[str] = None
+    provider: Optional[str] = None
     status: Optional[str] = None
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
@@ -180,12 +262,6 @@ async def list_employees(authorization: Optional[str] = Header(None)):
     owner_id = _get_owner_id(authorization)
     try:
         employees = store.list_employees(owner_id)
-        if owner_id:
-            legacy_employees = store.list_employees("")
-            seen_ids = {emp.id for emp in employees}
-            for legacy in legacy_employees:
-                if legacy.id not in seen_ids:
-                    employees.append(legacy)
         result = []
         for emp in employees:
             result.append({
@@ -193,10 +269,12 @@ async def list_employees(authorization: Optional[str] = Header(None)):
                 "name": emp.name,
                 "role": emp.role,
                 "avatar_url": emp.avatar_url,
+                "cover_url": emp.cover_url,
                 "status": emp.status.value,
                 "description": emp.description,
                 "system_prompt": emp.system_prompt,
                 "model": emp.model,
+                "provider": emp.provider,
                 "is_active": emp.is_active,
                 "temperature": emp.temperature,
                 "max_tokens": emp.max_tokens,
@@ -227,20 +305,46 @@ async def get_tools_catalog():
 
 
 @router.get("/employees/models/catalog")
-async def get_models_catalog(provider: str = "openrouter"):
+async def get_models_catalog(
+    provider: str = "openrouter",
+    api_key: str = "",
+    user=Depends(get_current_user),
+):
     """Return models for employee configuration.
     
     Args:
-        provider: "openrouter" or "nvidia" - defaults to "openrouter"
+        provider: "openrouter" | "openai" | "groq" | "nvidia"
     """
     try:
-        from backend.services.llm_provider import LLMProviderFactory
-        
-        llm_provider = LLMProviderFactory.get_provider(provider)
+        from backend.services.llm_provider import LLMProviderFactory, OpenRouterProvider, OpenAIProvider, GroqProvider, NVIDIAProvider
+
+        resolved_api_key = (api_key or "").strip()
+        if not resolved_api_key and user and user.get("id"):
+            owner_id = str(user["id"])
+            # Primary per-provider credential saved from Settings modal
+            resolved_api_key = workflow_store.get_credential(owner_id, f"llm_api_key_{provider}") or ""
+            # Legacy single-key fallback for older accounts
+            if not resolved_api_key:
+                legacy_provider = workflow_store.get_credential(owner_id, "llm_provider") or ""
+                legacy_key = workflow_store.get_credential(owner_id, "llm_api_key") or ""
+                if legacy_key and legacy_provider == provider:
+                    resolved_api_key = legacy_key
+
+        # If caller passed their own api_key, instantiate a fresh provider with it
+        if resolved_api_key:
+            _key_map = {
+                "openrouter": lambda k: OpenRouterProvider(api_key=k),
+                "openai": lambda k: OpenAIProvider(api_key=k),
+                "groq": lambda k: GroqProvider(api_key=k),
+                "nvidia": lambda k: NVIDIAProvider(),
+            }
+            llm_provider = _key_map.get(provider, lambda k: None)(resolved_api_key)
+        else:
+            llm_provider = LLMProviderFactory.get_provider(provider)
         if not llm_provider:
             raise HTTPException(
                 status_code=400, 
-                detail=f"Unknown provider: {provider}. Supported: openrouter, nvidia"
+                detail=f"Unknown provider: {provider}. Supported: openrouter, openai, groq, nvidia"
             )
         
         models = await llm_provider.get_models()
@@ -278,10 +382,11 @@ async def get_available_providers():
 
 
 @router.post("/employees/generate-prompt")
-async def generate_prompt(req: GeneratePromptRequest):
+async def generate_prompt(req: GeneratePromptRequest, authorization: Optional[str] = Header(None)):
     """Use Kimi K2.5 to generate a Katy-quality system prompt for a new employee."""
     if not req.name.strip():
         raise HTTPException(status_code=400, detail="Name is required")
+    owner_id = _get_owner_id(authorization)
     # Fetch existing public skills to pass to the LLM
     all_skills = store.list_public_skills()
     public_skills = [
@@ -298,6 +403,7 @@ async def generate_prompt(req: GeneratePromptRequest):
         name=req.name.strip(),
         description=req.description.strip(),
         public_skills=public_skills,
+        owner_id=owner_id,
     )
 
     # Auto-create any proposed new skills
@@ -323,6 +429,7 @@ async def generate_prompt(req: GeneratePromptRequest):
                 title=skill_title,
                 description=skill_desc,
                 employee_role=result.get("role", ""),
+                owner_id=owner_id,
             )
             now = datetime.now()
             new_skill = PublicSkill(
@@ -383,10 +490,12 @@ async def get_employee(employee_id: str, authorization: Optional[str] = Header(N
             "name": emp.name,
             "role": emp.role,
             "avatar_url": emp.avatar_url,
+            "cover_url": emp.cover_url,
             "status": emp.status.value,
             "description": emp.description,
             "system_prompt": emp.system_prompt,
             "model": emp.model,
+            "provider": emp.provider,
             "is_active": emp.is_active,
             "temperature": emp.temperature,
             "max_tokens": emp.max_tokens,
@@ -443,6 +552,51 @@ async def get_employee(employee_id: str, authorization: Optional[str] = Header(N
     )
 
 
+@router.get("/employees/{employee_id}/status")
+async def employee_status(employee_id: str):
+    """Lease-derived employee status (IDLE/WORKING) + busy_in context."""
+    return await dispatch_presence.get_status(employee_id)
+
+
+@router.post("/employees/status/bulk")
+async def employees_status_bulk(body: dict):
+    """Bulk presence lookup. body: {employee_ids: [...]}."""
+    ids = body.get("employee_ids") or []
+    return {"statuses": await dispatch_presence.get_statuses(ids)}
+
+
+async def _acquire_chat_lease(employee_id: str, user_id: str) -> str:
+    """Acquire a per-employee lease for an interactive chat turn.
+
+    Chat is served inline (not via the worker) so the SSE response can stream
+    tokens. But we still use the same lease primitive so a chat turn mutually
+    excludes with any team/sprint/workflow that needs this employee.
+    """
+    job_id = f"chat_{employee_id}_{user_id}_{int(datetime.now().timestamp() * 1000)}"
+    res = await acquire_all(
+        job_id=job_id,
+        user_id=user_id,
+        employee_ids=[employee_id],
+        user_cap=DEFAULT_USER_CONCURRENCY,
+    )
+    if res == 1:
+        await employee_status_changed(employee_id, "working", kind="chat", user_id=user_id)
+        return job_id
+    if res == -1:
+        raise HTTPException(status_code=429, detail="User concurrency limit reached")
+    # busy
+    info = await dispatch_presence.get_status(employee_id)
+    raise HTTPException(
+        status_code=409,
+        detail={"message": "Employee is busy on another run", "status": info},
+    )
+
+
+async def _release_chat_lease(job_id: str, employee_id: str, user_id: str) -> None:
+    await release_all(job_id, user_id)
+    await employee_status_changed(employee_id, "idle", kind="chat", user_id=user_id)
+
+
 @router.post("/employees/{employee_id}/chat")
 async def chat_with_employee(
     employee_id: str,
@@ -461,6 +615,7 @@ async def chat_with_employee(
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
 
+    chat_lease_id = await _acquire_chat_lease(employee_id, user["id"])
     try:
         response = await employee_service.chat(
             employee_id=employee_id,
@@ -483,6 +638,8 @@ async def chat_with_employee(
             retryable=True,
             details={"employee_id": employee_id, "session_id": request.session_id or ""},
         ) from e
+    finally:
+        await _release_chat_lease(chat_lease_id, employee_id, user["id"])
 
 
 @router.post("/employees/{employee_id}/chat/stream")
@@ -504,6 +661,8 @@ async def chat_with_employee_stream(
         employee = store.get_employee(employee_id, effective_owner_id)
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+
+    chat_lease_id = await _acquire_chat_lease(employee_id, user["id"])
 
     async def event_generator():
         try:
@@ -530,6 +689,8 @@ async def chat_with_employee_stream(
                 details={"employee_id": employee_id, "session_id": request.session_id or ""},
             )
             yield f"data: {json.dumps({'type': 'error', 'error': err.to_payload()['error']})}\n\n"
+        finally:
+            await _release_chat_lease(chat_lease_id, employee_id, user["id"])
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -574,17 +735,21 @@ async def create_employee(
     owner_id = _get_owner_id(authorization)
     now = datetime.now()
     employee_id = generate_id()
+    avatar_url = (req.avatar_url or "").strip() or _auto_avatar_url(req.name, owner_id)
+    cover_url = (req.cover_url or "").strip()
 
     status = EmployeeStatus.IDLE
     employee = Employee(
         id=employee_id,
         name=req.name,
         role=req.role,
-        avatar_url=req.avatar_url,
+        avatar_url=avatar_url,
+        cover_url=cover_url,
         status=status,
         description=req.description,
         system_prompt=req.system_prompt,
         model=req.model,
+        provider=req.provider,
         owner_id=owner_id,
         is_active=True,
         temperature=req.temperature,
@@ -635,10 +800,12 @@ async def create_employee(
             "name": employee.name,
             "role": employee.role,
             "avatar_url": employee.avatar_url,
+            "cover_url": employee.cover_url,
             "status": employee.status.value,
             "description": employee.description,
             "system_prompt": employee.system_prompt,
             "model": employee.model,
+            "provider": employee.provider,
             "is_active": employee.is_active,
             "temperature": employee.temperature,
             "max_tokens": employee.max_tokens,
@@ -725,10 +892,12 @@ async def update_employee(
         "name": employee.name,
         "role": employee.role,
         "avatar_url": employee.avatar_url,
+        "cover_url": employee.cover_url,
         "status": employee.status.value,
         "description": employee.description,
         "system_prompt": employee.system_prompt,
         "model": employee.model,
+        "provider": employee.provider,
         "is_active": employee.is_active,
         "temperature": employee.temperature,
         "max_tokens": employee.max_tokens,
@@ -771,6 +940,7 @@ async def update_employee_memory(
         "name": employee.name,
         "role": employee.role,
         "avatar_url": employee.avatar_url,
+        "cover_url": employee.cover_url,
         "status": employee.status.value,
         "description": employee.description,
         "system_prompt": employee.system_prompt,

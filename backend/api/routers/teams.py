@@ -25,6 +25,7 @@ from backend.core.agents.employee.types import (
 )
 from backend.core.agents.employee.team_runner import TeamRunner
 from backend.core.workflows.utils import generate_id
+from backend.core.dispatch.jobs import enqueue_job, QueueFullError
 from backend.lib.auth.session import get_current_user as _resolve_user
 from backend.db.stores.auth_store import AuthDB
 
@@ -335,32 +336,38 @@ async def start_run(
                 detail=f"Employee {emp_id} is not a member of this team",
             )
 
-    runner = TeamRunner(team_id=team_id, owner_id=owner_id)
-
+    # Enqueue the team run into the dispatch layer. The worker (not this request
+    # handler) will invoke TeamRunner.start(). The dispatcher gates admission on
+    # all required employees being idle.
     try:
-        run_id = await runner.start(
-            goal=body.goal,
-            member_tasks=body.member_tasks,
-            conversation_id=body.conversation_id,
+        job = await enqueue_job(
+            kind="team",
+            lane="team",
             user_id=owner_id or "anonymous",
+            owner_id=owner_id,
+            required_employee_ids=list(body.member_tasks.keys()),
+            payload={
+                "team_id": team_id,
+                "goal": body.goal,
+                "member_tasks": body.member_tasks,
+                "conversation_id": body.conversation_id,
+            },
         )
-    except ValueError as e:
+    except QueueFullError as e:
         raise AppError(
-            code="TEAM_RUN_INVALID",
+            code="TEAM_RUN_QUEUE_FULL",
             message=str(e),
-            status_code=400,
-            retryable=False,
+            status_code=429,
+            retryable=True,
             details={"team_id": team_id},
         ) from e
 
-    run = team_store.get_run(run_id)
-    run_members = team_store.list_run_members(run_id)
-
     return {
         "success": True,
-        "run_id": run_id,
-        "run": _run_to_dict(run) if run else {},
-        "members": [_run_member_to_dict(m) for m in run_members],
+        "job_id": job.id,
+        "status": "queued",
+        "team_id": team_id,
+        "employee_ids": job.required_employee_ids,
     }
 
 

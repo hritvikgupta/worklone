@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Agent } from '@/src/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
+import { useEmployeePresence } from '@/src/hooks/usePresence';
 
 interface AgentListProps {
   agents: Agent[];
@@ -12,9 +13,14 @@ interface AgentListProps {
 }
 
 export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListProps) {
+  // Live presence: overrides the static `agent.status` shipped in the payload
+  // so we always reflect the real Redis lease state instead of stale DB state.
+  const ids = useMemo(() => agents.map((a) => a.id), [agents]);
+  const { statuses, busyIn } = useEmployeePresence(ids);
+
   const getStatusColor = (status: Agent['status']) => {
     switch (status) {
-      case 'working': return 'bg-blue-400';
+      case 'working': return 'bg-amber-400';
       case 'idle': return 'bg-emerald-400';
       case 'blocked': return 'bg-rose-400';
       case 'offline': return 'bg-slate-300';
@@ -29,7 +35,11 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
         <span className="text-xs text-muted-foreground">{agents.length} members</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.map((agent, index) => (
+        {agents.map((agent, index) => {
+          const liveStatus = (statuses[agent.id]?.status as Agent['status']) || agent.status;
+          const ctx = busyIn(agent.id);
+          const mergedAgent: Agent = { ...agent, status: liveStatus };
+          return (
           <motion.div
             key={agent.id}
             initial={{ opacity: 0 }}
@@ -50,7 +60,7 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
               </Avatar>
               <div className={cn(
                 "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background",
-                getStatusColor(agent.status)
+                getStatusColor(liveStatus)
               )} />
             </div>
             <div className="flex-1 min-w-0 space-y-1">
@@ -70,12 +80,12 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
                 </Badge>
               </div>
               <div className="text-xs text-muted-foreground truncate">
-                {agent.status === 'working' ? (
+                {liveStatus === 'working' ? (
                   <span className="flex items-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" />
-                    {agent.currentTask}
+                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                    {ctx?.kind ? `Busy — ${ctx.kind}${ctx.run_id ? ` · ${ctx.run_id}` : ''}` : (agent.currentTask || 'Busy')}
                   </span>
-                ) : agent.status === 'blocked' ? (
+                ) : liveStatus === 'blocked' ? (
                   <span className="text-rose-500 font-medium">Blocked</span>
                 ) : (
                   <span>Available</span>
@@ -90,7 +100,8 @@ export function AgentList({ agents, onAgentClick, selectedAgentId }: AgentListPr
               </div>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

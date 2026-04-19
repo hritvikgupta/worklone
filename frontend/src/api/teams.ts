@@ -83,7 +83,7 @@ export async function startRun(
   teamId: string,
   goal: string,
   memberTasks: Record<string, string>
-): Promise<{ run_id: string; conversation_id: string }> {
+): Promise<{ run_id: string; conversation_id: string; job_id?: string; status?: string; employee_ids?: string[] }> {
   const payload = { goal, member_tasks: memberTasks };
   console.log('[startRun] payload:', JSON.stringify(payload));
   const data = await requestJson<any>(`/api/teams/${teamId}/runs`, {
@@ -91,7 +91,13 @@ export async function startRun(
     headers: authHeaders(),
     body: JSON.stringify(payload),
   }, 'The team run could not be started.');
-  return { run_id: data.run_id, conversation_id: data.run?.conversation_id || '' };
+  return {
+    run_id: data.run_id || '',
+    conversation_id: data.run?.conversation_id || '',
+    job_id: data.job_id,
+    status: data.status,
+    employee_ids: data.employee_ids,
+  };
 }
 
 export async function getRun(teamId: string, runId: string): Promise<TeamRun> {

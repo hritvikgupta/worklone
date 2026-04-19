@@ -5,6 +5,7 @@ OAuth Router - OAuth integration endpoints
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel
 
 from backend.api.schemas.oauth import DisconnectResponse, IntegrationsResponse
 from backend.lib.auth.service import AuthService, OAUTH_PROVIDERS
@@ -12,6 +13,12 @@ from backend.lib.auth.session import get_current_user
 
 router = APIRouter()
 auth_service = AuthService()
+
+
+class OAuthProviderCredentialsRequest(BaseModel):
+    provider: str
+    client_id: str
+    client_secret: str
 
 @router.get("/authorize")
 async def authorize_integration(
@@ -71,8 +78,40 @@ async def get_integrations(user=Depends(get_current_user)):
     status = auth_service.get_integration_status(user["id"])
     return IntegrationsResponse(
         success=True,
-        integrations=status["integrations"]
+        integrations=status["integrations"],
+        deployment_mode=status.get("deployment_mode", "self_hosted"),
     )
+
+
+@router.get("/credentials/{provider}")
+async def get_oauth_provider_credentials_status(
+    provider: str,
+    user=Depends(get_current_user),
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    result = auth_service.get_oauth_provider_credentials_status(user["id"], provider)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Failed to fetch credentials status")
+    return result
+
+
+@router.put("/credentials")
+async def save_oauth_provider_credentials(
+    body: OAuthProviderCredentialsRequest,
+    user=Depends(get_current_user),
+):
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    result = auth_service.set_oauth_provider_credentials(
+        user_id=user["id"],
+        provider=body.provider,
+        client_id=body.client_id,
+        client_secret=body.client_secret,
+    )
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Failed to save credentials")
+    return {"success": True}
 
 
 @router.post("/{provider}/disconnect", response_model=DisconnectResponse)
