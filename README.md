@@ -6,11 +6,11 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 
-**Worklone** is an open-source platform that lets you create, manage, and deploy AI employees for your business. These aren't static chatbots—they're autonomous agents that reason, use tools, execute workflows, collaborate with each other, and **get smarter over time** through self-learning.
+![Worklone Hero](frontend/public/landinghero.png)
+
+**Worklone** is a cloud-managed AI employee platform for organizations. It lets you create, manage, and deploy AI employees for your business. These are not static chatbots: they are autonomous agents that reason, use tools, execute workflows, collaborate with each other, and **get smarter over time** through self-learning.
 
 Think of Worklone as your digital workforce: hire AI employees for product management, engineering, sales, support, operations, or any role you define. Each employee learns your preferences, builds skills from experience, and improves with every interaction.
-
-![Worklone Self-Learning Employee Architecture](frontend/public/research/employee-architecture-diagram.png)
 
 ## Usage Notice
 
@@ -33,30 +33,30 @@ Commercial use, resale, hosted paid offerings, or product monetization are not a
 
 ## Features
 
-### 🧠 Self-Adapting AI Employees
+### Self-Adapting AI Employees
 - **Learns from every interaction** — automatically captures user preferences, work styles, and domain knowledge
 - **Builds skills autonomously** — discovers multi-step procedures through trial-and-error and saves them as reusable skills
 - **Improves over time** — the more you use it, the better it gets at understanding your needs
 
-### 👥 AI Employee System
+### AI Employee System
 - **Create custom employees** with specific roles, personalities, and capabilities
 - **Self-learning employees** — adaptive employees that improve through production feedback loops
 - **Assign 500+ tools** — from GitHub and Slack to Salesforce and Stripe
 - **Track performance** — monitor tokens, costs, and activity per employee
 - **Team collaboration** — employees can message each other and work together on tasks
 
-### 🔧 Massive Tool Ecosystem
+### Massive Tool Ecosystem
 - **500+ pre-built tools** across GitHub, Slack, Gmail, Jira, Notion, Salesforce, Stripe, Linear, HubSpot, Google Drive, Google Calendar, and more
 - **Custom tool framework** — add your own tools in under 50 lines of code
 - **Native function calling** — agents autonomously decide which tools to use and when
 
-### ⚡ DAG-Based Workflow Engine
+### DAG-Based Workflow Engine
 - **Visual workflow builder** — 13 block types including agents, tools, conditions, loops, and parallel execution
 - **Multiple triggers** — API, webhook, schedule (cron), or manual
 - **Human-in-the-loop** — approval blocks for critical decisions
 - **Background execution** — long-running workflows with monitoring and history
 
-### 🔒 Private & Self-Hosted
+### Private & Self-Hosted
 - **100% self-hosted** — your data never leaves your infrastructure
 - **Persistent data layer** — SQLite for application state, Redis for dispatch/realtime coordination
 - **Multi-tenant** — owner-based data isolation with session and API key auth
@@ -101,14 +101,6 @@ Open:
 - Frontend: `http://localhost:3000`
 - Backend API: `http://localhost:8000`
 - Backend docs: `http://localhost:8000/docs`
-
----
-
-## Architecture
-
-The current architecture (frontend + backend + redis + sqlite + self-learning loop) is documented here:
-
-- [Architecture](docs/ARCHITECTURE.md)
 
 ---
 
