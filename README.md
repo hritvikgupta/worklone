@@ -1,6 +1,6 @@
 # Worklone: AI Employees That Learn & Adapt
 
-[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/License-PolyForm%20Noncommercial%201.0.0-red.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
@@ -16,8 +16,8 @@ Think of Worklone as your digital workforce: hire AI employees for product manag
 
 ## Usage Notice
 
-This repository is released for **non-commercial research and evaluation only**.
-Commercial use, resale, hosted paid offerings, or product monetization are not allowed without prior written permission. See [LICENSE](LICENSE).
+This repository is released under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+If you use, modify, or host this software over a network, you must make the entire source code of your modified version publicly available under the same license. For commercial use without open-sourcing your code, please contact us for a commercial license. See [LICENSE](LICENSE).
 
 ---
 
@@ -189,7 +189,11 @@ We welcome contributions! Whether it's fixing a bug, adding a tool, or improving
 
 ## License
 
-This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE) — a standard, lawyer-drafted source-available license that permits use, modification, and distribution **only for noncommercial purposes** (research, evaluation, personal study, education, government, and other noncommercial use). Commercial use of any kind — including reselling, hosting as a paid service, or incorporating into a commercial product — is **not permitted** without a separate commercial license. Contact the maintainers for commercial licensing.
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE).
+
+This is a strong copyleft license that ensures the software remains free and open-source. If you modify this software and host it over a network (like a SaaS), the AGPL requires you to make your modified source code available to your users under the same license. 
+
+Commercial use of any kind — including reselling, hosting as a paid service, or incorporating into a commercial product without open-sourcing your own code — requires a separate commercial license. Contact the maintainers for commercial licensing.
 
 ---
 

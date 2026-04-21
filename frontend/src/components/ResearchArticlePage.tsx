@@ -14,6 +14,13 @@ export const researchArticles = [
     date: 'April 2026',
     category: 'Research',
   },
+  {
+    slug: 'training-ai-employees',
+    title: 'Training AI Employees for the Personal Workspace',
+    subtitle: 'A deep dive into how AI employees are contextualized, onboarded, and optimized for highly specialized organizational roles.',
+    date: 'April 2026',
+    category: 'Research',
+  },
 ];
 
 function SelfEvolvingDiagram() {
@@ -370,7 +377,7 @@ export function ResearchArticlePage() {
                   </div>
                   <div>
                     <EditorialMarkdown content={article.intro} compact />
-                    <SelfEvolvingDiagram />
+                    {slug !== 'training-ai-employees' && <SelfEvolvingDiagram />}
                   </div>
                 </div>
 

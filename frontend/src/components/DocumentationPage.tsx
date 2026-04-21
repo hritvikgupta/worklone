@@ -51,8 +51,8 @@ const docGroups: DocGroup[] = [
   {
     title: 'Getting Started',
     items: [
-      { label: 'Quick Start', slug: 'quick-start', icon: Rocket },
       { label: 'What is Worklone', slug: 'what-is-worklone', icon: CircleHelp },
+      { label: 'Quick Start', slug: 'quick-start', icon: Rocket },
       { label: 'Installation', slug: 'installation', icon: Wrench },
     ],
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Headphones, LineChart, Code, Briefcase, ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
@@ -126,12 +126,28 @@ export function LandingPage() {
             >
               What is Worklone
             </Link>
-            <Link
-              to={researchArticles[0] ? `/research/${researchArticles[0].slug}` : '/research/self-learning-employee'}
-              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
-            >
-              Research
-            </Link>
+            <div className="relative group">
+              <button
+                className="flex items-center gap-1 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+              >
+                Research
+                <ChevronDown className="h-3 w-3" />
+              </button>
+              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-4 hidden group-hover:block z-50">
+                <div className="w-[300px] rounded-xl border border-zinc-200 bg-white p-2 shadow-lg ring-1 ring-black/5">
+                  {researchArticles.map((article) => (
+                    <Link
+                      key={article.slug}
+                      to={`/research/${article.slug}`}
+                      className="block rounded-lg px-4 py-3 hover:bg-zinc-50 transition-colors"
+                    >
+                      <div className="text-sm font-medium text-zinc-900">{article.title}</div>
+                      <div className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{article.subtitle}</div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
             <Link
               to="/documentation"
               className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
@@ -166,88 +182,116 @@ export function LandingPage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden bg-white pt-20 pb-16 sm:pb-24 sm:pt-20">
-        <div className="relative z-10 px-6 sm:px-8 lg:px-10 mx-auto max-w-6xl flex justify-center">
-          <div className="max-w-3xl pt-10 pb-6 text-center flex flex-col items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55 }}
-              className="flex flex-col items-center"
+      <section className="relative overflow-hidden bg-white pt-24 pb-16 sm:pb-20 sm:pt-32">
+        <div className="relative z-10 px-6 sm:px-8 lg:px-10 mx-auto max-w-7xl mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="max-w-4xl text-left">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <h1 className="text-[32px] sm:text-[42px] leading-[1.2] font-normal tracking-tight text-zinc-950 max-w-3xl">
+                  We help teams build or hire their first AI employee
+                </h1>
+
+                <p className="mt-6 text-[16px] sm:text-[18px] leading-[1.6] text-zinc-800 max-w-3xl">
+                  Deploy self-adaptive AI employees that learn your workspace and master your workflows. An autonomous team that continuously improves and never makes the same mistake twice. Built for the modern enterprise.
+                </p>
+
+                <div className="mt-10 flex flex-wrap items-center justify-start gap-4">
+                  <Link
+                    to="/waitlist"
+                    className="inline-flex items-center justify-center rounded-[4px] bg-[#1a1a1a] px-6 py-3 text-[14px] font-medium text-white transition-colors hover:bg-black"
+                  >
+                    Join Waitlist
+                  </Link>
+                  <Link
+                    to="/what-is-worklone"
+                    className="inline-flex items-center justify-center rounded-[4px] border border-zinc-200 bg-white px-6 py-3 text-[14px] font-medium text-zinc-900 transition-colors hover:bg-zinc-50"
+                  >
+                    What is Worklone
+                  </Link>
+                </div>
+                
+                <div className="mt-8 text-[14px] text-zinc-800">
+                  Or, <Link to="/documentation" className="underline underline-offset-4 hover:text-zinc-500 transition-colors">read the documentation</Link>.
+                </div>
+              </motion.div>
+            </div>
+            
+            <motion.div 
+              className="hidden lg:flex justify-center lg:justify-end"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <h2 className="text-[40px] sm:text-[48px] font-serif tracking-tight text-zinc-900 mb-6 font-medium">Hey,</h2>
-              
-              <div className="font-mono text-[20px] sm:text-[24px] leading-[1.1] flex flex-wrap justify-center max-w-[400px] sm:max-w-[500px] gap-x-[10px] sm:gap-x-[14px] mb-12 font-bold select-none mx-auto" aria-hidden="true">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="flex w-full justify-center gap-x-[10px] sm:gap-x-[14px]">
-                    {Array.from({ length: 18 }).map((_, j) => {
-                      const val = Math.abs((Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1);
-                      const baseOpacity = val > 0.8 ? 1 : val > 0.5 ? 0.5 : val > 0.2 ? 0.2 : 0.1;
-                      return (
-                        <motion.span
-                          key={j}
-                          className="text-zinc-900 cursor-default"
-                          initial={{ opacity: 0, scale: 0 }}
-                          animate={{ 
-                            opacity: [baseOpacity, baseOpacity * 0.2, baseOpacity],
-                            scale: [1, 0.85, 1]
-                          }}
-                          transition={{ 
-                            duration: 2.5 + val, 
-                            repeat: Infinity, 
-                            delay: (i * 0.1) + (j * 0.05), 
-                            ease: "easeInOut" 
-                          }}
-                          whileHover={{ 
-                            scale: 1.5, 
-                            opacity: 1, 
-                            color: '#3b82f6',
-                            transition: { duration: 0.2 }
-                          }}
-                        >
-                          +
-                        </motion.span>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-
-              <h1 className="text-[28px] sm:text-[34px] leading-[1.3] font-medium tracking-tight text-zinc-900 max-w-[700px] mx-auto">
-                We help <span className="font-serif italic font-normal">teams</span> build or hire their first AI employee to handle <span className="text-blue-500">code</span>, <span className="text-red-500">docs</span>, <span className="text-green-500">tickets</span>, <span className="text-yellow-500">chats</span>, <span className="text-indigo-600">research</span> all done autonomously.
-              </h1>
-
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                <Link
-                  to="/what-is-worklone"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-6 py-3 text-[15px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 shadow-sm"
-                >
-                  What is Worklone
-                </Link>
-                <Link
-                  to="/waitlist"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#222] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-black shadow-sm gap-2"
-                >
-                  Join Waitlist &rarr;
-                </Link>
-              </div>
+              <img 
+                src="/heroright.png" 
+                alt="AI Face Visualization" 
+                className="w-full max-w-[500px] h-auto object-contain opacity-90"
+              />
             </motion.div>
           </div>
         </div>
+
+        <div className="relative z-10 px-6 sm:px-8 lg:px-10 mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1 */}
+            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
+              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
+                <Headphones className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Customer Support</div>
+              <div className="text-[14px] text-zinc-800 mb-1">24/7 automated resolution</div>
+              <div className="text-[14px] text-zinc-600">Integrates with Zendesk & Intercom.</div>
+            </div>
+            
+            {/* Card 2 */}
+            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
+              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
+                <LineChart className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Data Analyst</div>
+              <div className="text-[14px] text-zinc-800 mb-1">Real-time insights</div>
+              <div className="text-[14px] text-zinc-600">SQL & Python native queries.</div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
+              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
+                <Code className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Software Engineer</div>
+              <div className="text-[14px] text-zinc-800 mb-1">Code & PR reviews</div>
+              <div className="text-[14px] text-zinc-600">GitHub & GitLab ready.</div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
+              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
+                <Briefcase className="h-5 w-5" strokeWidth={1.5} />
+              </div>
+              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Product Manager</div>
+              <div className="text-[14px] text-zinc-800 mb-1">Automated roadmaps</div>
+              <div className="text-[14px] text-zinc-600">Jira & Linear sync.</div>
+            </div>
+          </div>
+        </div>
       </section>
+
+      <LandingChatDemoSection />
 
       <section id="workspace-preview" className="bg-white py-16 sm:py-24">
         <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] px-4 py-16 sm:px-8 lg:px-12">
           <div className="absolute inset-0 z-0 pointer-events-none">
             <img src="/bg.png" alt="" className="h-full w-full object-cover object-center" />
           </div>
-          <div className="relative z-10 space-y-6">
+          <div className="relative z-10 space-y-6" style={{ zoom: 0.85 }}>
             <LandingPageDashboard />
           </div>
         </div>
       </section>
-
-      <LandingChatDemoSection />
 
       <HowItWorksSection />
 
