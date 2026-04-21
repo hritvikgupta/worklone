@@ -7,7 +7,10 @@ import sys, os, time, tempfile
 sys.path = [p for p in sys.path if not p.endswith('/sdk') and p != '']
 
 
-os.environ["OPENROUTER_API_KEY"] = "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"
+# Set your API key via environment variable or .env file
+# export OPENROUTER_API_KEY=sk-or-...
+from dotenv import load_dotenv
+load_dotenv()
 
 DB = tempfile.mktemp(suffix=".db")
 

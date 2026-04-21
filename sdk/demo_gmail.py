@@ -7,7 +7,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.dirname(__file__))
-os.environ["OPENROUTER_API_KEY"] = "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"
+# Set your API key via environment variable or .env file
+# export OPENROUTER_API_KEY=sk-or-...
+from dotenv import load_dotenv
+load_dotenv()
 
 from worklone_employee import Employee
 from worklone_employee.integrations import Gmail, InMemoryTokenStore
