@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: worklone-employee
+Version: 0.1.0
+Summary: Autonomous AI employees with ReAct loop, evolution, and 250+ integrations
+Requires-Python: >=3.11
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: python-dotenv>=1.0.0

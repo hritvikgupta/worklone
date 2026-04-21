@@ -105,16 +105,10 @@ export function LandingPage() {
     <div className="min-h-screen bg-white text-zinc-950">
       {/* Sticky Navbar */}
       <div 
-        className={`fixed top-0 z-50 flex w-full justify-center transition-all duration-500 ${
-          isScrolled ? 'pt-0' : 'pt-5'
-        }`}
+        className="fixed top-0 z-50 flex w-full justify-center transition-all duration-500 bg-white/95 backdrop-blur-md"
       >
         <div 
-          className={`flex items-center justify-between bg-white/95 backdrop-blur-md transition-all duration-500 ${
-            isScrolled 
-              ? 'w-full px-6 py-4 sm:px-8 lg:px-10 shadow-sm' 
-              : 'mx-auto w-[90%] rounded-[28px] px-6 py-3 shadow-sm'
-          }`}
+          className="flex w-full max-w-7xl items-center justify-between px-6 py-3 sm:px-8 lg:px-10"
         >
           <div className="flex items-center gap-3">
             <img
@@ -138,6 +132,12 @@ export function LandingPage() {
             >
               Research
             </Link>
+            <Link
+              to="/documentation"
+              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+            >
+              Documentation
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">
@@ -156,7 +156,7 @@ export function LandingPage() {
             </a>
             <Link
               to="/waitlist"
-              className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
+              className="inline-flex items-center gap-2 rounded-md bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
             >
               <span className="hidden sm:inline">Join Waitlist</span>
               <span className="sm:hidden">Waitlist</span>
@@ -166,45 +166,72 @@ export function LandingPage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden bg-white pt-24">
-        <div className="relative px-6 sm:px-8 lg:px-10">
-          <div className="relative z-10 mx-auto max-w-4xl px-4 pt-16 pb-6 text-center sm:pt-20">
-            <motion.h1
+      <section className="relative overflow-hidden bg-white pt-20 pb-16 sm:pb-24 sm:pt-20">
+        <div className="relative z-10 px-6 sm:px-8 lg:px-10 mx-auto max-w-6xl flex justify-center">
+          <div className="max-w-3xl pt-10 pb-6 text-center flex flex-col items-center">
+            <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55 }}
-              className="mx-auto mt-6 max-w-3xl text-balance text-[40px] font-medium tracking-tight text-zinc-950 sm:text-[56px] sm:leading-[1.1]"
+              className="flex flex-col items-center"
             >
-              Build and hire your first AI employee
-            </motion.h1>
+              <h2 className="text-[40px] sm:text-[48px] font-serif tracking-tight text-zinc-900 mb-6 font-medium">Hey,</h2>
+              
+              <div className="font-mono text-[20px] sm:text-[24px] leading-[1.1] flex flex-wrap justify-center max-w-[400px] sm:max-w-[500px] gap-x-[10px] sm:gap-x-[14px] mb-12 font-bold select-none mx-auto" aria-hidden="true">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex w-full justify-center gap-x-[10px] sm:gap-x-[14px]">
+                    {Array.from({ length: 18 }).map((_, j) => {
+                      const val = Math.abs((Math.sin(i * 12.9898 + j * 78.233) * 43758.5453) % 1);
+                      const baseOpacity = val > 0.8 ? 1 : val > 0.5 ? 0.5 : val > 0.2 ? 0.2 : 0.1;
+                      return (
+                        <motion.span
+                          key={j}
+                          className="text-zinc-900 cursor-default"
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ 
+                            opacity: [baseOpacity, baseOpacity * 0.2, baseOpacity],
+                            scale: [1, 0.85, 1]
+                          }}
+                          transition={{ 
+                            duration: 2.5 + val, 
+                            repeat: Infinity, 
+                            delay: (i * 0.1) + (j * 0.05), 
+                            ease: "easeInOut" 
+                          }}
+                          whileHover={{ 
+                            scale: 1.5, 
+                            opacity: 1, 
+                            color: '#3b82f6',
+                            transition: { duration: 0.2 }
+                          }}
+                        >
+                          +
+                        </motion.span>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
 
-            <p className="mx-auto mt-6 max-w-2xl text-[16px] leading-7 text-zinc-600 sm:text-[18px]">
-              Deploy self-adaptive AI employees that learn your workspace and master your workflows. An autonomous team that continuously improves and never makes the same mistake twice.
-            </p>
+              <h1 className="text-[28px] sm:text-[34px] leading-[1.3] font-medium tracking-tight text-zinc-900 max-w-[700px] mx-auto">
+                We help <span className="font-serif italic font-normal">teams</span> build or hire their first AI employee to handle <span className="text-blue-500">code</span>, <span className="text-red-500">docs</span>, <span className="text-green-500">tickets</span>, <span className="text-yellow-500">chats</span>, <span className="text-indigo-600">research</span> all done autonomously.
+              </h1>
 
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                to="/waitlist"
-                className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-6 py-3.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-              >
-                Join Waitlist
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/what-is-worklone"
-                className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-6 py-3.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-white"
-              >
-                What is Worklone
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-2 bg-white pb-10">
-            <img
-              src="/landinghero.png"
-              alt="Worklone hero artwork"
-              className="block h-[300px] w-full bg-white object-cover object-center sm:h-[380px] lg:h-[500px]"
-            />
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <Link
+                  to="/what-is-worklone"
+                  className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-6 py-3 text-[15px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 shadow-sm"
+                >
+                  What is Worklone
+                </Link>
+                <Link
+                  to="/waitlist"
+                  className="inline-flex items-center justify-center rounded-xl bg-[#222] px-6 py-3 text-[15px] font-medium text-white transition-colors hover:bg-black shadow-sm gap-2"
+                >
+                  Join Waitlist &rarr;
+                </Link>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -222,9 +249,9 @@ export function LandingPage() {
 
       <LandingChatDemoSection />
 
-      <LandingEmployeeOverviewRow />
-
       <HowItWorksSection />
+
+      <LandingEmployeeOverviewRow />
 
       <AgentNetworkSection />
 

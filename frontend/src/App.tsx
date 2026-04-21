@@ -11,6 +11,7 @@ import { WhatIsWorklonePage } from './components/WhatIsWorklonePage';
 import { ResearchArticlePage } from './components/ResearchArticlePage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
 import { ContactPage } from './components/ContactPage';
+import { DocumentationPage } from './components/DocumentationPage';
 import { IntegrationCallback } from './components/IntegrationCallback';
 import { Sidebar } from './components/Sidebar';
 import { AIAssistant } from './components/AIAssistant';
@@ -180,6 +181,8 @@ export default function App() {
           <Route path="/research/:slug" element={<ResearchArticlePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/documentation" element={<DocumentationPage />} />
+          <Route path="/documentation/:docSlug" element={<DocumentationPage />} />
           <Route path="/waitlist" element={<WaitlistPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
