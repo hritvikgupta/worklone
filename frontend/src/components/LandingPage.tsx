@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
 import { LandingChatDemoSection } from './LandingChatDemoSection';
+import { LandingSprintSection } from './LandingSprintSection';
 import { AgentProgressSection } from './AgentProgressSection';
 import { CreateWorkflowSection } from './CreateWorkflowSection';
 import { AgentNetworkSection } from './AgentNetworkSection';
@@ -286,6 +287,8 @@ export function LandingPage() {
       </section>
 
       <HowItWorksSection />
+
+      <LandingSprintSection />
 
       <LandingChatDemoSection />
 
