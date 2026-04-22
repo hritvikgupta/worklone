@@ -4,7 +4,6 @@ import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { LandingPageDashboard } from './LandingPageDashboard';
 import { LandingChatDemoSection } from './LandingChatDemoSection';
-import { LandingEmployeeOverviewRow } from './LandingEmployeeOverviewRow';
 import { AgentProgressSection } from './AgentProgressSection';
 import { CreateWorkflowSection } from './CreateWorkflowSection';
 import { AgentNetworkSection } from './AgentNetworkSection';
@@ -154,6 +153,12 @@ export function LandingPage() {
             >
               Documentation
             </Link>
+            <Link
+              to="/agentskills"
+              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+            >
+              Agent Skills
+            </Link>
           </div>
 
           <div className="flex items-center gap-4">
@@ -192,7 +197,7 @@ export function LandingPage() {
                 transition={{ duration: 0.5 }}
               >
                 <h1 className="text-[32px] sm:text-[42px] leading-[1.2] font-normal tracking-tight text-zinc-950 max-w-3xl">
-                  We help teams build or hire their first AI employee
+                  Train and build your first AI employee
                 </h1>
 
                 <p className="mt-6 text-[16px] sm:text-[18px] leading-[1.6] text-zinc-800 max-w-3xl">
@@ -280,22 +285,39 @@ export function LandingPage() {
         </div>
       </section>
 
+      <HowItWorksSection />
+
       <LandingChatDemoSection />
 
       <section id="workspace-preview" className="bg-white py-16 sm:py-24">
-        <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] px-4 py-16 sm:px-8 lg:px-12">
-          <div className="absolute inset-0 z-0 pointer-events-none">
-            <img src="/bg.png" alt="" className="h-full w-full object-cover object-center" />
-          </div>
-          <div className="relative z-10 space-y-6" style={{ zoom: 0.85 }}>
-            <LandingPageDashboard />
+        <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
+          <div className="grid gap-0 overflow-hidden rounded-[30px] border border-zinc-200 bg-white lg:grid-cols-[0.64fr_1.36fr]">
+            <div className="flex items-center border-b border-zinc-200 p-8 sm:p-12 lg:border-b-0 lg:border-r lg:p-16">
+              <div>
+                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+                  Employee Training & Deployment
+                </div>
+                <h2 className="mt-4 text-[24px] font-medium leading-[1.15] tracking-tight text-zinc-900 sm:text-[30px]">
+                  Train and deploy your AI employees
+                  <span className="block text-zinc-500">with production-ready control</span>
+                </h2>
+                <p className="mt-4 max-w-md text-[15px] leading-7 text-zinc-600">
+                  Define behavior standards, validate outputs, and ship reliable autonomous execution at scale.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden bg-white p-4 sm:p-8">
+              <div className="absolute inset-0 z-0 pointer-events-none">
+                <img src="/bgothers.png" alt="" className="h-full w-full object-cover object-center" />
+              </div>
+              <div className="relative z-10" style={{ zoom: 0.78 }}>
+                <LandingPageDashboard />
+              </div>
+            </div>
           </div>
         </div>
       </section>
-
-      <HowItWorksSection />
-
-      <LandingEmployeeOverviewRow />
 
       <AgentNetworkSection />
 

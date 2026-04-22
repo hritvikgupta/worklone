@@ -84,11 +84,10 @@ export function LandingChatDemoSection() {
   const [isInView, setIsInView] = useState(false);
 
   const [employees] = useState(DUMMY_EMPLOYEES);
-  // Initially show 3 panes to fill the container without scrolling
+  // Show exactly 2 panes in the landing demo
   const [chatPanes, setChatPanes] = useState<Array<{ id: string; employeeId: string }>>([
     { id: 'pane-1', employeeId: 'emp-1' },
     { id: 'pane-2', employeeId: 'emp-2' },
-    { id: 'pane-3', employeeId: 'emp-3' },
   ]);
   const [sessions] = useState(DUMMY_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<Record<string, string>>({
@@ -289,258 +288,216 @@ export function LandingChatDemoSection() {
     }, 1500);
   };
 
-  const addPaneForEmployee = (employeeId: string) => {
-    if (!employeeId) return;
-    if (chatPanes.some((pane) => pane.employeeId === employeeId)) return;
-
-    setChatPanes((prev) => ([
-      ...prev,
-      { id: `pane-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, employeeId },
-    ]));
-  };
-
   const removePane = (paneId: string) => {
     setChatPanes((prev) => (prev.length <= 1 ? prev : prev.filter((pane) => pane.id !== paneId)));
   };
 
-  const paneEmployeeIds = chatPanes.map((p) => p.employeeId).filter(Boolean);
-  const openEmployeeIds = new Set(paneEmployeeIds);
-  const addableEmployees = employees.filter((employee) => !openEmployeeIds.has(employee.id));
-
   return (
-    <section ref={sectionRef} className="bg-white py-16 sm:py-24 border-t border-black/[0.04]">
-      <div className="mx-auto max-w-3xl text-center mb-12 px-6">
-        <h2 className="mb-4 text-[32px] font-medium tracking-tight text-zinc-950 sm:text-[40px]">
-          Run multiple employee chats in one workspace
-        </h2>
-        <p className="mx-auto max-w-2xl text-[16px] text-zinc-600">
-          The full multi-pane chat surface copied from the product chat page and filled with demo employees, sessions, plans, and approval flow.
-        </p>
-      </div>
+    <section ref={sectionRef} className="border-t border-zinc-200/70 bg-white py-16 sm:py-24">
+      <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
+        <div className="grid gap-0 overflow-hidden rounded-[30px] border border-zinc-200 bg-white lg:grid-cols-[0.64fr_1.36fr]">
+          <div className="flex items-center border-b border-zinc-300/70 p-8 sm:p-12 lg:border-b-0 lg:border-r lg:p-16">
+            <div>
+              <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+                Multi-Employee Workspace
+              </div>
+              <h2 className="mt-4 text-[24px] font-medium leading-[1.15] tracking-tight text-zinc-900 sm:text-[30px]">
+                Coordinate AI employee chats
+                <span className="block text-zinc-500">inside one shared workspace</span>
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] leading-7 text-zinc-600">
+                Keep teams aligned with concurrent execution, unified context, and clear handoffs.
+              </p>
+            </div>
+          </div>
 
-      <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] px-4 py-12 sm:px-8 lg:px-12 sm:py-16">
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <img src="/bg1.png" alt="" className="h-full w-full object-cover object-center" />
-        </div>
-        
-        <div className="relative z-10 h-[650px] overflow-hidden rounded-[28px] border border-zinc-200 bg-white shadow-2xl">
-          <div className="flex h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [--chat-bg-app:#f8fafc] [--chat-bg-sidebar:#f8fafc] [--chat-bg-main:#ffffff] [--chat-bg-header:rgba(255,255,255,0.95)] [--chat-bg-composer:rgba(255,255,255,0.96)] [--chat-bubble-outgoing:#334155] [--chat-bubble-outgoing-text:#f8fafc] [--chat-bubble-incoming:#f1f5f9] [--chat-bubble-incoming-text:#0f172a] [--chat-text-primary:#0f172a] [--chat-text-secondary:#475569] [--chat-text-tertiary:#64748b] [--chat-border:rgba(15,23,42,0.08)] [--chat-border-strong:rgba(15,23,42,0.12)] [--chat-accent:#334155] [--chat-accent-soft:rgba(51,65,85,0.08)] dark:[--chat-bg-app:#0b1220] dark:[--chat-bg-sidebar:#0f172a] dark:[--chat-bg-main:#0b1220] dark:[--chat-bg-header:rgba(15,23,42,0.9)] dark:[--chat-bg-composer:rgba(15,23,42,0.92)] dark:[--chat-bubble-outgoing:#334155] dark:[--chat-bubble-outgoing-text:#f8fafc] dark:[--chat-bubble-incoming:#1e293b] dark:[--chat-bubble-incoming-text:#e2e8f0] dark:[--chat-text-primary:#e2e8f0] dark:[--chat-text-secondary:#cbd5e1] dark:[--chat-text-tertiary:#94a3b8] dark:[--chat-border:rgba(148,163,184,0.22)] dark:[--chat-border-strong:rgba(148,163,184,0.34)] dark:[--chat-accent:#64748b] dark:[--chat-accent-soft:rgba(148,163,184,0.16)]">
-            {chatPanes.map((pane) => {
-              const employeeId = pane.employeeId;
-              const activeEmployee = employees.find((employee) => employee.id === employeeId);
-              const currentSessions = sessions[employeeId as keyof typeof sessions] || [];
-              const currentSessionId = activeSessionId[employeeId];
-              const selectedPlan = activePlans[employeeId as keyof typeof activePlans];
-              const isPlanCollapsed = collapsedPlans[employeeId] ?? false;
-              const isTyping = typingState[employeeId] ?? false;
-              
-              const paneConversations: SidebarConversation[] = activeEmployee ? [{
-                id: activeEmployee.id,
-                title: activeEmployee.name,
-                avatar: activeEmployee.avatar,
-                lastMessage: activeEmployee.role,
-                presence: 'online',
-              }] : [];
-              
-              const paneTypingUsers: TypingUser[] = isTyping && activeEmployee ? [{
-                id: activeEmployee.id,
-                name: activeEmployee.name,
-                avatar: activeEmployee.avatar,
-              }] : [];
+          <div className="relative overflow-hidden bg-white p-4 sm:p-8">
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <img src="/bgothers.png" alt="" className="h-full w-full object-cover object-center" />
+            </div>
 
-              const headerActions = (
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex h-7 items-center gap-1 rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-2 text-[11px] font-medium text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
-                      >
-                        <History className="h-3.5 w-3.5" />
-                        <span>Sessions</span>
-                        <ChevronDown className="h-3 w-3 opacity-50" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64">
-                      <DropdownMenuLabel>
-                        {activeEmployee ? `${activeEmployee.name}'s Sessions` : 'Sessions'}
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>
-                        <Plus className="mr-2 h-4 w-4" />
-                        New Session
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      {currentSessions.length === 0 ? (
-                        <DropdownMenuItem disabled>No sessions yet</DropdownMenuItem>
-                      ) : (
-                        currentSessions.map((session) => (
-                          <DropdownMenuItem
-                            key={session.id}
-                            className="flex items-center justify-between"
-                          >
-                            <span className="truncate">{session.title || 'Untitled Session'}</span>
-                            {currentSessionId === session.id && (
-                              <span className="text-[10px] font-bold text-[var(--chat-accent)] uppercase">Active</span>
-                            )}
-                          </DropdownMenuItem>
-                        ))
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            <div className="relative z-10 h-[650px] overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-[0_12px_28px_rgba(24,24,27,0.06)]">
+              <div className="flex h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [--chat-bg-app:#f6f4f3] [--chat-bg-sidebar:#f5f3f2] [--chat-bg-main:#fbfbfa] [--chat-bg-header:rgba(251,251,250,0.96)] [--chat-bg-composer:rgba(251,251,250,0.98)] [--chat-bubble-outgoing:#4b5563] [--chat-bubble-outgoing-text:#f9fafb] [--chat-bubble-incoming:#ece9e7] [--chat-bubble-incoming-text:#1f2937] [--chat-text-primary:#1f2937] [--chat-text-secondary:#4b5563] [--chat-text-tertiary:#6b7280] [--chat-border:rgba(31,41,55,0.09)] [--chat-border-strong:rgba(31,41,55,0.14)] [--chat-accent:#4b5563] [--chat-accent-soft:rgba(75,85,99,0.09)] dark:[--chat-bg-app:#0b1220] dark:[--chat-bg-sidebar:#0f172a] dark:[--chat-bg-main:#0b1220] dark:[--chat-bg-header:rgba(15,23,42,0.9)] dark:[--chat-bg-composer:rgba(15,23,42,0.92)] dark:[--chat-bubble-outgoing:#334155] dark:[--chat-bubble-outgoing-text:#f8fafc] dark:[--chat-bubble-incoming:#1e293b] dark:[--chat-bubble-incoming-text:#e2e8f0] dark:[--chat-text-primary:#e2e8f0] dark:[--chat-text-secondary:#cbd5e1] dark:[--chat-text-tertiary:#94a3b8] dark:[--chat-border:rgba(148,163,184,0.22)] dark:[--chat-border-strong:rgba(148,163,184,0.34)] dark:[--chat-accent:#64748b] dark:[--chat-accent-soft:rgba(148,163,184,0.16)]">
+                {chatPanes.map((pane) => {
+                  const employeeId = pane.employeeId;
+                  const activeEmployee = employees.find((employee) => employee.id === employeeId);
+                  const currentSessions = sessions[employeeId as keyof typeof sessions] || [];
+                  const currentSessionId = activeSessionId[employeeId];
+                  const selectedPlan = activePlans[employeeId as keyof typeof activePlans];
+                  const isPlanCollapsed = collapsedPlans[employeeId] ?? false;
+                  const isTyping = typingState[employeeId] ?? false;
 
-                  <button
-                    type="button"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
-                    title="New Session"
-                  >
-                    <Plus className="size-3.5" />
-                  </button>
+                  const paneConversations: SidebarConversation[] = activeEmployee ? [{
+                    id: activeEmployee.id,
+                    title: activeEmployee.name,
+                    avatar: activeEmployee.avatar,
+                    lastMessage: activeEmployee.role,
+                    presence: 'online',
+                  }] : [];
 
-                  <button
-                    type="button"
-                    onClick={() => removePane(pane.id)}
-                    disabled={chatPanes.length <= 1}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)] disabled:opacity-40"
-                    aria-label="Close pane"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              );
+                  const paneTypingUsers: TypingUser[] = isTyping && activeEmployee ? [{
+                    id: activeEmployee.id,
+                    name: activeEmployee.name,
+                    avatar: activeEmployee.avatar,
+                  }] : [];
 
-              const planPanel = selectedPlan ? (
-                <div className="shrink-0 border-t border-[var(--chat-border)] bg-[var(--chat-bg-main)]">
-                  <div className="mx-auto max-w-3xl px-3 py-1.5">
-                    <div className="rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] overflow-hidden shadow-sm">
-                      <div className={cn(
-                        "flex items-center justify-between gap-2 px-2.5 py-2",
-                        !isPlanCollapsed && "border-b border-[var(--chat-border)]"
-                      )}>
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <ListChecks className="h-4 w-4 shrink-0 text-[var(--chat-text-secondary)]" />
-                          <div className="min-w-0">
-                            <div className="truncate text-[13px] font-medium leading-4 text-[var(--chat-text-primary)]">
-                              {selectedPlan.tasks.filter((task) => task.status === 'done').length} of {selectedPlan.tasks.length} tasks completed
-                            </div>
-                            <div className="truncate text-[11px] leading-4 text-[var(--chat-text-tertiary)] mt-0.5">
-                              {selectedPlan.message || selectedPlan.reason || 'Agent-generated execution plan'}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <div className="rounded-full border border-[var(--chat-border)] px-2 py-0.5 text-[11px] text-[var(--chat-text-secondary)]">
-                            {selectedPlan.status === 'approved' ? 'Approved' : selectedPlan.status === 'running' ? 'Running' : selectedPlan.status === 'completed' ? 'Completed' : 'Needs approval'}
-                          </div>
+                  const headerActions = (
+                    <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
                           <button
                             type="button"
-                            onClick={() => setCollapsedPlans((prev) => ({ ...prev, [employeeId]: !isPlanCollapsed }))}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"
-                            aria-label={isPlanCollapsed ? 'Expand task plan' : 'Collapse task plan'}
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-2 text-[11px] font-medium text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
                           >
-                            <ChevronDown className={cn("h-4 w-4 transition-transform", !isPlanCollapsed && "rotate-180")} />
+                            <History className="h-3.5 w-3.5" />
+                            <span>Sessions</span>
+                            <ChevronDown className="h-3 w-3 opacity-50" />
                           </button>
-                        </div>
-                      </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64">
+                          <DropdownMenuLabel>
+                            {activeEmployee ? `${activeEmployee.name}'s Sessions` : 'Sessions'}
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>
+                            <Plus className="mr-2 h-4 w-4" />
+                            New Session
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {currentSessions.length === 0 ? (
+                            <DropdownMenuItem disabled>No sessions yet</DropdownMenuItem>
+                          ) : (
+                            currentSessions.map((session) => (
+                              <DropdownMenuItem key={session.id} className="flex items-center justify-between">
+                                <span className="truncate">{session.title || 'Untitled Session'}</span>
+                                {currentSessionId === session.id && (
+                                  <span className="text-[10px] font-bold text-[var(--chat-accent)] uppercase">Active</span>
+                                )}
+                              </DropdownMenuItem>
+                            ))
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
 
-                      {!isPlanCollapsed && (
-                        <div className="max-h-40 space-y-1.5 overflow-y-auto px-2.5 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                          {selectedPlan.tasks.map((task, index) => (
-                            <div key={task.task_id} className="flex items-start gap-2.5">
-                              <div className="pt-0.5">
-                                {task.status === 'done' ? (
-                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-                                ) : task.status === 'in_progress' ? (
-                                  <span className="mt-0.5 block h-3 w-3 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                                ) : task.status === 'blocked' || task.status === 'cancelled' ? (
-                                  <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
-                                ) : (
-                                  <span className="mt-1 block h-3 w-3 rounded-full border border-[var(--chat-text-tertiary)]" />
-                                )}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className={cn("text-[12px] leading-5", task.status === 'done' ? "text-[var(--chat-text-tertiary)] line-through" : "text-[var(--chat-text-secondary)]")}>
-                                  {index + 1}. {task.title}
+                      <button
+                        type="button"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
+                        title="New Session"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => removePane(pane.id)}
+                        disabled={chatPanes.length <= 1}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)] disabled:opacity-40"
+                        aria-label="Close pane"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+
+                  const planPanel = selectedPlan ? (
+                    <div className="shrink-0 border-t border-[var(--chat-border)] bg-[var(--chat-bg-main)]">
+                      <div className="mx-auto max-w-3xl px-3 py-1.5">
+                        <div className="overflow-hidden rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] shadow-sm">
+                          <div className={cn(
+                            'flex items-center justify-between gap-2 px-2.5 py-2',
+                            !isPlanCollapsed && 'border-b border-[var(--chat-border)]'
+                          )}>
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <ListChecks className="h-4 w-4 shrink-0 text-[var(--chat-text-secondary)]" />
+                              <div className="min-w-0">
+                                <div className="truncate text-[13px] font-medium leading-4 text-[var(--chat-text-primary)]">
+                                  {selectedPlan.tasks.filter((task) => task.status === 'done').length} of {selectedPlan.tasks.length} tasks completed
                                 </div>
-                                {task.description && (
-                                  <div className="mt-0.5 text-[11px] leading-[18px] text-[var(--chat-text-tertiary)]">
-                                    {task.description}
-                                  </div>
-                                )}
+                                <div className="mt-0.5 truncate text-[11px] leading-4 text-[var(--chat-text-tertiary)]">
+                                  {selectedPlan.message || selectedPlan.reason || 'Agent-generated execution plan'}
+                                </div>
                               </div>
                             </div>
-                          ))}
+                            <div className="flex shrink-0 items-center gap-2">
+                              <div className="rounded-full border border-[var(--chat-border)] px-2 py-0.5 text-[11px] text-[var(--chat-text-secondary)]">
+                                {selectedPlan.status === 'approved' ? 'Approved' : selectedPlan.status === 'running' ? 'Running' : selectedPlan.status === 'completed' ? 'Completed' : 'Needs approval'}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setCollapsedPlans((prev) => ({ ...prev, [employeeId]: !isPlanCollapsed }))}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"
+                                aria-label={isPlanCollapsed ? 'Expand task plan' : 'Collapse task plan'}
+                              >
+                                <ChevronDown className={cn('h-4 w-4 transition-transform', !isPlanCollapsed && 'rotate-180')} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {!isPlanCollapsed && (
+                            <div className="max-h-40 space-y-1.5 overflow-y-auto px-2.5 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                              {selectedPlan.tasks.map((task, index) => (
+                                <div key={task.task_id} className="flex items-start gap-2.5">
+                                  <div className="pt-0.5">
+                                    {task.status === 'done' ? (
+                                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                    ) : task.status === 'in_progress' ? (
+                                      <span className="mt-0.5 block h-3 w-3 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+                                    ) : task.status === 'blocked' || task.status === 'cancelled' ? (
+                                      <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                                    ) : (
+                                      <span className="mt-1 block h-3 w-3 rounded-full border border-[var(--chat-text-tertiary)]" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className={cn('text-[12px] leading-5', task.status === 'done' ? 'text-[var(--chat-text-tertiary)] line-through' : 'text-[var(--chat-text-secondary)]')}>
+                                      {index + 1}. {task.title}
+                                    </div>
+                                    {task.description && (
+                                      <div className="mt-0.5 text-[11px] leading-[18px] text-[var(--chat-text-tertiary)]">
+                                        {task.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ) : null;
+                  ) : null;
 
-              const composerSlot = (
-                <>
-                  {planPanel}
-                </>
-              );
-
-              return (
-                <div
-                  key={pane.id}
-                  style={{ '--header-avatar': activeEmployee?.avatar ? `url(${activeEmployee.avatar})` : 'none' } as React.CSSProperties}
-                  className="flex h-full min-h-0 flex-1 min-w-[300px] shrink-0 flex-col overflow-hidden border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-main)] [&_.chat-bubble_p]:text-[13.5px] [&_.chat-bubble_p]:leading-[1.4] [&_.chat-bubble]:px-3 [&_.chat-bubble]:py-1.5 [&_.chat-message-group]:text-[13px] [&_header_.size-10.rounded-full]:!bg-[image:var(--header-avatar)] [&_header_.size-10.rounded-full]:!bg-cover [&_header_.size-10.rounded-full]:!bg-center [&_header_.size-10.rounded-full]:!text-transparent"
-                >
-                  <div className="min-h-0 flex-1">
-                    <FullMessenger
-                      currentUser={currentUser}
-                      conversations={paneConversations}
-                      activeConversationId={employeeId}
-                      onSelectConversation={() => {}}
-                      messages={messages[employeeId] || []}
-                      typingUsers={paneTypingUsers}
-                      onSend={(text) => handleSend(employeeId, text)}
-                      title="Employees"
-                      theme="lunar"
-                      className="h-full w-full"
-                      headerActions={headerActions}
-                      beforeComposer={composerSlot}
-                      conversationStyle="tabs"
-                      hideConversationTabs
-                      messagesClassName="px-2"
-                      composerClassName="px-2 py-1"
-                    />
-                  </div>
-                </div>
-              );
-            })}
-            
-            {addableEmployees.length > 0 && (
-              <div className="flex h-full min-h-0 flex-1 min-w-[300px] shrink-0 items-center justify-center border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-main)]">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-2 rounded-xl border border-[var(--chat-border-strong)] bg-[var(--chat-bg-sidebar)] px-4 py-3 text-[14px] font-semibold text-[var(--chat-text-primary)] transition-colors hover:bg-[var(--chat-accent-soft)]"
+                  return (
+                    <div
+                      key={pane.id}
+                      style={{ '--header-avatar': activeEmployee?.avatar ? `url(${activeEmployee.avatar})` : 'none' } as React.CSSProperties}
+                      className="flex h-full min-h-0 min-w-[300px] flex-1 shrink-0 flex-col overflow-hidden border-r border-[var(--chat-border-strong)] bg-[var(--chat-bg-main)] [&_.chat-bubble]:px-3 [&_.chat-bubble]:py-1.5 [&_.chat-bubble_p]:text-[13.5px] [&_.chat-bubble_p]:leading-[1.4] [&_.chat-message-group]:text-[13px] [&_header_.size-10.rounded-full]:!bg-[image:var(--header-avatar)] [&_header_.size-10.rounded-full]:!bg-cover [&_header_.size-10.rounded-full]:!bg-center [&_header_.size-10.rounded-full]:!text-transparent"
                     >
-                      <Plus className="h-4 w-4" />
-                      <span>Add Chat</span>
-                      <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="center" className="w-64">
-                    <DropdownMenuLabel>Select Employee</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {addableEmployees.map((employee) => (
-                      <DropdownMenuItem
-                        key={employee.id}
-                        onClick={() => addPaneForEmployee(employee.id)}
-                      >
-                        {employee.name}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      <div className="min-h-0 flex-1">
+                        <FullMessenger
+                          currentUser={currentUser}
+                          conversations={paneConversations}
+                          activeConversationId={employeeId}
+                          onSelectConversation={() => {}}
+                          messages={messages[employeeId] || []}
+                          typingUsers={paneTypingUsers}
+                          onSend={(text) => handleSend(employeeId, text)}
+                          title="Employees"
+                          theme="lunar"
+                          className="h-full w-full"
+                          headerActions={headerActions}
+                          beforeComposer={planPanel}
+                          conversationStyle="tabs"
+                          hideConversationTabs
+                          messagesClassName="px-2"
+                          composerClassName="px-2 py-1"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

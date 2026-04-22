@@ -1,255 +1,85 @@
 import React from 'react';
-import { BookOpen, CalendarClock, FolderOpen, Github, LayoutDashboard, MessageSquare, Users, Zap, Clock, Coins, MessageCircle, CheckCircle2, ArrowRight, Wrench, Brain } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { AgentList } from '@/src/components/AgentList';
-import { cn } from '@/lib/utils';
+import type { Agent } from '@/src/types';
+import { AgentDetail } from '@/src/components/AgentDetail';
+import type { EmployeeActivity, EmployeeSkill, EmployeeTask, EmployeeTool } from '@/src/api/employees';
 
-const previewNavItems = [
-  { label: 'Chat', icon: MessageSquare },
-  { label: 'Dashboard', icon: LayoutDashboard },
-  { label: 'Current Sprint', icon: Zap },
-  { label: 'Workflows', icon: CalendarClock },
-  { label: 'Agent Files', icon: FolderOpen },
-  { label: 'Employees', icon: Users, active: true },
-  { label: 'Skill Library', icon: BookOpen },
-  { label: 'Integrations', icon: Github },
+const PREVIEW_AGENT: Agent = {
+  id: 'preview-agent-1',
+  name: 'Mira',
+  role: 'Growth Lead',
+  avatar: '/employees/women_2.png',
+  cover: '',
+  status: 'working',
+  description: 'Owns roadmap definition, requirement quality, and execution cadence.',
+  systemPrompt: 'You are Mira, a growth lead. Analyze funnel behavior, propose experiments, and execute growth work with structured reporting.',
+  currentTask: 'preview-task-1',
+  skills: ['Growth', 'Experimentation', 'Analytics'],
+  model: 'claude',
+};
+
+const PREVIEW_SKILLS: EmployeeSkill[] = [
+  { id: 's1', skill_name: 'Google Analytics', category: 'Analytics', proficiency_level: 9, description: 'Behavior analysis', created_at: '2026-04-21T10:00:00Z' },
+  { id: 's2', skill_name: 'Mixpanel', category: 'Analytics', proficiency_level: 8, description: 'Event funnels', created_at: '2026-04-21T10:00:00Z' },
+  { id: 's3', skill_name: 'SQL', category: 'Data', proficiency_level: 8, description: 'Querying', created_at: '2026-04-21T10:00:00Z' },
+  { id: 's4', skill_name: 'Looker', category: 'BI', proficiency_level: 7, description: 'Dashboards', created_at: '2026-04-21T10:00:00Z' },
+  { id: 's5', skill_name: 'Python', category: 'Data', proficiency_level: 7, description: 'Analysis scripts', created_at: '2026-04-21T10:00:00Z' },
 ];
 
-const MOCK_AGENTS = [
+const PREVIEW_TOOLS: EmployeeTool[] = [
+  { id: 't1', tool_name: 'BigQuery', is_enabled: true, config: {}, created_at: '2026-04-21T10:00:00Z' },
+  { id: 't2', tool_name: 'dbt', is_enabled: true, config: {}, created_at: '2026-04-21T10:00:00Z' },
+  { id: 't3', tool_name: 'Jupyter', is_enabled: true, config: {}, created_at: '2026-04-21T10:00:00Z' },
+];
+
+const PREVIEW_TASKS: EmployeeTask[] = [
   {
-    id: 'agent-1',
-    name: 'Mira',
-    role: 'Growth Lead',
-    avatar: '/employees/women_2.png',
-    status: 'working' as const,
-    description: 'Owns roadmap definition, requirement quality, and execution cadence.',
-    currentTask: 'issue-101',
-    skills: ['Growth', 'Experimentation', 'Analytics'],
-    model: 'claude',
-  },
-  {
-    id: 'agent-2',
-    name: 'Sam',
-    role: 'Data Analyst',
-    avatar: '/employees/men_1.png',
-    status: 'idle' as const,
-    description: 'Turns messy operational and product data into decisions.',
-    skills: ['SQL', 'Analytics', 'Dashboards'],
-    model: 'minimax',
-  },
-  {
-    id: 'agent-3',
-    name: 'Leo',
-    role: 'Backend Engineer',
-    avatar: '/employees/men_2.png',
-    status: 'working' as const,
-    description: 'Builds the backend systems that keep the operating environment reliable.',
-    currentTask: 'issue-102',
-    skills: ['Python', 'APIs', 'Postgres'],
-    model: 'openai',
-  },
-  {
-    id: 'agent-4',
-    name: 'Katy',
-    role: 'Product Manager',
-    avatar: '/employees/women_1.png',
-    status: 'idle' as const,
-    description: 'Translates ambiguous requests into clear plans.',
-    skills: ['Roadmapping', 'PRDs', 'Prioritization'],
-    model: 'gpt',
+    id: 'preview-task-1',
+    task_title: 'Audit acquisition funnel drop-offs',
+    task_description: 'Analyze funnel drop-off rates across paid and organic channels, then produce 3 conversion hypotheses.',
+    status: 'in_progress',
+    priority: 'high',
+    tags: ['growth', 'conversion'],
+    created_at: '2026-04-21T10:00:00Z',
+    updated_at: '2026-04-21T14:52:00Z',
+    completed_at: null,
   },
 ];
 
-const taskTimeline = [
+const PREVIEW_ACTIVITY: EmployeeActivity[] = [
   {
-    time: '2:34 PM',
-    type: 'completed',
+    id: 'a1',
+    activity_type: 'task_completed',
     message: 'Analyzed funnel drop-off rates across paid and organic channels',
-    icon: CheckCircle2,
+    task_id: 'preview-task-1',
+    metadata: {},
+    timestamp: '2026-04-21T14:34:00Z',
   },
   {
-    time: '2:41 PM',
-    type: 'completed',
+    id: 'a2',
+    activity_type: 'task_completed',
     message: 'Generated 3 conversion hypotheses with supporting data',
-    icon: CheckCircle2,
-  },
-  {
-    time: '2:52 PM',
-    type: 'active',
-    message: 'Drafting experiment brief for top-performing hypothesis',
-    icon: MessageCircle,
+    task_id: 'preview-task-1',
+    metadata: {},
+    timestamp: '2026-04-21T14:41:00Z',
   },
 ];
-
-const skillsUsed = ['Google Analytics', 'Mixpanel', 'SQL', 'Looker', 'Python'];
-const toolsUsed = ['BigQuery', 'dbt', 'Jupyter'];
 
 export function LandingPageDashboard() {
   return (
     <div className="mx-auto max-w-[90%] overflow-hidden rounded-[28px] border border-zinc-200 bg-white">
-      <div className="grid min-h-[800px] lg:grid-cols-[240px_1fr]">
-        <aside className="border-r border-zinc-200 bg-zinc-50">
-          <div className="m-2 flex items-center gap-2 rounded-md p-4">
-            <img
-              src="/brand/worklone-mark-black.png"
-              alt="Worklone"
-              className="h-5 w-auto"
-            />
-            <h1 className="text-[15px] font-semibold tracking-tight text-sidebar-foreground">Worklone</h1>
-          </div>
-
-          <nav className="space-y-0.5 px-2 py-4">
-            {previewNavItems.map((item) => (
-              <div
-                key={item.label}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium',
-                  item.active
-                    ? 'bg-sidebar-accent text-sidebar-foreground'
-                    : 'text-sidebar-foreground/70'
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    'h-4 w-4',
-                    item.active ? 'text-sidebar-foreground' : 'text-sidebar-foreground/50'
-                  )}
-                />
-                {item.label}
-              </div>
-            ))}
-          </nav>
-        </aside>
-
+      <div className="min-h-[800px]">
         <div className="relative overflow-hidden bg-white">
-          <div className="h-full overflow-y-auto p-8">
-            <div className="mx-auto max-w-6xl space-y-8">
-              <div className="flex items-end justify-between border-b border-border pb-3">
-                <div>
-                  <h2 className="text-2xl font-semibold tracking-tight">Employees</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Manage and configure your autonomous teammates.
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" className="h-8 gap-2 text-xs font-medium">
-                  Provision Employee
-                </Button>
-              </div>
-
-              <AgentList agents={MOCK_AGENTS} onAgentClick={() => {}} selectedAgentId="agent-1" />
-            </div>
-          </div>
-
-          <div className="absolute inset-y-4 right-4 z-10 w-80">
-            <div className="flex h-full rounded-xl bg-white shadow-lg ring-1 ring-black/10">
-              <div className="flex h-full flex-col">
-                <div className="border-b border-zinc-200 p-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src="/employees/women_2.png"
-                      alt="Mira"
-                      className="h-9 w-9 rounded-lg object-cover"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold">Mira</div>
-                      <div className="text-[11px] text-muted-foreground">Growth Lead · Working</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="mb-4 rounded-lg bg-muted p-3">
-                    <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Current Task</div>
-                    <div className="mt-1 text-xs font-medium text-foreground">Audit acquisition funnel drop-offs</div>
-                  </div>
-
-                  <div className="mb-4">
-                    <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Activity</div>
-                    <div className="space-y-0">
-                      {taskTimeline.map((item, index) => (
-                        <div key={index} className="relative flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className={cn(
-                              "relative flex h-6 w-6 items-center justify-center rounded-full",
-                              item.type === 'active' ? 'bg-blue-100' : 'bg-green-100'
-                            )}>
-                              <item.icon className={cn(
-                                "h-3.5 w-3.5",
-                                item.type === 'active' ? 'text-blue-600' : 'text-green-600'
-                              )} />
-                              {item.type === 'active' && (
-                                <span className="absolute inset-0 animate-ping rounded-full bg-blue-400/30" />
-                              )}
-                            </div>
-                            {index < taskTimeline.length - 1 && (
-                              <div className="w-px bg-muted" style={{ minHeight: '24px' }} />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-4">
-                            <div className="text-[10px] text-muted-foreground">{item.time}</div>
-                            <div className="mt-0.5 text-xs text-foreground">{item.message}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      <Brain className="h-3 w-3" />
-                      Skills used
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {skillsUsed.map((skill) => (
-                        <span key={skill} className="rounded-md bg-violet-50 px-2 py-1 text-[10px] font-medium text-violet-700">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      <Wrench className="h-3 w-3" />
-                      Tools used
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {toolsUsed.map((tool) => (
-                        <span key={tool} className="rounded-md bg-blue-50 px-2 py-1 text-[10px] font-medium text-blue-700">
-                          {tool}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-foreground/6 p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
-                        Session time
-                      </span>
-                      <span className="font-medium text-foreground">18m 42s</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <Coins className="h-3.5 w-3.5" />
-                        Tokens used
-                      </span>
-                      <span className="font-medium text-foreground">24,812</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1.5 text-muted-foreground">
-                        <ArrowRight className="h-3.5 w-3.5" />
-                        Cost
-                      </span>
-                      <span className="font-medium text-foreground">$0.04</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="h-full overflow-y-auto p-6">
+            <AgentDetail
+              agent={PREVIEW_AGENT}
+              onBack={() => {}}
+              onConfigure={() => {}}
+              tools={PREVIEW_TOOLS}
+              skills={PREVIEW_SKILLS}
+              tasks={PREVIEW_TASKS}
+              activity={PREVIEW_ACTIVITY}
+              compactPreview
+            />
           </div>
         </div>
       </div>

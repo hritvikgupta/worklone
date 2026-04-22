@@ -46,6 +46,7 @@ interface AgentDetailProps {
   skills?: EmployeeSkill[];
   tasks?: EmployeeTask[];
   activity?: EmployeeActivity[];
+  compactPreview?: boolean;
 }
 
 function normalizeSystemPrompt(text: string): string {
@@ -104,7 +105,7 @@ const markdownComponents = {
   ),
 };
 
-export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools = [], skills = [], tasks = [], activity = [] }: AgentDetailProps) {
+export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools = [], skills = [], tasks = [], activity = [], compactPreview = false }: AgentDetailProps) {
   const { statuses, busyIn } = useEmployeePresence([agent.id]);
   const livePresence = {
     status: (statuses[agent.id]?.status as Agent['status']) || agent.status,
@@ -379,7 +380,7 @@ export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools =
           </section>
 
           {/* Prompt Section */}
-          <section className="space-y-4">
+          {!compactPreview && <section className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
                 <Code className="w-4 h-4" />
@@ -411,7 +412,7 @@ export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools =
                 )}
               </div>
             </div>
-          </section>
+          </section>}
           </div>
         </div>
 

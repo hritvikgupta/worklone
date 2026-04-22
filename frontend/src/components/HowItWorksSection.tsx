@@ -30,12 +30,12 @@ const steps = [
     description: "Give them a goal and watch them plan and execute autonomously using their assigned tools.",
   },
   { 
-    title: "Create workflows", 
-    description: "Set up recurring schedules or trigger-based automation for complex multi-step processes.",
+    title: "Train in loop", 
+    description: "Train by running the task in a loop so that it learns.",
   },
   { 
-    title: "Monitor and chat", 
-    description: "Stay in the loop, provide feedback, and collaborate with your AI coworkers in real-time.",
+    title: "Create workflows", 
+    description: "Set up recurring schedules or trigger-based automation for complex multi-step processes.",
   },
 ]
 
@@ -186,6 +186,52 @@ export function HowItWorksSection() {
         );
       case 4:
         return (
+          <div className="mx-auto w-full max-w-[460px] border-2 border-zinc-900 bg-white p-4 font-mono text-zinc-900 shadow-[5px_5px_0_rgba(24,24,27,0.08)]">
+            <div className="border-2 border-dotted border-zinc-900 p-3">
+              <div className="mb-4 border border-zinc-900 bg-white p-3">
+                <div className="mx-auto mb-3 w-fit bg-white px-3 text-[12px] uppercase tracking-[0.18em]">
+                  Agentic Loop
+                </div>
+                <div className="border border-zinc-900 p-3">
+                  <div className="mb-2 text-[13px] uppercase tracking-[0.12em]">[ Run Tasks ]</div>
+                  <div className="text-[12px] leading-5 text-zinc-700">
+                    Execute real work with prompts,
+                    <br />
+                    tools, memory, and constraints.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center py-1">
+                <div className="h-6 w-px bg-zinc-900" />
+                <div className="text-[18px] leading-none">▼</div>
+                <div className="h-6 w-px bg-zinc-900" />
+              </div>
+
+              <div className="border border-zinc-900 bg-white p-3">
+                <div className="mx-auto mb-3 w-fit bg-white px-3 text-[12px] uppercase tracking-[0.18em]">
+                  Learning Engine
+                </div>
+                <div className="border border-zinc-900 p-3">
+                  <div className="mb-2 text-[13px] uppercase tracking-[0.12em]">[ Review + Improve ]</div>
+                  <div className="text-[12px] leading-5 text-zinc-700">
+                    Detect failures, refine behavior,
+                    <br />
+                    update memory, then run again.
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 border-t-2 border-dotted border-zinc-900 pt-3 text-[12px] leading-6">
+                <div>✓ Train by running the task in a loop</div>
+                <div>✓ The system improves every cycle</div>
+                <div>✓ Repeat until performance is reliable</div>
+              </div>
+            </div>
+          </div>
+        );
+      case 5:
+        return (
           <div className="relative w-[360px] h-[480px] scale-90 sm:scale-100 mx-auto">
             <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 overflow-visible">
                 <motion.path 
@@ -221,31 +267,6 @@ export function HowItWorksSection() {
             <GraphNode label="Action" sub="Slack" icon={Slack} left={140} top={360} delay={0.9} />
           </div>
         );
-      case 5:
-        return (
-          <div className="w-full max-w-md mx-auto rounded-[32px] border border-black/5 bg-white p-6 shadow-xl space-y-6 overflow-hidden">
-             <div className="flex items-center gap-3 pb-4 border-b border-black/5">
-                <div className="h-10 w-10 rounded-full bg-zinc-100 overflow-hidden border border-black/5">
-                    <img src="/employees/women_2.png" className="w-full h-full object-cover" alt="Katy" />
-                </div>
-                <div>
-                    <div className="text-sm font-semibold text-zinc-950">Katy</div>
-                    <div className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
-                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-                        Online
-                    </div>
-                </div>
-             </div>
-             <div className="space-y-4">
-                <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-zinc-100 p-4 rounded-2xl rounded-tl-none text-[13px] leading-relaxed text-zinc-800 max-w-[85%] shadow-sm">
-                    I've updated the 3 Jira tickets and summarized the progress in Slack. Should I draft the weekly report next?
-                </motion.div>
-                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="bg-zinc-950 text-white p-4 rounded-2xl rounded-tr-none text-[13px] leading-relaxed ml-auto max-w-[85%] shadow-md">
-                    Great work, Katy. Yes, please proceed with the report and tag the tech lead for review.
-                </motion.div>
-             </div>
-          </div>
-        );
       default:
         return null;
     }
@@ -258,7 +279,7 @@ export function HowItWorksSection() {
                 How it works
             </h2>
             <p className="mt-6 text-[16px] sm:text-[18px] leading-7 text-zinc-600">
-                From hiring to execution, get your AI workforce up and running in minutes.
+                From training to execution, get your AI workforce up and running in minutes.
             </p>
         </div>
 

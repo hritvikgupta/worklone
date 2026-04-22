@@ -7,6 +7,7 @@ import { useAuth } from './contexts/AuthContext';
 import { LoginPage } from './components/LoginPage';
 import { WaitlistPage } from './components/WaitlistPage';
 import { LandingPage } from './components/LandingPage';
+import { AgentSkillsPage } from './components/AgentSkillsPage';
 import { WhatIsWorklonePage } from './components/WhatIsWorklonePage';
 import { ResearchArticlePage } from './components/ResearchArticlePage';
 import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
@@ -177,6 +178,7 @@ export default function App() {
       ) : (
         <>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/agentskills" element={<AgentSkillsPage />} />
           <Route path="/what-is-worklone" element={<WhatIsWorklonePage />} />
           <Route path="/research/:slug" element={<ResearchArticlePage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
