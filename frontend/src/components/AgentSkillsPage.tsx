@@ -211,7 +211,7 @@ export function AgentSkillsPage() {
               <div className="text-xs uppercase tracking-[0.22em] text-zinc-500">WORKLONE</div>
               <h1 className="mt-6 text-5xl font-medium leading-[1.1] tracking-tight text-zinc-900">Worklone Agent Skills</h1>
               <p className="mt-6 max-w-xl text-lg leading-8 text-zinc-600">
-                Skills available inside Worklone, sourced from your cloned agency-agents repository.
+                Skills available inside Worklone, organized in your local skills library.
               </p>
             </div>
 
@@ -241,7 +241,7 @@ export function AgentSkillsPage() {
         <div className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
           <div className="mb-6">
             <h2 className="text-3xl font-medium tracking-tight text-zinc-900">Find Skills</h2>
-            <p className="mt-2 text-zinc-600">Browse categories and search across the cloned agency-agents repository.</p>
+            <p className="mt-2 text-zinc-600">Browse categories and search across your local skills library.</p>
           </div>
 
           <div className="relative mb-6">

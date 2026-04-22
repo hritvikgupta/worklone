@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const repoDir = path.join(process.cwd(), 'public', 'agency-agents');
+const repoDir = path.join(process.cwd(), 'public', 'agent-skills');
 const outputFilePath = path.join(process.cwd(), 'public', 'agency-skills.json');
 
 const skills = [];
@@ -37,6 +37,10 @@ function walkSkills(dirPath) {
       continue;
     }
 
+    if (/^CONTRIBUTING(?:_.+)?\.md$/i.test(entry.name) || /^SECURITY\.md$/i.test(entry.name)) {
+      continue;
+    }
+
     const rel = path.relative(repoDir, fullPath).split(path.sep).join('/');
     const category = rel.split('/')[0] || 'misc';
     const fileBase = path.basename(entry.name, '.md');
@@ -49,8 +53,8 @@ function walkSkills(dirPath) {
       category,
       name: name || fileBase,
       description: description || '',
-      publisher: 'Agency Agents',
-      path: `/agency-agents/${rel}`,
+      publisher: 'Worklone',
+      path: `/agent-skills/${rel}`,
     });
   }
 }
