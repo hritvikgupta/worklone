@@ -18,12 +18,13 @@ import { Sidebar } from './components/Sidebar';
 import { AIAssistant } from './components/AIAssistant';
 import { ChatView } from './components/ChatView';
 import { Integrations } from './components/Integrations';
-import { DashboardPage } from './components/pages/DashboardPage';
+import { HomePage } from './components/pages/HomePage';
 import { CurrentSprintPage } from './components/pages/CurrentSprintPage';
 import { TeamsPage } from './components/pages/TeamsPage';
 import { ScheduledWorkflowsPage } from './components/pages/ScheduledWorkflowsPage';
 import { AgentFilesPage } from './components/pages/AgentFilesPage';
 import { AgentsPage } from './components/pages/AgentsPage';
+// import { AgentWorkspacePage } from './components/pages/AgentWorkspacePage';
 import { SkillLibraryPage } from './components/pages/SkillLibraryPage';
 import { OnboardingPage } from './components/OnboardingPage';
 import { getOnboardingStatus } from '@/src/api/onboarding';
@@ -75,18 +76,20 @@ function AuthenticatedShell() {
           )}
 
           <Routes>
-            <Route path="/" element={<Navigate to="/chat" replace />} />
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/chat" element={<ChatView />} />
             {/* <Route path="/dashboard" element={<DashboardPage />} /> */}
             <Route path="/current-sprint" element={<CurrentSprintPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/scheduled-workflows" element={<Navigate to="/workflows" replace />} />
             <Route path="/workflows" element={<ScheduledWorkflowsPage />} />
+            {/* <Route path="/agent" element={<AgentWorkspacePage />} /> */}
             <Route path="/agent-files" element={<AgentFilesPage />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/skill-library" element={<SkillLibraryPage />} />
             <Route path="/integrations" element={<Integrations />} />
-            <Route path="*" element={<Navigate to="/chat" replace />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </motion.main>
 
