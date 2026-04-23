@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/src/contexts/AuthContext';
 import { listEmployees, EmployeeDetail } from '@/src/api/employees';
@@ -183,33 +183,36 @@ export function HomePage() {
 
   return (
     <div className="h-full overflow-y-auto bg-background">
-      <div className="mx-auto max-w-7xl p-8 space-y-8">
+      <div className="mx-auto max-w-7xl p-6 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               Welcome back, {firstName}!
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Here is a quick view of your most recent employees and active operations.
             </p>
           </div>
-          <Button className="h-10 px-5 font-medium" onClick={() => navigate('/agents')}>
-            Create Employee
+          <Button
+            className="h-9 px-4 text-sm font-medium"
+            onClick={() => navigate('/agents', { state: { openProvisionModal: true } })}
+          >
+            Provision Employee
           </Button>
         </div>
 
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-medium tracking-tight text-muted-foreground">Recently Edited Employees</h2>
-            <Button variant="ghost" className="gap-1 text-muted-foreground" onClick={() => navigate('/agents')}>
+            <h2 className="text-xl font-medium tracking-tight text-muted-foreground">Recently Edited Employees</h2>
+            <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" onClick={() => navigate('/agents')}>
               View All <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-3 md:grid-cols-2">
             {recentEmployees.length === 0 ? (
               <Card className="col-span-full border-dashed">
-                <CardContent className="py-12 text-center text-muted-foreground">
+                <CardContent className="py-10 text-center text-sm text-muted-foreground">
                   No employees yet. Create your first employee to get started.
                 </CardContent>
               </Card>
@@ -217,23 +220,23 @@ export function HomePage() {
               recentEmployees.map((emp) => (
                 <Card
                   key={emp.id}
-                  className="group relative cursor-pointer border-border/70 transition-colors hover:border-border hover:bg-muted/20"
-                  onClick={() => navigate('/agents')}
+                  className="group relative cursor-pointer gap-3 border-border/70 py-3 transition-colors hover:border-border hover:bg-muted/20"
+                  onClick={() => navigate(`/agents/${emp.id}`)}
                 >
-                  <CardHeader className="pb-2">
+                  <CardHeader className="px-4 pb-1.5">
                     <div className="flex items-center gap-3">
                       <img
                         src={emp.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(emp.name)}`}
                         alt={emp.name}
-                        className="h-11 w-11 rounded-full border border-border object-cover"
+                        className="h-8 w-8 rounded-full border border-border object-cover"
                       />
                       <div className="min-w-0">
-                        <CardTitle className="truncate text-xl font-semibold">{emp.name}</CardTitle>
-                        <p className="truncate text-sm text-muted-foreground">{emp.role}</p>
+                        <CardTitle className="truncate text-base font-semibold">{emp.name}</CardTitle>
+                        <p className="truncate text-xs text-muted-foreground">{emp.role}</p>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent className="px-4 pt-0">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{timeAgo(emp.updated_at)}</span>
                       <Badge
@@ -255,50 +258,56 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-medium tracking-tight text-muted-foreground">Live Operations</h3>
+            <h3 className="text-xl font-medium tracking-tight text-muted-foreground">Live Operations</h3>
           </div>
 
-          <Card className="overflow-hidden border-border/70">
-            <div className="grid grid-cols-12 gap-3 border-b border-border/70 bg-muted/30 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <div className="col-span-2">Type</div>
-              <div className="col-span-3">Name</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-2">Owner</div>
-              <div className="col-span-3">Detail</div>
-            </div>
-
-            {operationRows.length === 0 ? (
-              <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-                No active team, workflow, or employee runs right now.
-              </div>
-            ) : (
-              <div>
-                {operationRows.map((row, index) => {
-                  const Icon = typeIcon(row.type);
-                  return (
-                    <div key={row.id}>
-                      <div className="grid grid-cols-12 gap-3 px-5 py-3.5 text-sm">
-                        <div className="col-span-2 flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                          <span className="capitalize">{row.type}</span>
-                        </div>
-                        <div className="col-span-3 font-medium text-foreground truncate">{row.name}</div>
-                        <div className="col-span-2">
+          <Card className="overflow-hidden border-border/70 py-0">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow className="hover:bg-muted/30">
+                  <TableHead className="h-9 w-[120px] px-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Type</TableHead>
+                  <TableHead className="w-[220px] text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Name</TableHead>
+                  <TableHead className="w-[140px] text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status</TableHead>
+                  <TableHead className="w-[180px] text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Owner</TableHead>
+                  <TableHead className="px-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Detail</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {operationRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="px-4 py-6 text-center text-sm text-muted-foreground">
+                      No active team, workflow, or employee runs right now.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  operationRows.map((row) => {
+                    const Icon = typeIcon(row.type);
+                    return (
+                      <TableRow key={row.id}>
+                        <TableCell className="px-4">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4 text-muted-foreground" />
+                            <span className="capitalize">{row.type}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="max-w-[220px] truncate font-medium text-foreground">{row.name}</TableCell>
+                        <TableCell>
                           <Badge variant="outline" className={cn('capitalize', statusClass(row.status))}>
                             {row.status}
                           </Badge>
-                        </div>
-                        <div className="col-span-2 text-muted-foreground truncate">{row.owner}</div>
-                        <div className="col-span-3 text-muted-foreground truncate">{row.detail} · {timeAgo(row.updatedAt)}</div>
-                      </div>
-                      {index < operationRows.length - 1 && <Separator />}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate text-muted-foreground">{row.owner}</TableCell>
+                        <TableCell className="max-w-[320px] truncate px-4 text-muted-foreground">
+                          {row.detail} · {timeAgo(row.updatedAt)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
           </Card>
         </section>
       </div>

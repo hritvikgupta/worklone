@@ -127,6 +127,8 @@ interface FullMessengerProps {
   composerClassName?: string
   onCreateConversation?: () => void
   hideConversationTabs?: boolean
+  hideHeader?: boolean
+  hideHeaderIdentity?: boolean
 }
 
 function FullMessenger({
@@ -149,6 +151,8 @@ function FullMessenger({
   composerClassName,
   onCreateConversation,
   hideConversationTabs = false,
+  hideHeader = false,
+  hideHeaderIdentity = false,
 }: FullMessengerProps) {
   const activeConvo = conversations.find((c) => c.id === activeConversationId)
 
@@ -221,30 +225,32 @@ function FullMessenger({
 
           {activeConvo ? (
             <>
-              <ChatHeader
-                title={activeConvo.title}
-                subtitle={subtitle || activeConvo.lastMessage || (activeConvo.isGroup ? "Group" : undefined)}
-                avatar={
-                  <div className="relative">
-                    <div className="flex size-10 items-center justify-center rounded-full bg-[var(--chat-bubble-incoming)] text-sm font-semibold text-[var(--chat-text-primary)]">
-                      {activeConvo.title.charAt(0).toUpperCase()}
+              {!hideHeader && (
+                <ChatHeader
+                  title={hideHeaderIdentity ? "" : activeConvo.title}
+                  subtitle={hideHeaderIdentity ? undefined : (subtitle || activeConvo.lastMessage || (activeConvo.isGroup ? "Group" : undefined))}
+                  avatar={hideHeaderIdentity ? undefined : (
+                    <div className="relative">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-[var(--chat-bubble-incoming)] text-sm font-semibold text-[var(--chat-text-primary)]">
+                        {activeConvo.title.charAt(0).toUpperCase()}
+                      </div>
+                      {activeConvo.presence === "online" && (
+                        <div className="absolute -bottom-0.5 -right-0.5 size-[10px] rounded-full border-2 border-[var(--chat-bg-main)] bg-[var(--chat-green)]" />
+                      )}
                     </div>
-                    {activeConvo.presence === "online" && (
-                      <div className="absolute -bottom-0.5 -right-0.5 size-[10px] rounded-full border-2 border-[var(--chat-bg-main)] bg-[var(--chat-green)]" />
-                    )}
-                  </div>
-                }
-                actions={
-                  headerActions || (
-                    <div className="flex items-center gap-1">
-                      <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Phone className="size-4" /></button>
-                      <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Search className="size-4" /></button>
-                      <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Pin className="size-4" /></button>
-                    </div>
-                  )
-                }
-                className={cn(conversationStyle === "tabs" && "py-2")}
-              />
+                  )}
+                  actions={
+                    headerActions || (
+                      <div className="flex items-center gap-1">
+                        <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Phone className="size-4" /></button>
+                        <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Search className="size-4" /></button>
+                        <button className="flex size-8 items-center justify-center rounded-lg text-[var(--chat-text-secondary)] hover:bg-[var(--chat-accent-soft)]"><Pin className="size-4" /></button>
+                      </div>
+                    )
+                  }
+                  className={cn(conversationStyle === "tabs" && "py-2")}
+                />
+              )}
               <ChatMessages messages={messages} typingUsers={typingUsers} className={messagesClassName} />
               {beforeComposer}
               <ChatComposer onSend={onSend} className={composerClassName} />

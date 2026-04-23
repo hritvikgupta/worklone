@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Headphones, LineChart, Code, Briefcase, ChevronDown } from 'lucide-react';
+import { ArrowRight, ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { LandingPageDashboard } from './LandingPageDashboard';
-import { LandingChatDemoSection } from './LandingChatDemoSection';
-import { LandingSprintSection } from './LandingSprintSection';
-import { AgentProgressSection } from './AgentProgressSection';
-import { CreateWorkflowSection } from './CreateWorkflowSection';
 import { AgentNetworkSection } from './AgentNetworkSection';
+import { AgentsSection } from './AgentsSection';
 import { HowItWorksSection } from './HowItWorksSection';
+import { WorkflowShowcaseSection } from './WorkflowShowcaseSection';
+import AI_Prompt from './prompt-kit/AI_Prompt';
 import { researchArticles } from './ResearchArticlePage';
 
 // Integration icon component - uses simple SVG icons from public CDN
@@ -65,6 +63,73 @@ const integrationRows = [
   ['Snowflake', 'Postgres', 'BigQuery', 'ClickUp', 'Intercom', 'Dropbox', 'Trello', 'Zapier'],
 ];
 
+const heroPromptTabs = [
+  'Agent Orchestration',
+  'Tool Calling',
+  'Memory',
+  'Automation',
+] as const;
+
+type HeroPromptTab = (typeof heroPromptTabs)[number];
+type HeroPromptBadgeIcon = 'gmail' | 'slack' | 'notion' | 'jira' | 'calendar';
+
+const heroPromptConfig: Record<
+  HeroPromptTab,
+  {
+    lines: Array<{
+      text: string;
+      inlineBadges?: Array<{ icon: HeroPromptBadgeIcon; label: string; position: number }>;
+    }>;
+  }
+> = {
+  'Agent Orchestration': {
+    lines: [
+      {
+        text: 'Hey, can you send a clear customer update through and include the owner, timeline, and next steps before EOD, then post the same summary to  so the team can track it immediately?',
+        inlineBadges: [
+          { icon: 'gmail', label: 'Gmail', position: 50 },
+          { icon: 'slack', label: 'Slack', position: 140 },
+        ],
+      },
+    ],
+  },
+  'Tool Calling': {
+    lines: [
+      {
+        text: 'Can you pull blockers from , update the project brief in , and send the action list to  before standup starts?',
+        inlineBadges: [
+          { icon: 'jira', label: 'Jira', position: 27 },
+          { icon: 'notion', label: 'Notion', position: 57 },
+          { icon: 'slack', label: 'Slack', position: 87 },
+        ],
+      },
+    ],
+  },
+  Memory: {
+    lines: [
+      {
+        text: 'Use context from  and prior incidents in , then draft a response that reflects our escalation policy and promised recovery steps.',
+        inlineBadges: [
+          { icon: 'notion', label: 'Notion', position: 17 },
+          { icon: 'jira', label: 'Jira', position: 41 },
+        ],
+      },
+    ],
+  },
+  Automation: {
+    lines: [
+      {
+        text: 'Set this to run every weekday at 9 AM: summarize inbox priorities from , post status in , and create follow-up events in .',
+        inlineBadges: [
+          { icon: 'gmail', label: 'Gmail', position: 71 },
+          { icon: 'slack', label: 'Slack', position: 88 },
+          { icon: 'calendar', label: 'Calendar', position: 121 },
+        ],
+      },
+    ],
+  },
+};
+
   const pricingPlans = [
     {
       name: 'Starter',
@@ -92,6 +157,7 @@ const integrationRows = [
 
 export function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeHeroPromptTab, setActiveHeroPromptTab] = useState<HeroPromptTab>('Agent Orchestration');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -188,145 +254,92 @@ export function LandingPage() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden bg-white pt-24 pb-16 sm:pb-20 sm:pt-32">
-        <div className="relative z-10 px-6 sm:px-8 lg:px-10 mx-auto max-w-7xl mb-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="max-w-4xl text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <h1 className="text-[32px] sm:text-[42px] leading-[1.2] font-normal tracking-tight text-zinc-950 max-w-3xl">
-                  Train and build your first AI employee
-                </h1>
+      <section className="relative overflow-hidden bg-white pb-16 pt-24 sm:pb-20 sm:pt-28 lg:min-h-[calc(100vh-64px)]">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 sm:px-8 lg:px-10">
+          <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-2 lg:gap-10">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <p className="text-[15px] font-normal tracking-[-0.01em] text-zinc-600">Worklone AI Agents</p>
+              <h1 className="mt-3 max-w-3xl text-[32px] font-medium leading-tight tracking-tight text-zinc-950 sm:text-[40px]">
+                Build production ready
+                <br />
+                workplace employee agents in 70+ industrial usecases
+              </h1>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                <Link
+                  to="/waitlist"
+                  className="inline-flex items-center justify-center rounded-full bg-zinc-950 px-5 py-2.5 text-[14px] font-normal text-white transition-colors hover:bg-zinc-800"
+                >
+                  Get started
+                </Link>
+                <Link
+                  to="/documentation"
+                  className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-[14px] font-normal text-zinc-900 transition-colors hover:bg-zinc-50"
+                >
+                  Explore docs
+                </Link>
+              </div>
+            </motion.div>
 
-                <p className="mt-6 text-[16px] sm:text-[18px] leading-[1.6] text-zinc-800 max-w-3xl">
-                  Deploy self-adaptive AI employees that learn your workspace and master your workflows. An autonomous team that continuously improves and never makes the same mistake twice. Built for the modern enterprise.
-                </p>
-
-                <div className="mt-10 flex flex-wrap items-center justify-start gap-4">
-                  <Link
-                    to="/waitlist"
-                    className="inline-flex items-center justify-center rounded-[4px] bg-[#1a1a1a] px-6 py-3 text-[14px] font-medium text-white transition-colors hover:bg-black"
-                  >
-                    Join Waitlist
-                  </Link>
-                  <Link
-                    to="/what-is-worklone"
-                    className="inline-flex items-center justify-center rounded-[4px] border border-zinc-200 bg-white px-6 py-3 text-[14px] font-medium text-zinc-900 transition-colors hover:bg-zinc-50"
-                  >
-                    What is Worklone
-                  </Link>
-                </div>
-                
-                <div className="mt-8 text-[14px] text-zinc-800">
-                  Or, <Link to="/documentation" className="underline underline-offset-4 hover:text-zinc-500 transition-colors">read the documentation</Link>.
-                </div>
-              </motion.div>
-            </div>
-            
-            <motion.div 
-              className="hidden lg:flex justify-center lg:justify-end"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+            <motion.div
+              className="max-w-xl lg:pt-14"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              <img 
-                src="/heroright.png" 
-                alt="AI Face Visualization" 
-                className="w-full max-w-[500px] h-auto object-contain opacity-90"
-              />
+              <p className="text-[15px] leading-[1.45] tracking-[-0.005em] text-zinc-700 sm:text-[18px]">
+                API-first infrastructure for building, deploying, and scaling AI agents across support, product, sales, and operations.
+              </p>
             </motion.div>
           </div>
-        </div>
 
-        <div className="relative z-10 px-6 sm:px-8 lg:px-10 mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1 */}
-            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
-              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
-                <Headphones className="h-5 w-5" strokeWidth={1.5} />
-              </div>
-              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Customer Support</div>
-              <div className="text-[14px] text-zinc-800 mb-1">24/7 automated resolution</div>
-              <div className="text-[14px] text-zinc-600">Integrates with Zendesk & Intercom.</div>
-            </div>
-            
-            {/* Card 2 */}
-            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
-              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
-                <LineChart className="h-5 w-5" strokeWidth={1.5} />
-              </div>
-              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Data Analyst</div>
-              <div className="text-[14px] text-zinc-800 mb-1">Real-time insights</div>
-              <div className="text-[14px] text-zinc-600">SQL & Python native queries.</div>
+          <motion.div
+            className="mt-12 rounded-[24px] border border-zinc-200 bg-[#f5f5f4] p-4 sm:p-6"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.15 }}
+          >
+            <div className="mx-auto w-full max-w-3xl">
+              <AI_Prompt
+                headerText="AI Agent Execution"
+                headerAction="Ready"
+                placeholder="Describe what your agent should do..."
+                inputMinHeight={96}
+                showHeader={false}
+                animatedLines={heroPromptConfig[activeHeroPromptTab].lines}
+                className="bg-transparent py-0"
+              />
             </div>
 
-            {/* Card 3 */}
-            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
-              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
-                <Code className="h-5 w-5" strokeWidth={1.5} />
-              </div>
-              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Software Engineer</div>
-              <div className="text-[14px] text-zinc-800 mb-1">Code & PR reviews</div>
-              <div className="text-[14px] text-zinc-600">GitHub & GitLab ready.</div>
+            <div className="mt-8 flex flex-wrap justify-center gap-2.5 sm:gap-3">
+              {heroPromptTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveHeroPromptTab(tab)}
+                  className={`rounded-full px-4 py-1.5 text-[12.5px] font-normal transition-colors ${
+                    activeHeroPromptTab === tab
+                      ? 'border border-zinc-300 bg-white text-zinc-900'
+                      : 'text-zinc-600 hover:bg-zinc-100'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
-
-            {/* Card 4 */}
-            <div className="group border border-zinc-200 bg-white p-6 relative transition-all duration-300 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[4px_4px_0_0_#10b981] hover:border-[#10b981]">
-              <div className="mb-6 h-10 w-12 border-2 border-zinc-900 flex items-center justify-center group-hover:border-[#10b981] group-hover:text-[#10b981] transition-colors">
-                <Briefcase className="h-5 w-5" strokeWidth={1.5} />
-              </div>
-              <div className="text-[16px] font-semibold text-zinc-950 mb-4 group-hover:bg-[#10b981]/10 w-fit">Product Manager</div>
-              <div className="text-[14px] text-zinc-800 mb-1">Automated roadmaps</div>
-              <div className="text-[14px] text-zinc-600">Jira & Linear sync.</div>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </section>
+
+      <AgentsSection />
 
       <HowItWorksSection />
 
-      <LandingSprintSection />
-
-      <LandingChatDemoSection />
-
-      <section id="workspace-preview" className="bg-white py-16 sm:py-24">
-        <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
-          <div className="grid gap-0 overflow-hidden rounded-[30px] border border-zinc-200 bg-white lg:grid-cols-[0.64fr_1.36fr]">
-            <div className="flex items-center border-b border-zinc-200 p-8 sm:p-12 lg:border-b-0 lg:border-r lg:p-16">
-              <div>
-                <div className="text-[11px] font-medium uppercase tracking-[0.14em] text-zinc-500">
-                  Employee Training & Deployment
-                </div>
-                <h2 className="mt-4 text-[24px] font-medium leading-[1.15] tracking-tight text-zinc-900 sm:text-[30px]">
-                  Train and deploy your AI employees
-                  <span className="block text-zinc-500">with production-ready control</span>
-                </h2>
-                <p className="mt-4 max-w-md text-[15px] leading-7 text-zinc-600">
-                  Define behavior standards, validate outputs, and ship reliable autonomous execution at scale.
-                </p>
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden bg-white p-4 sm:p-8">
-              <div className="absolute inset-0 z-0 pointer-events-none">
-                <img src="/bgothers.png" alt="" className="h-full w-full object-cover object-center" />
-              </div>
-              <div className="relative z-10" style={{ zoom: 0.78 }}>
-                <LandingPageDashboard />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <WorkflowShowcaseSection />
 
       <AgentNetworkSection />
-
-      <AgentProgressSection />
-
-      <CreateWorkflowSection />
 
       <section className="overflow-hidden bg-white px-6 py-16 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-4xl text-center">

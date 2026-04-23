@@ -431,7 +431,7 @@ export function ScheduledWorkflowsPage() {
       </div>
 
       {/* Floating Prompt Input Bar */}
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 z-40">
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 md:left-[calc(50%+7.5rem)] w-full max-w-2xl px-6 z-40">
         <div className="flex flex-col rounded-[24px] border border-border bg-card shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all focus-within:border-foreground/15 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
           {/* Input Area */}
           <div className="p-4 pb-0">

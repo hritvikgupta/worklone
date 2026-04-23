@@ -293,7 +293,7 @@ export function LandingChatDemoSection() {
   };
 
   return (
-    <section ref={sectionRef} className="border-t border-zinc-200/70 bg-white py-16 sm:py-24">
+    <section ref={sectionRef} className="border-t border-zinc-200/70 bg-white pt-4 pb-16 sm:pb-24">
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
         <div className="grid gap-0 overflow-hidden rounded-[30px] border border-zinc-200 bg-white lg:grid-cols-[0.64fr_1.36fr]">
           <div className="flex items-center border-b border-zinc-300/70 p-8 sm:p-12 lg:border-b-0 lg:border-r lg:p-16">
@@ -311,10 +311,7 @@ export function LandingChatDemoSection() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden bg-white p-4 sm:p-8">
-            <div className="absolute inset-0 z-0 pointer-events-none">
-              <img src="/bgothers.png" alt="" className="h-full w-full object-cover object-center" />
-            </div>
+          <div className="relative overflow-hidden bg-[#f5f5f4] p-4 sm:p-8">
 
             <div className="relative z-10 h-[650px] overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-[0_12px_28px_rgba(24,24,27,0.06)]">
               <div className="flex h-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [--chat-bg-app:#f6f4f3] [--chat-bg-sidebar:#f5f3f2] [--chat-bg-main:#fbfbfa] [--chat-bg-header:rgba(251,251,250,0.96)] [--chat-bg-composer:rgba(251,251,250,0.98)] [--chat-bubble-outgoing:#4b5563] [--chat-bubble-outgoing-text:#f9fafb] [--chat-bubble-incoming:#ece9e7] [--chat-bubble-incoming-text:#1f2937] [--chat-text-primary:#1f2937] [--chat-text-secondary:#4b5563] [--chat-text-tertiary:#6b7280] [--chat-border:rgba(31,41,55,0.09)] [--chat-border-strong:rgba(31,41,55,0.14)] [--chat-accent:#4b5563] [--chat-accent-soft:rgba(75,85,99,0.09)] dark:[--chat-bg-app:#0b1220] dark:[--chat-bg-sidebar:#0f172a] dark:[--chat-bg-main:#0b1220] dark:[--chat-bg-header:rgba(15,23,42,0.9)] dark:[--chat-bg-composer:rgba(15,23,42,0.92)] dark:[--chat-bubble-outgoing:#334155] dark:[--chat-bubble-outgoing-text:#f8fafc] dark:[--chat-bubble-incoming:#1e293b] dark:[--chat-bubble-incoming-text:#e2e8f0] dark:[--chat-text-primary:#e2e8f0] dark:[--chat-text-secondary:#cbd5e1] dark:[--chat-text-tertiary:#94a3b8] dark:[--chat-border:rgba(148,163,184,0.22)] dark:[--chat-border-strong:rgba(148,163,184,0.34)] dark:[--chat-accent:#64748b] dark:[--chat-accent-soft:rgba(148,163,184,0.16)]">

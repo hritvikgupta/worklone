@@ -61,7 +61,7 @@ function TreeFlow({ flow, index }: { flow: typeof flows[0], index: number }) {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ delay: index * 0.2 }}
-        className="text-zinc-500 text-[12px] font-semibold uppercase tracking-widest mb-10"
+        className="mb-8 text-[22px] font-medium tracking-tight text-zinc-900 sm:text-[26px]"
       >
         {flow.title}
       </motion.div>
@@ -73,7 +73,7 @@ function TreeFlow({ flow, index }: { flow: typeof flows[0], index: number }) {
             <motion.path
               key={i}
               initial={{ pathLength: 0, opacity: 0 }}
-              whileInView={{ pathLength: 1, opacity: 0.15 }}
+              whileInView={{ pathLength: 1, opacity: 0.5 }}
               viewport={{ once: true }}
               transition={{ duration: 1, delay: index * 0.2 + 0.2 + (i * 0.2) }}
               d={linePath}
@@ -133,8 +133,7 @@ export function AgentNetworkSection() {
         </motion.p>
       </div>
 
-      <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] border border-black/5 bg-zinc-50/50 px-4 py-16 sm:px-8 lg:px-12 sm:py-24">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
+      <div className="relative mx-auto w-[96%] max-w-[1400px] overflow-hidden rounded-[40px] border border-black/5 bg-[#f5f5f4] px-4 py-16 sm:px-8 lg:px-12 sm:py-24">
 
         <div className="relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 lg:gap-4 justify-items-center">

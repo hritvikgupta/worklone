@@ -108,7 +108,7 @@ export function LandingSprintSection() {
   };
 
   return (
-    <section className="border-t border-zinc-200/70 bg-white py-16 sm:py-24">
+    <section className="border-t border-zinc-200/70 bg-white pt-4 pb-16 sm:pb-24">
       <div className="mx-auto w-full max-w-7xl px-6 sm:px-8 lg:px-10">
         <div className="grid gap-0 overflow-hidden rounded-[30px] border border-zinc-200 bg-white lg:grid-cols-[0.64fr_1.36fr]">
           <div className="flex items-center border-b border-zinc-300/70 p-8 sm:p-12 lg:border-b-0 lg:border-r lg:p-16">
@@ -126,10 +126,7 @@ export function LandingSprintSection() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden bg-white p-4 sm:p-8">
-            <div className="absolute inset-0 z-0 pointer-events-none">
-              <img src="/bgothers.png" alt="" className="h-full w-full object-cover object-center" />
-            </div>
+          <div className="relative overflow-hidden bg-[#f5f5f4] p-4 sm:p-8">
 
             <div className="relative z-10 h-[680px] overflow-hidden rounded-[24px] border border-zinc-200 bg-white shadow-[0_12px_28px_rgba(24,24,27,0.06)]">
               <div className="h-full p-8">

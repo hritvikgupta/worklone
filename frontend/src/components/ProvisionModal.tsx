@@ -1,75 +1,39 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { getErrorMessage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { generateEmployeePrompt, GeneratedPromptResult } from '@/src/api/employees';
-import type { EmployeeFormData } from '@/src/components/EmployeePanel';
 
 interface ProvisionModalProps {
   open: boolean;
   onClose: () => void;
-  onGenerated: (form: EmployeeFormData) => void;
+  onSubmit: (payload: { name: string; description: string }) => void;
   initialName?: string;
   initialDescription?: string;
 }
 
-export function ProvisionModal({ open, onClose, onGenerated, initialName = '', initialDescription = '' }: ProvisionModalProps) {
+export function ProvisionModal({ open, onClose, onSubmit, initialName = '', initialDescription = '' }: ProvisionModalProps) {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
       setName(initialName);
       setDescription(initialDescription);
-      setError(null);
     }
   }, [open, initialName, initialDescription]);
 
   const handleGenerate = async () => {
-    if (!name.trim()) return;
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result: GeneratedPromptResult = await generateEmployeePrompt(
-        name.trim(),
-        description.trim(),
-      );
-
-      const form: EmployeeFormData = {
-        name: name.trim(),
-        role: result.role,
-        avatar_url: '',
-        description: description.trim(),
-        system_prompt: result.system_prompt,
-        model: 'openai/gpt-4o',
-        provider: '',
-        temperature: 0.7,
-        max_tokens: 4096,
-        tools: result.tools,
-        skills: result.skills,
-        memory: [],
-      };
-
-      onGenerated(form);
-      // Reset for next time
-      setName('');
-      setDescription('');
-    } catch (err) {
-      setError(getErrorMessage(err, 'Failed to generate prompt'));
-    } finally {
-      setLoading(false);
-    }
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+    onSubmit({ name: trimmedName, description: description.trim() });
+    setName('');
+    setDescription('');
+    onClose();
   };
 
   const handleClose = () => {
-    if (loading) return;
     setName('');
     setDescription('');
-    setError(null);
     onClose();
   };
 
@@ -107,8 +71,7 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
               </div>
               <button
                 onClick={handleClose}
-                disabled={loading}
-                className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-muted-foreground transition-colors disabled:opacity-50"
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-muted-foreground transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -125,8 +88,7 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Alex, Jordan, Mira"
-                  disabled={loading}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && name.trim()) handleGenerate();
                   }}
@@ -142,19 +104,12 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g. Manage our product backlog, conduct user research, and coordinate with engineering on sprint planning..."
                   rows={4}
-                  disabled={loading}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">
                   The more detail you provide, the better the generated persona will be.
                 </p>
               </div>
-
-              {error && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                  {error}
-                </div>
-              )}
             </div>
 
             {/* Footer */}
@@ -163,7 +118,6 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
                 variant="outline"
                 size="sm"
                 onClick={handleClose}
-                disabled={loading}
                 className="text-xs"
               >
                 Cancel
@@ -171,38 +125,13 @@ export function ProvisionModal({ open, onClose, onGenerated, initialName = '', i
               <Button
                 size="sm"
                 onClick={handleGenerate}
-                disabled={loading || !name.trim()}
+                disabled={!name.trim()}
                 className="gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/80"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Generate Employee
-                  </>
-                )}
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate Employee
               </Button>
             </div>
-
-            {/* Loading overlay */}
-            {loading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-card/80 backdrop-blur-[2px]">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="relative">
-                    <div className="h-10 w-10 rounded-full border-2 border-border" />
-                    <div className="absolute inset-0 h-10 w-10 animate-spin rounded-full border-2 border-transparent border-t-zinc-950" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-foreground">Crafting employee persona...</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">Generating system prompt, tools, and skills using your configured LLM settings</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </motion.div>
         </>
       )}

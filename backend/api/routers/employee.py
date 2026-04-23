@@ -5,7 +5,9 @@ Endpoints for CRUD, tools, skills, tasks, and activity log.
 This is separate from workflows (Harry) — employees are the chat-based agents (like Katy).
 """
 
+import asyncio
 import json
+import os
 import random
 from datetime import datetime
 from pathlib import Path
@@ -264,6 +266,11 @@ async def list_employees(authorization: Optional[str] = Header(None)):
         employees = store.list_employees(owner_id)
         result = []
         for emp in employees:
+            enabled_tools = [
+                t.tool_name
+                for t in store.get_employee_tools(emp.id, owner_id)
+                if t.is_enabled
+            ]
             result.append({
                 "id": emp.id,
                 "name": emp.name,
@@ -279,6 +286,7 @@ async def list_employees(authorization: Optional[str] = Header(None)):
                 "temperature": emp.temperature,
                 "max_tokens": emp.max_tokens,
                 "memory": emp.memory,
+                "tools": enabled_tools,
                 "created_at": emp.created_at.isoformat(),
                 "updated_at": emp.updated_at.isoformat(),
             })
@@ -419,18 +427,64 @@ async def generate_prompt(req: GeneratePromptRequest, authorization: Optional[st
         return normalized or "skill"
 
     new_skills_created = []
-    for skill in result.get("skills", []):
-        if skill.get("new"):
-            # Generate the skill via LLM and save it
-            skill_title = skill.get("skill_name", skill.get("title", "unknown"))
-            skill_desc = skill.get("description", "")
-            from backend.services.prompt_generator import generate_public_skill
-            gen_result = await generate_public_skill(
-                title=skill_title,
-                description=skill_desc,
-                employee_role=result.get("role", ""),
-                owner_id=owner_id,
-            )
+    skills = result.get("skills", [])
+    # Reuse existing public skills when the model incorrectly marks them as new.
+    existing_by_slug: dict[str, dict] = {}
+    existing_by_title_key: dict[str, dict] = {}
+    for ps in public_skills:
+        slug_key = slugify(ps.get("slug", ""))
+        title_key = slugify(ps.get("title", ""))
+        if slug_key:
+            existing_by_slug[slug_key] = ps
+        if title_key:
+            existing_by_title_key[title_key] = ps
+
+    # Deduplicate new-skill generation by normalized skill key.
+    dedup_jobs: dict[str, dict] = {}
+    for index, skill in enumerate(skills):
+        if not skill.get("new"):
+            continue
+        skill_title = skill.get("skill_name", skill.get("title", "unknown"))
+        skill_desc = skill.get("description", "")
+        skill_key = slugify(skill_title)
+
+        existing = existing_by_slug.get(skill_key) or existing_by_title_key.get(skill_key)
+        if existing:
+            skill["skill_name"] = existing.get("slug", skill_title)
+            skill["title"] = existing.get("title", skill.get("title", skill_title))
+            skill.pop("new", None)
+            continue
+
+        if skill_key in dedup_jobs:
+            dedup_jobs[skill_key]["indices"].append(index)
+            continue
+        dedup_jobs[skill_key] = {
+            "title": skill_title,
+            "desc": skill_desc,
+            "indices": [index],
+        }
+
+    if dedup_jobs:
+        max_parallel = max(1, int(os.getenv("PROVISION_SKILL_GEN_PARALLELISM", "8")))
+        semaphore = asyncio.Semaphore(max_parallel)
+        employee_role = result.get("role", "")
+
+        async def _generate_skill(index: int, title: str, desc: str):
+            async with semaphore:
+                gen_result = await generate_public_skill(
+                    title=title,
+                    description=desc,
+                    employee_role=employee_role,
+                    owner_id=owner_id,
+                )
+            return index, title, desc, gen_result
+
+        generated_skills = await asyncio.gather(*(
+            _generate_skill(-1, job["title"], job["desc"])
+            for job in dedup_jobs.values()
+        ))
+
+        for job_key, (_idx, skill_title, skill_desc, gen_result) in zip(dedup_jobs.keys(), generated_skills):
             now = datetime.now()
             new_skill = PublicSkill(
                 id=generate_id("pskill"),
@@ -438,11 +492,11 @@ async def generate_prompt(req: GeneratePromptRequest, authorization: Optional[st
                 title=gen_result.get("title") or skill_title,
                 description=gen_result.get("description") or skill_desc,
                 category=gen_result.get("category") or skill.get("category", "research"),
-                employee_role=result.get("role", ""),
+                employee_role=employee_role,
                 suggested_tools=gen_result.get("suggested_tools", []) or [],
                 skill_markdown=gen_result.get("skill_markdown", "") or "",
                 notes=gen_result.get("notes", "") or "",
-                source_model=gen_result.get("model", "") or "",
+                source_model=f"provision:{gen_result.get('model', '') or ''}".rstrip(":"),
                 created_at=now,
                 updated_at=now,
             )
@@ -451,10 +505,12 @@ async def generate_prompt(req: GeneratePromptRequest, authorization: Optional[st
                 "slug": new_skill.slug,
                 "title": new_skill.title,
             })
-            # Update the skill in the result with the real slug
-            skill["skill_name"] = new_skill.slug
-            skill["title"] = new_skill.title
-            skill.pop("new", None)
+            # Update all duplicate references in the result with the same created skill.
+            for index in dedup_jobs[job_key]["indices"]:
+                skill = skills[index]
+                skill["skill_name"] = new_skill.slug
+                skill["title"] = new_skill.title
+                skill.pop("new", None)
 
     return {"success": True, **result, "new_skills_created": new_skills_created}
 

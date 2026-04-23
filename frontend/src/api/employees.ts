@@ -16,6 +16,7 @@ export interface EmployeeDetail {
   temperature: number;
   max_tokens: number;
   memory: string[];
+  tools?: string[];
   created_at: string;
   updated_at: string;
 }

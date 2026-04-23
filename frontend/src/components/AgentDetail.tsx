@@ -105,6 +105,27 @@ const markdownComponents = {
   ),
 };
 
+const TOOL_ICON_MAP: Array<{ match: RegExp; icon: string; alt: string }> = [
+  { match: /(gmail|googlemail)/i, icon: 'https://cdn.simpleicons.org/gmail/EA4333', alt: 'Gmail' },
+  { match: /(slack)/i, icon: '/slackicon.png', alt: 'Slack' },
+  { match: /(notion)/i, icon: 'https://cdn.simpleicons.org/notion/000000', alt: 'Notion' },
+  { match: /(google.?drive|drive)/i, icon: '/icons/google-drive.svg', alt: 'Google Drive' },
+  { match: /(calendar)/i, icon: 'https://cdn.simpleicons.org/googlecalendar/4285F4', alt: 'Calendar' },
+  { match: /(github)/i, icon: 'https://cdn.simpleicons.org/github/181717', alt: 'GitHub' },
+  { match: /(jira)/i, icon: 'https://cdn.simpleicons.org/jira/0052CC', alt: 'Jira' },
+  { match: /(linear)/i, icon: 'https://cdn.simpleicons.org/linear/5E6AD2', alt: 'Linear' },
+  { match: /(hubspot)/i, icon: 'https://cdn.simpleicons.org/hubspot/FF7A59', alt: 'HubSpot' },
+  { match: /(stripe)/i, icon: 'https://cdn.simpleicons.org/stripe/635BFF', alt: 'Stripe' },
+  { match: /(salesforce)/i, icon: 'https://cdn.simpleicons.org/salesforce/00A1E0', alt: 'Salesforce' },
+  { match: /(airtable)/i, icon: 'https://cdn.simpleicons.org/airtable/18BFFF', alt: 'Airtable' },
+];
+
+function toolIconFor(toolName: string): { icon?: string; label: string } {
+  const hit = TOOL_ICON_MAP.find((item) => item.match.test(toolName));
+  if (hit) return { icon: hit.icon, label: hit.alt };
+  return { label: toolName };
+}
+
 export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools = [], skills = [], tasks = [], activity = [], compactPreview = false }: AgentDetailProps) {
   const { statuses, busyIn } = useEmployeePresence([agent.id]);
   const livePresence = {
@@ -146,6 +167,16 @@ export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools =
     type
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const formatToolName = (raw: string) =>
+    (raw || '')
+      .replace(/Tool$/i, '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
 
   const describeActivity = (entry: EmployeeActivity) => {
     const linkedTask = entry.task_id ? taskById.get(entry.task_id) : null;
@@ -450,11 +481,25 @@ export function AgentDetail({ agent, onBack, onConfigure, onCoverUpdate, tools =
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground">Tools</h4>
                 <div className="flex flex-wrap gap-2">
-                  {tools.map((tool) => (
-                    <Badge key={tool.id} variant="outline" className="bg-card text-foreground border-border">
-                      {tool.tool_name}
-                    </Badge>
-                  ))}
+                  {tools.map((tool) => {
+                    const readable = formatToolName(tool.tool_name);
+                    const icon = toolIconFor(tool.tool_name);
+                    return (
+                      <Badge key={tool.id} variant="outline" className="bg-card text-foreground border-border gap-1.5">
+                        {icon.icon && (
+                          <img
+                            src={icon.icon}
+                            alt={icon.label}
+                            className="h-3.5 w-3.5"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        {readable}
+                      </Badge>
+                    );
+                  })}
                   {tools.length === 0 && (
                     <span className="text-sm text-muted-foreground">No tools attached</span>
                   )}

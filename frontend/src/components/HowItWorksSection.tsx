@@ -11,7 +11,7 @@ import {
   StepperTitle,
   StepperTrigger,
 } from "@/components/reui/stepper"
-import { CheckIcon, Mail, Code, Search, Database, Slack, Github, Calendar, Terminal, Bot, FileText, Settings, Layers } from 'lucide-react'
+import { CheckIcon, Mail, Code, Search, Database, Slack, Github, Calendar, Terminal, Bot, FileText, Settings, Layers, Play, RefreshCw } from 'lucide-react'
 import { motion, AnimatePresence, useScroll, useTransform } from "motion/react"
 import AI_Prompt from "./prompt-kit/AI_Prompt"
 import { cn } from '@/lib/utils';
@@ -130,6 +130,142 @@ const GraphNode = ({ label, sub, icon, iconBg, left, top, delay, status, color, 
   </motion.div>
 );
 
+const AgenticLoopViz = () => {
+  const [tick, setTick] = useState(0);
+  const [cycle, setCycle] = useState(1);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTick(t => {
+        if (t >= 99) { setCycle(c => (c % 12) + 1); return 0; }
+        return t + 1;
+      });
+    }, 45);
+    return () => clearInterval(id);
+  }, []);
+
+  const qBez = (t: number, x0: number, y0: number, cx: number, cy: number, x1: number, y1: number) => ({
+    x: (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cx + t * t * x1,
+    y: (1 - t) * (1 - t) * y0 + 2 * (1 - t) * t * cy + t * t * y1,
+  });
+
+  const t = tick / 100;
+  const fwd = qBez(t, 190, 108, 250, 28, 310, 108);
+  const bwd = qBez(t, 310, 152, 250, 232, 190, 152);
+
+  return (
+    <div className="flex flex-col items-center gap-6 w-full">
+      {/* Badge */}
+      <motion.div
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center gap-2 rounded-full border border-black/8 bg-white px-3.5 py-1.5 shadow-sm"
+      >
+        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+        <span className="text-[12px] font-medium text-zinc-600 tracking-wide uppercase">Agentic Loop</span>
+      </motion.div>
+
+      {/* Diagram */}
+      <div className="relative w-[500px] scale-[0.82] sm:scale-90 origin-center" style={{ height: 250 }}>
+        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
+          <defs>
+            <marker id="arrowFwd" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M 0 0 L 7 3.5 L 0 7 Z" fill="#18181b" opacity="0.5" />
+            </marker>
+            <marker id="arrowBwd" markerWidth="7" markerHeight="7" refX="1" refY="3.5" orient="auto">
+              <path d="M 7 0 L 0 3.5 L 7 7 Z" fill="#18181b" opacity="0.5" />
+            </marker>
+          </defs>
+          {/* Forward arc (top) */}
+          <motion.path
+            d="M 190 108 Q 250 28 310 108"
+            stroke="#18181b" strokeWidth="1.5" strokeDasharray="5 5" fill="none" opacity={0.25}
+            markerEnd="url(#arrowFwd)"
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+            transition={{ duration: 0.9, delay: 0.5 }}
+          />
+          {/* Backward arc (bottom) */}
+          <motion.path
+            d="M 310 152 Q 250 232 190 152"
+            stroke="#18181b" strokeWidth="1.5" strokeDasharray="5 5" fill="none" opacity={0.25}
+            markerEnd="url(#arrowBwd)"
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+            transition={{ duration: 0.9, delay: 0.8 }}
+          />
+          {/* Moving dots */}
+          <motion.circle cx={fwd.x} cy={fwd.y} r={5} fill="#18181b"
+            initial={{ opacity: 0 }} animate={{ opacity: 0.7 }}
+            transition={{ delay: 1.4 }}
+          />
+          <motion.circle cx={bwd.x} cy={bwd.y} r={5} fill="#18181b"
+            initial={{ opacity: 0 }} animate={{ opacity: 0.7 }}
+            transition={{ delay: 1.7 }}
+          />
+        </svg>
+
+        {/* Run Tasks card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.2 }}
+          className="absolute w-[170px] bg-white/90 backdrop-blur-xl border border-black/10 rounded-[26px] p-4 flex flex-col items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.08)]"
+          style={{ left: 20, top: 35 }}
+        >
+          <div className="w-11 h-11 rounded-[14px] bg-zinc-950 flex items-center justify-center mb-3 shrink-0">
+            <Play size={15} className="text-white ml-0.5" />
+          </div>
+          <h3 className="text-[13px] font-semibold text-zinc-950 mb-1">Run Tasks</h3>
+          <p className="text-[11px] text-zinc-400 text-center leading-[1.5]">Execute with tools, memory &amp; constraints</p>
+          <div className="flex items-center gap-1.5 mt-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="text-[11px] text-emerald-600 font-medium">Executing</span>
+          </div>
+        </motion.div>
+
+        {/* Review + Improve card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.38 }}
+          className="absolute w-[170px] bg-white/90 backdrop-blur-xl border border-black/10 rounded-[26px] p-4 flex flex-col items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.08)]"
+          style={{ right: 20, top: 35 }}
+        >
+          <div className="w-11 h-11 rounded-[14px] bg-zinc-900 flex items-center justify-center mb-3 shrink-0">
+            <RefreshCw size={15} className="text-white" />
+          </div>
+          <h3 className="text-[13px] font-semibold text-zinc-950 mb-1">Review + Improve</h3>
+          <p className="text-[11px] text-zinc-400 text-center leading-[1.5]">Refine behavior, update memory</p>
+          <div className="flex items-center gap-1.5 mt-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shrink-0" />
+            <span className="text-[11px] text-blue-600 font-medium">Refining</span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Stats row */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.4 }}
+        className="flex items-center gap-3"
+      >
+        {[
+          { label: 'Cycle', value: cycle },
+          { label: 'Tasks run', value: 12 },
+          { label: 'Pass rate', value: '94%', dot: true },
+        ].map(stat => (
+          <div key={stat.label} className="flex items-center gap-2 rounded-xl border border-black/5 bg-white px-3 py-2 shadow-sm">
+            {stat.dot && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />}
+            <span className="text-[12px] text-zinc-400">{stat.label}</span>
+            <span className="text-[13px] font-semibold text-zinc-900">{stat.value}</span>
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
 export function HowItWorksSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -185,51 +321,7 @@ export function HowItWorksSection() {
           </div>
         );
       case 4:
-        return (
-          <div className="mx-auto w-full max-w-[460px] border-2 border-zinc-900 bg-white p-4 font-mono text-zinc-900 shadow-[5px_5px_0_rgba(24,24,27,0.08)]">
-            <div className="border-2 border-dotted border-zinc-900 p-3">
-              <div className="mb-4 border border-zinc-900 bg-white p-3">
-                <div className="mx-auto mb-3 w-fit bg-white px-3 text-[12px] uppercase tracking-[0.18em]">
-                  Agentic Loop
-                </div>
-                <div className="border border-zinc-900 p-3">
-                  <div className="mb-2 text-[13px] uppercase tracking-[0.12em]">[ Run Tasks ]</div>
-                  <div className="text-[12px] leading-5 text-zinc-700">
-                    Execute real work with prompts,
-                    <br />
-                    tools, memory, and constraints.
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center py-1">
-                <div className="h-6 w-px bg-zinc-900" />
-                <div className="text-[18px] leading-none">▼</div>
-                <div className="h-6 w-px bg-zinc-900" />
-              </div>
-
-              <div className="border border-zinc-900 bg-white p-3">
-                <div className="mx-auto mb-3 w-fit bg-white px-3 text-[12px] uppercase tracking-[0.18em]">
-                  Learning Engine
-                </div>
-                <div className="border border-zinc-900 p-3">
-                  <div className="mb-2 text-[13px] uppercase tracking-[0.12em]">[ Review + Improve ]</div>
-                  <div className="text-[12px] leading-5 text-zinc-700">
-                    Detect failures, refine behavior,
-                    <br />
-                    update memory, then run again.
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t-2 border-dotted border-zinc-900 pt-3 text-[12px] leading-6">
-                <div>✓ Train by running the task in a loop</div>
-                <div>✓ The system improves every cycle</div>
-                <div>✓ Repeat until performance is reliable</div>
-              </div>
-            </div>
-          </div>
-        );
+        return <AgenticLoopViz />;
       case 5:
         return (
           <div className="relative w-[360px] h-[480px] scale-90 sm:scale-100 mx-auto">
@@ -321,7 +413,7 @@ export function HowItWorksSection() {
                 </Stepper>
             </div>
 
-            <div className="relative h-[580px] w-full rounded-[48px] border border-black/5 bg-zinc-50/50 p-8 flex items-center justify-center overflow-hidden">
+            <div className="relative h-[580px] w-full rounded-[48px] border border-black/5 bg-[#f5f5f4] p-8 flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
                 
                 <AnimatePresence mode="wait">

@@ -2,7 +2,7 @@
 
 import { ArrowRight, Bot, Check, ChevronDown, Paperclip } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Anthropic from "@/components/icons/anthropic";
 import AnthropicDark from "@/components/icons/anthropic-dark";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,22 @@ interface AIPromptProps {
   headerAction?: string;
   onSubmit?: (value: string, model: string) => void;
   className?: string;
+  inputMinHeight?: number;
+  showHeader?: boolean;
+  animatedLines?: Array<{
+    icon?: "gmail" | "slack" | "notion" | "jira" | "calendar";
+    text: string;
+    inlineBadge?: {
+      icon: "gmail" | "slack" | "notion" | "jira" | "calendar";
+      label: string;
+      position: number;
+    };
+    inlineBadges?: Array<{
+      icon: "gmail" | "slack" | "notion" | "jira" | "calendar";
+      label: string;
+      position: number;
+    }>;
+  }>;
 }
 
 const DEFAULT_MODELS = [
@@ -70,16 +86,21 @@ export default function AI_Prompt({
   headerAction = "Ship Now!",
   onSubmit,
   className,
+  inputMinHeight = 72,
+  showHeader = true,
+  animatedLines,
   value: controlledValue,
 }: AIPromptProps & { value?: string }) {
   const [internalValue, setInternalValue] = useState("");
   const value = controlledValue !== undefined ? controlledValue : internalValue;
   const setValue = controlledValue !== undefined ? () => {} : setInternalValue;
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 72,
+    minHeight: inputMinHeight,
     maxHeight: 300,
   });
   const [selectedModel, setSelectedModel] = useState(defaultModel);
+  const [animatedLineIndex, setAnimatedLineIndex] = useState(0);
+  const [animatedCharIndex, setAnimatedCharIndex] = useState(0);
 
   const MODEL_ICONS: Record<string, React.ReactNode> = {
     "GPT-5-mini": OPENAI_SVG,
@@ -150,28 +171,164 @@ export default function AI_Prompt({
     }
   };
 
+  useEffect(() => {
+    if (!animatedLines?.length || value.trim()) return;
+
+    const currentLine = animatedLines[animatedLineIndex];
+    if (!currentLine) return;
+
+    const isLineComplete = animatedCharIndex >= currentLine.text.length;
+
+    const timer = window.setTimeout(() => {
+      if (!isLineComplete) {
+        setAnimatedCharIndex((prev) => prev + 1);
+        return;
+      }
+
+      if (animatedLineIndex < animatedLines.length - 1) {
+        setAnimatedLineIndex((prev) => prev + 1);
+        setAnimatedCharIndex(0);
+        return;
+      }
+
+      setAnimatedLineIndex(0);
+      setAnimatedCharIndex(0);
+    }, isLineComplete ? 1200 : 26);
+
+    return () => window.clearTimeout(timer);
+  }, [animatedCharIndex, animatedLineIndex, animatedLines, value]);
+
+  useEffect(() => {
+    setAnimatedLineIndex(0);
+    setAnimatedCharIndex(0);
+  }, [animatedLines]);
+
+  const iconForLine = (icon?: "gmail" | "slack" | "notion" | "jira" | "calendar") => {
+    if (icon === "gmail") {
+      return (
+        <img
+          src="https://cdn.simpleicons.org/gmail/EA4333"
+          alt="Gmail"
+          className="h-3.5 w-3.5 rounded-full object-contain"
+        />
+      );
+    }
+    if (icon === "slack") {
+      return <img src="/slackicon.png" alt="Slack" className="h-3.5 w-3.5 rounded-full object-contain" />;
+    }
+    if (icon === "notion") {
+      return (
+        <img
+          src="https://cdn.simpleicons.org/notion/000000"
+          alt="Notion"
+          className="h-3.5 w-3.5 rounded-full object-contain"
+        />
+      );
+    }
+    if (icon === "jira") {
+      return (
+        <img
+          src="https://cdn.simpleicons.org/jira/0052CC"
+          alt="Jira"
+          className="h-3.5 w-3.5 rounded-full object-contain"
+        />
+      );
+    }
+    if (icon === "calendar") {
+      return (
+        <img
+          src="https://cdn.simpleicons.org/googlecalendar/4285F4"
+          alt="Calendar"
+          className="h-3.5 w-3.5 rounded-full object-contain"
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <div className={cn("w-full py-4", className)}>
       <div className="rounded-2xl bg-white p-1.5 pt-4 dark:bg-white/5 shadow-sm border border-black/5">
-        <div className="mx-2 mb-2.5 flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2">
-            <Anthropic className="h-3.5 w-3.5 text-black dark:hidden" />
-            <AnthropicDark className="hidden h-3.5 w-3.5 dark:block" />
-            <h3 className="text-black text-xs tracking-tighter dark:text-white/90">
-              {headerText}
-            </h3>
+        {showHeader && (
+          <div className="mx-2 mb-2.5 flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-2">
+              <Anthropic className="h-3.5 w-3.5 text-black dark:hidden" />
+              <AnthropicDark className="hidden h-3.5 w-3.5 dark:block" />
+              <h3 className="text-black text-xs tracking-tighter dark:text-white/90">
+                {headerText}
+              </h3>
+            </div>
+            <p className="text-black text-xs tracking-tighter dark:text-white/90">
+              {headerAction}
+            </p>
           </div>
-          <p className="text-black text-xs tracking-tighter dark:text-white/90">
-            {headerAction}
-          </p>
-        </div>
+        )}
         <div className="relative">
           <div className="relative flex flex-col">
             <div className="overflow-y-auto" style={{ maxHeight: "400px" }}>
+              {animatedLines?.length && !value.trim() && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-10 rounded-xl rounded-b-none bg-zinc-50 px-4 py-3 dark:bg-white/5">
+                  <div className="space-y-2 text-[13px] leading-5 text-black/80 dark:text-white/80">
+                    {animatedLines.map((line, index) => {
+                      let displayText = "";
+                      if (index < animatedLineIndex) {
+                        displayText = line.text;
+                      } else if (index === animatedLineIndex) {
+                        displayText = line.text.slice(0, animatedCharIndex);
+                      }
+
+                      const normalizedBadges = (
+                        line.inlineBadges ||
+                        (line.inlineBadge ? [line.inlineBadge] : [])
+                      )
+                        .filter((badge) => badge.position >= 0 && badge.position <= line.text.length)
+                        .sort((a, b) => a.position - b.position);
+
+                      const visibleBadges = normalizedBadges.filter(
+                        (badge) => displayText.length >= badge.position
+                      );
+
+                      let cursor = 0;
+                      const parts: React.ReactNode[] = [];
+                      visibleBadges.forEach((badge, badgeIndex) => {
+                        const segment = displayText.slice(cursor, badge.position);
+                        if (segment) {
+                          parts.push(
+                            <span key={`seg-${index}-${badgeIndex}-${cursor}`}>{segment}</span>
+                          );
+                        }
+
+                        parts.push(
+                          <span
+                            key={`badge-${index}-${badgeIndex}-${badge.position}`}
+                            className="mx-1.5 inline-flex items-center gap-1 rounded-md border border-black/10 bg-white px-1.5 py-0.5 align-middle text-[11px] font-medium text-black/80 shadow-sm"
+                          >
+                            {iconForLine(badge.icon)}
+                            {badge.label}
+                          </span>
+                        );
+
+                        cursor = badge.position;
+                      });
+
+                      const tail = displayText.slice(cursor);
+                      if (tail) {
+                        parts.push(<span key={`tail-${index}`}>{tail}</span>);
+                      }
+
+                      return (
+                        <div key={`${line.icon || "line"}-${index}`} className="leading-5">
+                          {parts.length ? parts : <span>{displayText}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <Textarea
                 className={cn(
                   "w-full resize-none rounded-xl rounded-b-none border-none bg-zinc-50 px-4 py-3 placeholder:text-black/70 focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-white/5 dark:text-white dark:placeholder:text-white/70",
-                  "min-h-[72px]"
+                  "min-h-[64px]"
                 )}
                 id="ai-input-15"
                 onChange={(e) => {
@@ -182,6 +339,7 @@ export default function AI_Prompt({
                 placeholder={placeholder}
                 ref={textareaRef}
                 value={value}
+                style={{ minHeight: `${inputMinHeight}px` }}
               />
             </div>
 

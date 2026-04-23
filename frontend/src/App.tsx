@@ -24,7 +24,8 @@ import { TeamsPage } from './components/pages/TeamsPage';
 import { ScheduledWorkflowsPage } from './components/pages/ScheduledWorkflowsPage';
 import { AgentFilesPage } from './components/pages/AgentFilesPage';
 import { AgentsPage } from './components/pages/AgentsPage';
-// import { AgentWorkspacePage } from './components/pages/AgentWorkspacePage';
+import { AgentProfilePage } from './components/pages/AgentProfilePage';
+import { AgentWorkspacePage } from './components/pages/AgentWorkspacePage';
 import { SkillLibraryPage } from './components/pages/SkillLibraryPage';
 import { OnboardingPage } from './components/OnboardingPage';
 import { getOnboardingStatus } from '@/src/api/onboarding';
@@ -32,12 +33,12 @@ import { getOnboardingStatus } from '@/src/api/onboarding';
 function AuthenticatedShell() {
   const location = useLocation();
   const [isAIOpen, setIsAIOpen] = useState(false);
-
-  const showKatyToggle = location.pathname !== '/chat';
+  const showKatyToggle = false;
+  const showPrimarySidebar = !/^\/agents\/[^/]+\/workspace$/.test(location.pathname);
 
   return (
     <div className="flex h-screen bg-background text-foreground antialiased overflow-hidden">
-      <Sidebar />
+      {showPrimarySidebar && <Sidebar />}
 
       <div className="flex-1 flex overflow-hidden relative">
         <motion.main
@@ -84,7 +85,8 @@ function AuthenticatedShell() {
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/scheduled-workflows" element={<Navigate to="/workflows" replace />} />
             <Route path="/workflows" element={<ScheduledWorkflowsPage />} />
-            {/* <Route path="/agent" element={<AgentWorkspacePage />} /> */}
+            <Route path="/agents/:agentId" element={<AgentProfilePage />} />
+            <Route path="/agents/:agentId/workspace" element={<AgentWorkspacePage />} />
             <Route path="/agent-files" element={<AgentFilesPage />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/skill-library" element={<SkillLibraryPage />} />

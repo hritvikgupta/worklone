@@ -3,11 +3,23 @@ import asyncio
 import httpx
 from pathlib import Path
 
-# Configuration
-SIM_BASE_DIR = Path("/Users/hritvik/Downloads/ceo-agent/.reference/sim/apps/sim")
+# Configuration (path-robust)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SIM_BASE_DIR = Path(
+    os.getenv("SIM_BASE_DIR", str(REPO_ROOT / ".reference/sim/apps/sim"))
+).resolve()
 TOOLS_SCHEMA_DIR = SIM_BASE_DIR / "tools"
 TOOLS_API_DIR = SIM_BASE_DIR / "app/api/tools"
-OUTPUT_DIR = Path("/Users/hritvik/Downloads/ceo-agent/backend/core/tools/integration_tools_v2")
+
+_output_override = os.getenv("TOOL_MIGRATION_OUTPUT_DIR")
+if _output_override:
+    OUTPUT_DIR = Path(_output_override).resolve()
+else:
+    _output_candidates = [
+        REPO_ROOT / "backend/core/tools/integration_tools_v2",
+        REPO_ROOT / "backend/core/tools/integration_tools",
+    ]
+    OUTPUT_DIR = next((p for p in _output_candidates if p.exists()), _output_candidates[0]).resolve()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 MODEL = "x-ai/grok-4.1-fast"
@@ -255,11 +267,63 @@ class ToolMigrationAgent:
         print("\n🎉 Migration process complete.")
 
 if __name__ == "__main__":
-    # You can restrict it to specific providers for testing, e.g., ["gmail", "notion"]
-    # Pass an empty list to crawl ALL tools.
-    major_providers = [
-        "salesforce", "linear", "slack", "hubspot", 
-        "stripe", "github", "jira", "google_drive"
+    # Target app providers from Gumloop list shared by user (normalized to SIM IDs).
+    gumloop_target_providers = [
+        "airtable",
+        "apollo",
+        "asana",
+        "ashby",
+        "calcom",
+        "confluence",
+        "databricks",
+        "datadog",
+        "dropbox",
+        "exa",
+        "firecrawl",
+        "gong",
+        "google_ads",
+        "google_bigquery",
+        "google_docs",
+        "google_meet",
+        "google_slides",
+        "incidentio",
+        "intercom",
+        "loops",
+        "microsoft_excel",
+        "microsoft_teams",
+        "outlook",
+        "pagerduty",
+        "pipedrive",
+        "reddit",
+        "reducto",
+        "shopify",
+        "trello",
+        "x",
+        "youtube",
+        "zendesk",
+        "zoom",
     ]
-    agent = ToolMigrationAgent(provider_filter=major_providers, skip_providers=["gmail", "notion"])
+
+    if not TOOLS_SCHEMA_DIR.exists():
+        print(f"🚨 ERROR: Tools schema directory not found: {TOOLS_SCHEMA_DIR}")
+        raise SystemExit(1)
+
+    available_sim = {d.name for d in TOOLS_SCHEMA_DIR.iterdir() if d.is_dir()}
+    existing_out = {d.name for d in OUTPUT_DIR.iterdir() if d.is_dir()} if OUTPUT_DIR.exists() else set()
+
+    provider_filter = sorted(
+        p for p in gumloop_target_providers if p in available_sim and p not in existing_out
+    )
+
+    print(f"SIM base dir: {SIM_BASE_DIR}")
+    print(f"Output dir: {OUTPUT_DIR}")
+    print(f"Target providers from Gumloop list: {len(gumloop_target_providers)}")
+    print(f"Already present in output: {len([p for p in gumloop_target_providers if p in existing_out])}")
+    print(f"Missing to migrate now: {len(provider_filter)}")
+    if provider_filter:
+        print("Will migrate:", ", ".join(provider_filter))
+    else:
+        print("Nothing to migrate from target list.")
+
+    agent = ToolMigrationAgent(provider_filter=provider_filter, skip_providers=[])
     asyncio.run(agent.run())

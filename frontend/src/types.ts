@@ -11,6 +11,7 @@ export interface Agent {
   systemPrompt: string;
   currentTask?: string;
   skills: string[];
+  tools?: string[];
   model: string;
 }
 

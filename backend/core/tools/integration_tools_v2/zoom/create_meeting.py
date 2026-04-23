@@ -1,0 +1,163 @@
+from typing import Any, Dict
+import httpx
+from urllib.parse import quote
+from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
+from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
+
+class ZoomCreateMeetingTool(BaseTool):
+    name = "zoom_create_meeting"
+    description = "Create a new Zoom meeting"
+    category = "integration"
+
+    @staticmethod
+    def _is_placeholder_token(value: str) -> bool:
+        normalized = (value or "").strip().lower()
+        return not normalized or normalized.startswith("your-") or "replace-me" in normalized or normalized == "ya29...."
+
+    def get_required_credentials(self) -> list[CredentialRequirement]:
+        return [
+            CredentialRequirement(
+                key="zoom_access_token",
+                description="Access token",
+                env_var="ZOOM_ACCESS_TOKEN",
+                required=True,
+                auth_type="oauth",
+            )
+        ]
+
+    async def _resolve_access_token(self, context: dict | None) -> str:
+        connection = await resolve_oauth_connection(
+            "zoom",
+            context=context,
+            context_token_keys=("zoom_access_token",),
+            env_token_keys=("ZOOM_ACCESS_TOKEN",),
+            placeholder_predicate=self._is_placeholder_token,
+            allow_refresh=True,
+        )
+        return connection.access_token
+
+    def get_schema(self) -> dict:
+        return {
+            "type": "object",
+            "properties": {
+                "userId": {
+                    "type": "string",
+                    "description": 'The user ID or email address (e.g., "me", "user@example.com", or "AbcDefGHi"). Use "me" for the authenticated user.',
+                },
+                "topic": {
+                    "type": "string",
+                    "description": 'Meeting topic (e.g., "Weekly Team Standup" or "Project Review")',
+                },
+                "type": {
+                    "type": "number",
+                    "description": "Meeting type: 1=instant, 2=scheduled, 3=recurring no fixed time, 8=recurring fixed time",
+                },
+                "startTime": {
+                    "type": "string",
+                    "description": "Meeting start time in ISO 8601 format (e.g., 2025-06-03T10:00:00Z)",
+                },
+                "duration": {
+                    "type": "number",
+                    "description": "Meeting duration in minutes (e.g., 30, 60, 90)",
+                },
+                "timezone": {
+                    "type": "string",
+                    "description": "Timezone for the meeting (e.g., America/Los_Angeles)",
+                },
+                "password": {
+                    "type": "string",
+                    "description": "Meeting password",
+                },
+                "agenda": {
+                    "type": "string",
+                    "description": "Meeting agenda or description text",
+                },
+                "hostVideo": {
+                    "type": "boolean",
+                    "description": "Start with host video on",
+                },
+                "participantVideo": {
+                    "type": "boolean",
+                    "description": "Start with participant video on",
+                },
+                "joinBeforeHost": {
+                    "type": "boolean",
+                    "description": "Allow participants to join before host",
+                },
+                "muteUponEntry": {
+                    "type": "boolean",
+                    "description": "Mute participants upon entry",
+                },
+                "waitingRoom": {
+                    "type": "boolean",
+                    "description": "Enable waiting room",
+                },
+                "autoRecording": {
+                    "type": "string",
+                    "description": "Auto recording setting: local, cloud, or none",
+                },
+            },
+            "required": ["userId", "topic"],
+        }
+
+    async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        access_token = await self._resolve_access_token(context)
+        
+        if self._is_placeholder_token(access_token):
+            return ToolResult(success=False, output="", error="Access token not configured.")
+        
+        topic = parameters.get("topic")
+        if not topic or not topic.strip():
+            return ToolResult(success=False, output="", error="Topic is required to create a Zoom meeting")
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+        
+        user_id = parameters["userId"]
+        url = f"https://api.zoom.us/v2/users/{quote(user_id)}/meetings"
+        
+        body: Dict[str, Any] = {
+            "topic": topic,
+            "type": parameters.get("type", 2),
+        }
+        if parameters.get("startTime"):
+            body["start_time"] = parameters["startTime"]
+        if parameters.get("duration") is not None:
+            body["duration"] = parameters["duration"]
+        if parameters.get("timezone"):
+            body["timezone"] = parameters["timezone"]
+        if parameters.get("password"):
+            body["password"] = parameters["password"]
+        if parameters.get("agenda"):
+            body["agenda"] = parameters["agenda"]
+        
+        settings: Dict[str, Any] = {}
+        if parameters.get("hostVideo") is not None:
+            settings["host_video"] = parameters["hostVideo"]
+        if parameters.get("participantVideo") is not None:
+            settings["participant_video"] = parameters["participantVideo"]
+        if parameters.get("joinBeforeHost") is not None:
+            settings["join_before_host"] = parameters["joinBeforeHost"]
+        if parameters.get("muteUponEntry") is not None:
+            settings["mute_upon_entry"] = parameters["muteUponEntry"]
+        if parameters.get("waitingRoom") is not None:
+            settings["waiting_room"] = parameters["waitingRoom"]
+        if parameters.get("autoRecording"):
+            settings["auto_recording"] = parameters["autoRecording"]
+        
+        if settings:
+            body["settings"] = settings
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, headers=headers, json=body)
+                
+                if response.status_code in [200, 201, 204]:
+                    return ToolResult(success=True, output=response.text, data=response.json())
+                else:
+                    return ToolResult(success=False, output="", error=response.text)
+                    
+        except Exception as e:
+            return ToolResult(success=False, output="", error=f"API error: {str(e)}")

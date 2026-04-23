@@ -126,6 +126,28 @@ export function mapMarkdownNodesToFileItems(nodes: MarkdownTreeNode[]): FileItem
 }
 
 const SKILL_CATEGORIES = ['research', 'coding', 'devops', 'analytics', 'communication', 'product', 'design', 'sales', 'finance'];
+const AVATAR_URL_OPTIONS = [
+  '/employees/men_1.png',
+  '/employees/men_2.png',
+  '/employees/men_3.png',
+  '/employees/men_4.png',
+  '/employees/men_5.png',
+  '/employees/men_6.png',
+  '/employees/men_7.png',
+  '/employees/women_1.png',
+  '/employees/women_2.png',
+  '/employees/women_3.png',
+  '/employees/women_4.png',
+  '/employees/women_5.png',
+  '/employees/women_6.png',
+  '/employees/women_7.png',
+  '/employees/women_8.png',
+];
+
+function avatarLabel(url: string): string {
+  const base = url.split('/').pop() || url;
+  return base.replace(/\.[^.]+$/, '').replace(/_/g, ' ');
+}
 
 const emptyForm: EmployeeFormData = {
   name: '',
@@ -151,6 +173,8 @@ export function EmployeeConfigPanel({
   isSaving,
 }: EmployeeConfigPanelProps) {
   const [form, setForm] = useState<EmployeeFormData>(emptyForm);
+  const [savedSignature, setSavedSignature] = useState<string | null>(null);
+  const [showSavedHint, setShowSavedHint] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'tools' | 'skills'>('profile');
   const [newSkill, setNewSkill] = useState({ skill_name: '', category: 'research', description: '' });
   const [availableTools, setAvailableTools] = useState<AvailableTool[]>([]);
@@ -167,6 +191,7 @@ export function EmployeeConfigPanel({
   const [selectedSkillSlug, setSelectedSkillSlug] = useState<string | null>(null);
   const [selectedSkillDetail, setSelectedSkillDetail] = useState<PublicSkillDetail | null>(null);
   const [toolSearch, setToolSearch] = useState('');
+  const [publicSkillSearch, setPublicSkillSearch] = useState('');
   const [agentFiles, setAgentFiles] = useState<FileItem[]>([]);
 
   useEffect(() => {
@@ -271,6 +296,13 @@ export function EmployeeConfigPanel({
     }
   }, [employee, open]);
 
+  useEffect(() => {
+    if (!open) {
+      setSavedSignature(null);
+      setShowSavedHint(false);
+    }
+  }, [open]);
+
   // Reload models when provider changes
   useEffect(() => {
     if (open) {
@@ -324,6 +356,8 @@ export function EmployeeConfigPanel({
   const modelOptions = !form.model || availableModels.some((model) => model.id === form.model)
     ? availableModels
     : [{ id: form.model, name: form.model, description: 'Currently selected model', context_length: 0 }, ...availableModels];
+  const selectedAvatarValue = AVATAR_URL_OPTIONS.includes(form.avatar_url) ? form.avatar_url : '';
+  const isSaved = savedSignature !== null && savedSignature === JSON.stringify(form);
 
   return (
     <AnimatePresence>
@@ -410,13 +444,31 @@ export function EmployeeConfigPanel({
 
                     <div className="space-y-2">
                       <Label className="text-sm font-medium text-muted-foreground">Avatar URL</Label>
-                      <input
-                        type="text"
-                        value={form.avatar_url}
-                        onChange={(e) => updateField('avatar_url', e.target.value)}
-                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring h-11 shadow-sm"
-                        placeholder="https://..."
-                      />
+                      <Select
+                        value={selectedAvatarValue}
+                        onValueChange={(value) => updateField('avatar_url', value)}
+                      >
+                        <SelectTrigger className="h-11 bg-background">
+                          {form.avatar_url ? (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <img src={form.avatar_url} alt="Selected avatar" className="h-6 w-6 rounded-full object-cover border border-border" />
+                              <span className="truncate">{avatarLabel(form.avatar_url)}</span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder="Select an avatar..." />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AVATAR_URL_OPTIONS.map((url) => (
+                            <SelectItem key={url} value={url}>
+                              <div className="flex items-center gap-2">
+                                <img src={url} alt={avatarLabel(url)} className="h-6 w-6 rounded-full object-cover border border-border" />
+                                <span>{avatarLabel(url)}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
@@ -594,42 +646,84 @@ export function EmployeeConfigPanel({
                           <>
                             <div className="space-y-2">
                               <Label className="text-xs font-medium text-muted-foreground">Select a public skill</Label>
-                              <Select
-                                value={newSkill.skill_name}
-                                onValueChange={(value) => {
-                                  const skill = publicSkills.find((s) => s.slug === value);
-                                  if (skill) setNewSkill({ skill_name: skill.slug, category: skill.category, description: skill.description });
-                                }}
-                              >
-                                <SelectTrigger className="h-10 bg-background">
-                                  <SelectValue placeholder="Select a public skill..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {publicSkills.filter((s) => !form.skills.some((fs) => fs.skill_name === s.slug)).map((s) => (
-                                    <SelectItem key={s.slug} value={s.slug}>
-                                      <div className="flex flex-col gap-0.5">
-                                        <span className="font-medium">{s.title}</span>
-                                        <span className="text-[10px] text-muted-foreground uppercase">{s.category}</span>
+                              <div className="flex items-center gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <Select
+                                    value={newSkill.skill_name}
+                                    onValueChange={(value) => {
+                                      const skill = publicSkills.find((s) => s.slug === value);
+                                      if (skill) setNewSkill({ skill_name: skill.slug, category: skill.category, description: skill.description });
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-10 w-full bg-background">
+                                      <SelectValue placeholder="Select a public skill..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <div className="sticky top-0 z-10 border-b border-border bg-popover p-2">
+                                        <div className="relative">
+                                          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                                          <input
+                                            type="text"
+                                            value={publicSkillSearch}
+                                            onChange={(e) => setPublicSkillSearch(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              e.stopPropagation();
+                                            }}
+                                            placeholder="Search public skills..."
+                                            className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-2 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+                                          />
+                                        </div>
                                       </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                      {publicSkills
+                                        .filter((s) => !form.skills.some((fs) => fs.skill_name === s.slug))
+                                        .filter((s) => {
+                                          const q = publicSkillSearch.trim().toLowerCase();
+                                          if (!q) return true;
+                                          return (
+                                            s.title.toLowerCase().includes(q) ||
+                                            s.category.toLowerCase().includes(q) ||
+                                            s.description.toLowerCase().includes(q)
+                                          );
+                                        })
+                                        .map((s) => (
+                                          <SelectItem key={s.slug} value={s.slug}>
+                                            {s.title}
+                                          </SelectItem>
+                                        ))}
+                                      {publicSkills
+                                        .filter((s) => !form.skills.some((fs) => fs.skill_name === s.slug))
+                                        .filter((s) => {
+                                          const q = publicSkillSearch.trim().toLowerCase();
+                                          if (!q) return true;
+                                          return (
+                                            s.title.toLowerCase().includes(q) ||
+                                            s.category.toLowerCase().includes(q) ||
+                                            s.description.toLowerCase().includes(q)
+                                          );
+                                        }).length === 0 && (
+                                        <div className="px-3 py-2 text-xs text-muted-foreground">
+                                          No matching skills found
+                                        </div>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={addSkill}
+                                  disabled={!newSkill.skill_name.trim()}
+                                  className="h-10 shrink-0 gap-1.5 px-3.5"
+                                >
+                                  <Plus className="h-3.5 w-3.5" />
+                                  Attach to Employee
+                                </Button>
+                              </div>
                             </div>
                             {newSkill.skill_name && (
                               <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground leading-relaxed italic">
                                 {newSkill.description}
                               </div>
                             )}
-                            <Button 
-                              size="sm" 
-                              onClick={addSkill} 
-                              disabled={!newSkill.skill_name.trim()} 
-                              className="w-full h-9 gap-2"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Attach to Employee
-                            </Button>
                           </>
                         )}
                       </CardContent>
@@ -740,18 +834,31 @@ export function EmployeeConfigPanel({
 
             {/* Footer */}
             <div className="p-4 border-t border-border bg-background flex items-center justify-end gap-3 shadow-[0_-4px_10px_-5px_rgba(0,0,0,0.05)]">
+              {showSavedHint && (
+                <span className="mr-auto text-xs font-medium text-emerald-600">Saved</span>
+              )}
               <Button variant="outline" onClick={onClose} disabled={isSaving}>
                 Cancel
               </Button>
               <Button
-                onClick={() => onSave(form)}
-                disabled={isSaving || !form.name.trim()}
+                onClick={async () => {
+                  await onSave(form);
+                  setSavedSignature(JSON.stringify(form));
+                  setShowSavedHint(true);
+                  window.setTimeout(() => setShowSavedHint(false), 2500);
+                }}
+                disabled={isSaving || !form.name.trim() || isSaved}
                 className="gap-2 px-6"
               >
                 {isSaving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Saving...
+                  </>
+                ) : isSaved ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Saved
                   </>
                 ) : (
                   <>
