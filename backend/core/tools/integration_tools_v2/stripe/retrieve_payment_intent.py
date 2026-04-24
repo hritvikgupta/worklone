@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class StripeRetrievePaymentIntentTool(BaseTool):
-    name = "Stripe Retrieve Payment Intent"
+    name = "stripe_retrieve_payment_intent"
     description = "Retrieve an existing Payment Intent by ID"
     category = "integration"
 

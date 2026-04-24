@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection
 
 class ShopifyCreateCustomerTool(BaseTool):
-    name = "Shopify Create Customer"
+    name = "shopify_create_customer"
     description = "Create a new customer in your Shopify store"
     category = "integration"
 

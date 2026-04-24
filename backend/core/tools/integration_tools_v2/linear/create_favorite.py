@@ -6,7 +6,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class LinearCreateFavoriteTool(BaseTool):
-    name = "Linear Create Favorite"
+    name = "linear_create_favorite"
     description = "Bookmark an issue, project, cycle, or label in Linear"
     category = "integration"
 

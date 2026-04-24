@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GitLabUpdateMergeRequestTool(BaseTool):
-    name = "GitLab Update Merge Request"
+    name = "gitlab_update_merge_request"
     description = "Update an existing merge request in a GitLab project"
     category = "integration"
 

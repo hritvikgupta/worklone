@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class SixtyfourFindPhoneTool(BaseTool):
-    name = "Sixtyfour Find Phone"
+    name = "sixtyfour_find_phone"
     description = "Find phone numbers for a lead using Sixtyfour AI."
     category = "integration"
 

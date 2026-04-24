@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class VercelUpdateEdgeConfigItemsTool(BaseTool):
-    name = "Vercel Update Edge Config Items"
+    name = "vercel_update_edge_config_items"
     description = "Create, update, upsert, or delete items in an Edge Config store"
     category = "integration"
 

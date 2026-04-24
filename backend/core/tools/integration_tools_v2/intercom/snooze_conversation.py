@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomSnoozeConversationTool(BaseTool):
-    name = "Snooze Conversation in Intercom"
+    name = "snooze_conversation_in_intercom"
     description = "Snooze a conversation to reopen at a future time"
     category = "integration"
 

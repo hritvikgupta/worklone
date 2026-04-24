@@ -9,7 +9,7 @@ from typing import Optional, Dict, Any
 from backend.core.config import get_settings
 from backend.db.stores.auth_store import AuthDB
 from backend.db.stores.workflow_store import WorkflowStore
-from backend.lib.oauth.providers import OAUTH_PROVIDERS
+from backend.lib.oauth.providers import OAUTH_PROVIDERS, API_KEY_PROVIDERS
 
 HIDDEN_AVAILABLE_PROVIDERS = {"salesforce"}
 
@@ -115,15 +115,15 @@ class AuthService:
         Resolve provider-specific env vars with compatibility fallbacks.
         Primary: PROVIDER_<NAME>_<SUFFIX>
         Fallback: <NAME>_<SUFFIX>
-        Google Drive and Calendar share credentials with the base Google provider.
+        Google family integrations share credentials with the base Google provider.
         """
         provider_upper = provider.upper()
         candidates = [
             f"PROVIDER_{provider_upper}_{suffix}",
             f"{provider_upper}_{suffix}",
         ]
-        # Google Drive and Calendar use the same OAuth app as Gmail
-        if provider_upper in ("GOOGLE_DRIVE", "GOOGLE_CALENDAR"):
+        # Google family tools use the same OAuth app as Gmail.
+        if provider_upper in ("GOOGLE_EMAIL", "GMAIL", "GOOGLE_DRIVE", "GOOGLE_CALENDAR"):
             candidates += [f"PROVIDER_GOOGLE_{suffix}", f"GOOGLE_{suffix}"]
         for key in candidates:
             value = os.getenv(key, "").strip()
@@ -134,7 +134,7 @@ class AuthService:
     @staticmethod
     def _provider_credential_namespace(provider: str) -> str:
         normalized = provider.strip().lower().replace("-", "_")
-        if normalized in {"google_calendar", "google_drive"}:
+        if normalized in {"google_email", "gmail", "google_calendar", "google_drive"}:
             return "google"
         return normalized
 
@@ -448,18 +448,46 @@ class AuthService:
             provider_list.append({
                 "id": key,
                 "name": config["name"],
-                "icon": config["icon"],
+                "icon": config.get("icon", ""),
                 "connected": has_token,
                 "connected_at": integration.get("connected_at") if has_token else None,
                 "provider_email": integration.get("provider_email") if has_token else None,
                 "client_credentials_required": deployment_mode == "self_hosted",
                 "has_client_credentials": has_client_credentials,
+                "auth_type": "oauth",
+            })
+
+        # Include API key providers
+        for key, config in API_KEY_PROVIDERS.items():
+            first_field_key = config["fields"][0]["key"] if config["fields"] else ""
+            cred_value = self.workflow_store.get_credential(user_id, f"integration_apikey_{key}_{first_field_key}") if first_field_key else None
+            connected = bool(cred_value and cred_value.strip())
+            provider_list.append({
+                "id": key,
+                "name": config["name"],
+                "icon": config.get("icon", ""),
+                "connected": connected,
+                "connected_at": None,
+                "provider_email": None,
+                "client_credentials_required": False,
+                "has_client_credentials": False,
+                "auth_type": "api_key",
+                "fields": config["fields"],
             })
 
         return {"integrations": provider_list, "deployment_mode": deployment_mode}
 
     def disconnect_integration(self, user_id: str, provider: str) -> Dict[str, Any]:
-        """Disconnect an integration"""
+        """Disconnect an integration (OAuth or API key)"""
+        if provider in API_KEY_PROVIDERS:
+            config = API_KEY_PROVIDERS[provider]
+            for field in config.get("fields", []):
+                try:
+                    self.workflow_store.delete_credential(user_id, f"integration_apikey_{provider}_{field['key']}")
+                except Exception:
+                    pass
+            return {"success": True, "message": f"{config['name']} disconnected"}
+
         provider_config = OAUTH_PROVIDERS.get(provider)
         if not provider_config:
             return {"success": False, "error": "Unknown provider"}
@@ -469,3 +497,28 @@ class AuthService:
             "success": True,
             "message": f"{provider_config['name']} disconnected"
         }
+
+    def save_provider_api_keys(self, user_id: str, provider: str, fields: Dict[str, str]) -> Dict[str, Any]:
+        """Save API key fields for an API-key-based provider."""
+        if provider not in API_KEY_PROVIDERS:
+            return {"success": False, "error": "Unknown API key provider"}
+        config = API_KEY_PROVIDERS[provider]
+        for field in config.get("fields", []):
+            value = fields.get(field["key"], "").strip()
+            if field.get("required") and not value:
+                return {"success": False, "error": f"Field '{field['label']}' is required"}
+            if value:
+                self.workflow_store.set_credential(user_id, f"integration_apikey_{provider}_{field['key']}", value, field["label"])
+        return {"success": True}
+
+    def get_provider_api_keys(self, user_id: str, provider: str) -> Dict[str, str]:
+        """Return saved API key fields for a provider (for tool context injection)."""
+        if provider not in API_KEY_PROVIDERS:
+            return {}
+        config = API_KEY_PROVIDERS[provider]
+        result = {}
+        for field in config.get("fields", []):
+            val = self.workflow_store.get_credential(user_id, f"integration_apikey_{provider}_{field['key']}")
+            if val:
+                result[field["key"]] = val
+        return result

@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class CalcomCreateEventTypeTool(BaseTool):
-    name = "Cal.com Create Event Type"
+    name = "cal_com_create_event_type"
     description = "Create a new event type in Cal.com"
     category = "integration"
 

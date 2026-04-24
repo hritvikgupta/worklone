@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection
 
 class AgentmailCreateInboxTool(BaseTool):
-    name = "Create Inbox"
+    name = "create_inbox"
     description = "Create a new email inbox with AgentMail"
     category = "integration"
 

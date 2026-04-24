@@ -3,7 +3,7 @@ from redis.asyncio import Redis
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class RedisExpireTool(BaseTool):
-    name = "Redis EXPIRE"
+    name = "redis_expire"
     description = "Set an expiration time (in seconds) on a key in Redis."
     category = "integration"
 

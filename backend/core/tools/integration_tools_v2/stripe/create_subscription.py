@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class StripeCreateSubscriptionTool(BaseTool):
-    name = "Stripe Create Subscription"
+    name = "stripe_create_subscription"
     description = "Create a new subscription for a customer"
     category = "integration"
 

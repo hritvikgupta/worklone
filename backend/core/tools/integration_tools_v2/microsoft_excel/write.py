@@ -28,8 +28,7 @@ class MicrosoftExcelWriteTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "microsoft",
+        connection = await resolve_oauth_connection("microsoft_excel",
             context=context,
             context_token_keys=("provider_token",),
             env_token_keys=("MICROSOFT_EXCEL_ACCESS_TOKEN",),

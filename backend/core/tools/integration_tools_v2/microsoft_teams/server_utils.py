@@ -28,11 +28,10 @@ class MicrosoftTeamsFileUploadTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "microsoft",
+        connection = await resolve_oauth_connection("microsoft_teams",
             context=context,
-            context_token_keys=("microsoft_token",},
-            env_token_keys=("MICROSOFT_ACCESS_TOKEN",},
+            context_token_keys=("microsoft_token",),
+            env_token_keys=("MICROSOFT_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

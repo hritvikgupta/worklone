@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomOpenConversationTool(BaseTool):
-    name = "Open Conversation in Intercom"
+    name = "open_conversation_in_intercom"
     description = "Open a closed or snoozed conversation in Intercom"
     category = "integration"
 
@@ -29,8 +29,8 @@ class IntercomOpenConversationTool(BaseTool):
         connection = await resolve_oauth_connection(
             "intercom",
             context=context,
-            context_token_keys=("accessToken",},
-            env_token_keys=("INTERCOM_ACCESS_TOKEN",},
+            context_token_keys=("accessToken",),
+            env_token_keys=("INTERCOM_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=False,
         )

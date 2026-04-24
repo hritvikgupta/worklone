@@ -5,7 +5,7 @@ from urllib.parse import quote
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordKickMemberTool(BaseTool):
-    name = "Discord Kick Member"
+    name = "discord_kick_member"
     description = "Kick a member from a Discord server"
     category = "integration"
 

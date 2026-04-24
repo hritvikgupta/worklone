@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class VercelListTeamMembersTool(BaseTool):
-    name = "Vercel List Team Members"
+    name = "vercel_list_team_members"
     description = "List all members of a Vercel team"
     category = "integration"
 

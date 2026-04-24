@@ -1,5 +1,8 @@
 import os
-import boto3
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 from typing import Dict, Any
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
@@ -73,6 +76,9 @@ class S3DeleteObjectTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if boto3 is None:
+            return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
         access_key_id = self._resolve_credential(context, "accessKeyId", "AWS_ACCESS_KEY_ID")
         secret_access_key = self._resolve_credential(context, "secretAccessKey", "AWS_SECRET_ACCESS_KEY")
         region = self._resolve_credential(context, "region", "AWS_DEFAULT_REGION")

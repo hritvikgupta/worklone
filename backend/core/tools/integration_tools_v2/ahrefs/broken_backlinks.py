@@ -6,7 +6,7 @@ from datetime import date
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class AhrefsBrokenBacklinksTool(BaseTool):
-    name = "Ahrefs Broken Backlinks"
+    name = "ahrefs_broken_backlinks"
     description = "Get a list of broken backlinks pointing to a target domain or URL. Useful for identifying link reclamation opportunities."
     category = "integration"
 

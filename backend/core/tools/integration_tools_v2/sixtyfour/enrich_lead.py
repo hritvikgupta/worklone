@@ -4,7 +4,7 @@ import json
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class SixtyfourEnrichLeadTool(BaseTool):
-    name = "Sixtyfour Enrich Lead"
+    name = "sixtyfour_enrich_lead"
     description = "Enrich lead information with contact details, social profiles, and company data using Sixtyfour AI."
     category = "integration"
 

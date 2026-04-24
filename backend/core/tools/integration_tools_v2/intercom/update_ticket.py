@@ -5,7 +5,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IntercomUpdateTicketTool(BaseTool):
-    name = "Update Ticket in Intercom"
+    name = "update_ticket_in_intercom"
     description = "Update a ticket in Intercom (change state, assignment, attributes)"
     category = "integration"
 

@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomAssignConversationTool(BaseTool):
-    name = "Assign Conversation in Intercom"
+    name = "assign_conversation_in_intercom"
     description = "Assign a conversation to an admin or team in Intercom"
     category = "integration"
 

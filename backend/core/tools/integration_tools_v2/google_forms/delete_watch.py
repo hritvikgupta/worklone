@@ -26,8 +26,7 @@ class GoogleFormsDeleteWatchTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google",
+        connection = await resolve_oauth_connection("google_forms",
             context=context,
             context_token_keys=("accessToken",),
             env_token_keys=("GOOGLE_FORMS_ACCESS_TOKEN",),

@@ -1,11 +1,14 @@
-import boto3
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 import json
 import urllib.parse
 from typing import Any, Dict
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class S3CopyObjectTool(BaseTool):
-    name = "S3 Copy Object"
+    name = "s3_copy_object"
     description = "Copy an object within or between AWS S3 buckets"
     category = "integration"
 
@@ -62,6 +65,9 @@ class S3CopyObjectTool(BaseTool):
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
         try:
+            if boto3 is None:
+                return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
             access_key_id = parameters["accessKeyId"]
             secret_access_key = parameters["secretAccessKey"]
             region = parameters["region"]

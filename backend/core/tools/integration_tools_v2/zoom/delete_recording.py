@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class ZoomDeleteRecordingTool(BaseTool):
-    name = "Zoom Delete Recording"
+    name = "zoom_delete_recording"
     description = "Delete cloud recordings for a Zoom meeting"
     category = "integration"
 

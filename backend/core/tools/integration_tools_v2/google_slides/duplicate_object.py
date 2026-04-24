@@ -26,11 +26,10 @@ class GoogleSlidesDuplicateObjectTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google-drive",
+        connection = await resolve_oauth_connection("google_slides",
             context=context,
-            context_token_keys=("provider_token",},
-            env_token_keys=("GOOGLE_DRIVE_ACCESS_TOKEN",},
+            context_token_keys=("provider_token",),
+            env_token_keys=("GOOGLE_DRIVE_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

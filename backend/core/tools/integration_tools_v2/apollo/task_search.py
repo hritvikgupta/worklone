@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class ApolloTaskSearchTool(BaseTool):
-    name = "Apollo Search Tasks"
+    name = "apollo_search_tasks"
     description = "Search for tasks in Apollo"
     category = "integration"
 

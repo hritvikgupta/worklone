@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class ZepCreateThreadTool(BaseTool):
-    name = "Create Thread"
+    name = "create_thread"
     description = "Start a new conversation thread in Zep"
     category = "integration"
 

@@ -28,8 +28,8 @@ class PipedriveCreateLeadTool(BaseTool):
         connection = await resolve_oauth_connection(
             "pipedrive",
             context=context,
-            context_token_keys=("access_token",},
-            env_token_keys=("PIPEDRIVE_ACCESS_TOKEN",},
+            context_token_keys=("access_token",),
+            env_token_keys=("PIPEDRIVE_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

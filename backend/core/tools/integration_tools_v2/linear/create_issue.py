@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class LinearCreateIssueTool(BaseTool):
-    name = "Linear Issue Writer"
+    name = "linear_issue_writer"
     description = "Create a new issue in Linear"
     category = "integration"
 

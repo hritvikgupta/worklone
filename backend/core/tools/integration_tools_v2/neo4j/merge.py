@@ -1,6 +1,9 @@
 from typing import Any, Dict
 from datetime import datetime, date, time, timedelta
-from neo4j import GraphDatabase
+try:
+    from neo4j import GraphDatabase
+except ImportError:
+    GraphDatabase = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class Neo4jMergeTool(BaseTool):
@@ -65,6 +68,9 @@ class Neo4jMergeTool(BaseTool):
         return str(value)
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if GraphDatabase is None:
+            return ToolResult(success=False, output="", error="neo4j is not installed. Install it to use Neo4j tools.")
+
         try:
             host: str = parameters["host"]
             if not host:

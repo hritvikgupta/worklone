@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class SlackCreateChannelCanvasTool(BaseTool):
-    name = "Slack Create Channel Canvas"
+    name = "slack_create_channel_canvas"
     description = "Create a canvas pinned to a Slack channel as its resource hub"
     category = "integration"
 

@@ -1,13 +1,16 @@
 from typing import Any, Dict
 from collections import defaultdict
 import json
-from neo4j import AsyncGraphDatabase
+try:
+    from neo4j import AsyncGraphDatabase
+except ImportError:
+    AsyncGraphDatabase = None
 
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 
 class Neo4jIntrospectTool(BaseTool):
-    name = "Neo4j Introspect"
+    name = "neo4j_introspect"
     description = "Introspect a Neo4j database to discover its schema including node labels, relationship types, properties, constraints, and indexes."
     category = "integration"
 
@@ -47,7 +50,10 @@ class Neo4jIntrospectTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
-        driver: AsyncGraphDatabase | None = None
+        if AsyncGraphDatabase is None:
+            return ToolResult(success=False, output="", error="neo4j is not installed. Install it to use Neo4j tools.")
+
+        driver = None
         try:
             host: str = parameters["host"]
             port: int = parameters["port"]

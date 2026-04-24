@@ -5,7 +5,7 @@ import json
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GongGetCallTool(BaseTool):
-    name = "Gong Get Call"
+    name = "gong_get_call"
     description = "Retrieve detailed data for a specific call from Gong."
     category = "integration"
 

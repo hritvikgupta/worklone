@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioCustomFieldsUpdateTool(BaseTool):
-    name = "incident.io Custom Fields Update"
+    name = "incident_io_custom_fields_update"
     description = "Update an existing custom field in incident.io."
     category = "integration"
 

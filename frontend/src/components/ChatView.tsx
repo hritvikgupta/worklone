@@ -478,6 +478,14 @@ export function ChatView() {
           setPendingResume(null);
           activities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
           answerBuffer = event.content || answerBuffer;
+          setActivePlans(prev => {
+            const plan = prev[employeeId];
+            if (!plan) return prev;
+            const nextTasks = plan.tasks.map(t =>
+              t.status === 'todo' || t.status === 'in_progress' ? { ...t, status: 'done' } : t
+            );
+            return { ...prev, [employeeId]: { ...plan, status: 'completed', tasks: nextTasks } };
+          });
         } else if (event.type === 'error') {
           activities = activities.map(a => a.status === 'running' ? { ...a, status: 'error', detail: event.message } : a);
           answerBuffer += `\nError: ${event.message}`;

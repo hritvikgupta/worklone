@@ -635,12 +635,15 @@ class GenericEmployeeAgent:
                     yield f"\n[Error: {str(e)}]\n"
                 return
 
-            # Log usage for this cycle
+            # Log usage for this cycle.
+            # We bill ONLY for user-visible tokens: the user's message as input
+            # and the assistant's generated content as output. Tool schemas and
+            # system prompt are infrastructure overhead, not metered usage.
             cycle_duration_ms = int((datetime.now() - cycle_start).total_seconds() * 1000)
             if cycle_usage:
-                input_tokens = cycle_usage.get("input_tokens", 0)
-                output_tokens = cycle_usage.get("output_tokens", 0)
-                total_tokens = cycle_usage.get("total_tokens", 0)
+                input_tokens = self._estimate_tokens(message) if cycle_count == 1 else 0
+                output_tokens = self._estimate_tokens(response_text)
+                total_tokens = input_tokens + output_tokens
                 cost = self._estimate_cost(self.model, input_tokens, output_tokens)
                 try:
                     self.store.log_usage(
@@ -1256,6 +1259,15 @@ class GenericEmployeeAgent:
             store.update_employee(self.employee_id, {"status": EmployeeStatus.BLOCKED.value}, self.owner_id)
         finally:
             self._background_tasks.pop(task_id, None)
+
+    @staticmethod
+    def _estimate_tokens(text: str) -> int:
+        """Rough token count for billing — ~4 chars per token (GPT-style average).
+        Excludes tool schemas and system prompt by design: we only bill for the
+        user's input and the model's produced content."""
+        if not text:
+            return 0
+        return max(1, len(text) // 4)
 
     @staticmethod
     def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:

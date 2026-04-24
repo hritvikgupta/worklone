@@ -445,6 +445,17 @@ export function AgentWorkspacePage() {
           setPendingResume(null);
           activities = activities.map((a) => (a.status === 'running' ? { ...a, status: 'done' } : a));
           answerBuffer = event.content || answerBuffer;
+          // Auto-complete any tasks the agent didn't explicitly mark done
+          // (happens when agent uses execute_workflow, run_task_async, or skips complete_task)
+          setActivePlan((prev) => {
+            if (!prev) return prev;
+            const nextTasks = prev.tasks.map((t) =>
+              t.status === 'todo' || t.status === 'in_progress'
+                ? { ...t, status: 'done' }
+                : t
+            );
+            return { ...prev, status: 'completed', tasks: nextTasks };
+          });
         } else if (event.type === 'error') {
           activities = activities.map((a) =>
             a.status === 'running' ? { ...a, status: 'error', detail: event.message } : a,

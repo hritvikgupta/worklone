@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordAssignRoleTool(BaseTool):
-    name = "Discord Assign Role"
+    name = "discord_assign_role"
     description = "Assign a role to a member in a Discord server"
     category = "integration"
 

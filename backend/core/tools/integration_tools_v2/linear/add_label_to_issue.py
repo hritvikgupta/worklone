@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class LinearAddLabelToIssueTool(BaseTool):
-    name = "Linear Add Label to Issue"
+    name = "linear_add_label_to_issue"
     description = "Add a label to an issue in Linear"
     category = "integration"
 

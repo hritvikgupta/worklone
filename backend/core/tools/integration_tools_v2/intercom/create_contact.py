@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomCreateContactTool(BaseTool):
-    name = "Create Contact in Intercom"
+    name = "create_contact_in_intercom"
     description = "Create a new contact in Intercom with email, external_id, or role. Returns API-aligned fields only."
     category = "integration"
 

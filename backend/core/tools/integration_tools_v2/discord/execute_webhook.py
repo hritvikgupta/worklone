@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordExecuteWebhookTool(BaseTool):
-    name = "Discord Execute Webhook"
+    name = "discord_execute_webhook"
     description = "Execute a Discord webhook to send a message"
     category = "integration"
 

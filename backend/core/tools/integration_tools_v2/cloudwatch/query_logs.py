@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Optional
 import asyncio
-import boto3
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class CloudWatchQueryLogsTool(BaseTool):
@@ -99,6 +102,9 @@ class CloudWatchQueryLogsTool(BaseTool):
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
         try:
+            if boto3 is None:
+                return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
             aws_region: str = parameters["awsRegion"]
             access_key_id: str = parameters["awsAccessKeyId"]
             secret_access_key: str = parameters["awsSecretAccessKey"]

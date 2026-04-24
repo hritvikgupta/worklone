@@ -1,7 +1,10 @@
 from typing import Any, Dict
 import httpx
 import time
-import jwt
+try:
+    import jwt
+except ImportError:
+    jwt = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class KalshiGetPositionsTool(BaseTool):
@@ -88,6 +91,9 @@ class KalshiGetPositionsTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if jwt is None:
+            return ToolResult(success=False, output="", error="pyjwt is not installed. Install it to use this Kalshi tool.")
+
         key_id = parameters.get("keyId", "")
         private_key = parameters.get("privateKey", "")
         if self._is_placeholder_token(key_id) or self._is_placeholder_token(private_key):

@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class SlackMessageReaderTool(BaseTool):
-    name = "Slack Message Reader"
+    name = "slack_message_reader"
     description = "Read the latest messages from Slack channels. Retrieve conversation history with filtering options."
     category = "integration"
 

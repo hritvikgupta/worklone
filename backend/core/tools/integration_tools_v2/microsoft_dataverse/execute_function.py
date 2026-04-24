@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class MicrosoftDataverseExecuteFunctionTool(BaseTool):
-    name = "Execute Microsoft Dataverse Function"
+    name = "execute_microsoft_dataverse_function"
     description = "Execute a bound or unbound Dataverse function. Functions are read-only operations (e.g., RetrievePrincipalAccess, RetrieveTotalRecordCount, InitializeFrom). For bound functions, provide the entity set name and record ID."
     category = "integration"
 

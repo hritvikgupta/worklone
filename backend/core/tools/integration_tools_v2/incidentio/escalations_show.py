@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioEscalationsShowTool(BaseTool):
-    name = "Show Escalation"
+    name = "show_escalation"
     description = "Get details of a specific escalation policy in incident.io"
     category = "integration"
 

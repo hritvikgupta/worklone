@@ -4,7 +4,7 @@ from urllib.parse import quote
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordRemoveReactionTool(BaseTool):
-    name = "Discord Remove Reaction"
+    name = "discord_remove_reaction"
     description = "Remove a reaction from a Discord message"
     category = "integration"
 

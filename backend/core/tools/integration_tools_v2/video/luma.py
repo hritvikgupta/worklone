@@ -4,7 +4,7 @@ import asyncio
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class LumaVideoTool(BaseTool):
-    name = "Luma Dream Machine Video"
+    name = "luma_dream_machine_video"
     description = "Generate videos using Luma Dream Machine with advanced camera controls"
     category = "integration"
 

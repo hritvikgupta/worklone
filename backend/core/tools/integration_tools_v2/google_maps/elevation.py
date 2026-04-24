@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GoogleMapsElevationTool(BaseTool):
-    name = "Google Maps Elevation"
+    name = "google_maps_elevation"
     description = "Get elevation data for a location"
     category = "integration"
 

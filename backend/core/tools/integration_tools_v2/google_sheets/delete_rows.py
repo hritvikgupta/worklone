@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GoogleSheetsDeleteRowsTool(BaseTool):
-    name = "Delete Rows from Google Sheets V2"
+    name = "delete_rows_from_google_sheets_v2"
     description = "Delete rows from a sheet in a Google Sheets spreadsheet"
     category = "integration"
 

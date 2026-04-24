@@ -9,7 +9,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GoogleSlidesCreateShapeTool(BaseTool):
-    name = "Create Shape in Google Slides"
+    name = "create_shape_in_google_slides"
     description = "Create a shape (rectangle, ellipse, text box, arrow, etc.) on a slide in a Google Slides presentation"
     category = "integration"
 
@@ -175,8 +175,7 @@ class GoogleSlidesCreateShapeTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google-drive",
+        connection = await resolve_oauth_connection("google_slides",
             context=context,
             context_token_keys=("accessToken",),
             env_token_keys=("GOOGLE_DRIVE_ACCESS_TOKEN",),

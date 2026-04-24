@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from backend.api.schemas.oauth import DisconnectResponse, IntegrationsResponse
 from backend.lib.auth.service import AuthService, OAUTH_PROVIDERS
+from backend.lib.oauth.providers import API_KEY_PROVIDERS
 from backend.lib.auth.session import get_current_user
 
 router = APIRouter()
@@ -19,6 +20,11 @@ class OAuthProviderCredentialsRequest(BaseModel):
     provider: str
     client_id: str
     client_secret: str
+
+
+class ApiKeyProviderRequest(BaseModel):
+    provider: str
+    fields: dict  # {field_key: value}
 
 @router.get("/authorize")
 async def authorize_integration(
@@ -111,6 +117,22 @@ async def save_oauth_provider_credentials(
     )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error") or "Failed to save credentials")
+    return {"success": True}
+
+
+@router.post("/api-key")
+async def save_api_key_integration(
+    body: ApiKeyProviderRequest,
+    user=Depends(get_current_user),
+):
+    """Save API key credentials for an API-key-based integration"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if body.provider not in API_KEY_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"Unknown API key provider: {body.provider}")
+    result = auth_service.save_provider_api_keys(user["id"], body.provider, body.fields)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error") or "Failed to save API keys")
     return {"success": True}
 
 

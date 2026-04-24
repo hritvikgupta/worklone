@@ -103,7 +103,7 @@ class CronjobTool(BaseTool):
         if next_run is None:
             return ToolResult(False, "", error=f"Invalid or unsupported cron expression: '{schedule}'.")
 
-        tasks = await self._decompose_prompt_to_tasks(prompt)
+        tasks = await self._decompose_prompt_to_tasks(prompt, owner_id=owner_id)
 
         workflow_id = generate_id("wf")
         actor_type = (ctx.get("actor_type") or "employee").strip() or "employee"
@@ -381,7 +381,7 @@ class CronjobTool(BaseTool):
                 return t
         return ToolResult(False, "", error=f"Workflow {workflow.id} has no schedule trigger.")
 
-    async def _decompose_prompt_to_tasks(self, prompt: str) -> list[str]:
+    async def _decompose_prompt_to_tasks(self, prompt: str, owner_id: str = "") -> list[str]:
         """Split a natural-language prompt into sequential task steps via LLM.
 
         Mirrors the /workflows/generate architect so cron jobs run as
@@ -391,6 +391,7 @@ class CronjobTool(BaseTool):
         import json as _json
 
         from backend.core.tools.run_tools.llm_tool import LLMTool
+        from backend.services.llm_config import get_user_provider_config
 
         system_prompt = (
             "You are an expert workflow architect. Parse the user's request "
@@ -402,11 +403,17 @@ class CronjobTool(BaseTool):
         )
 
         try:
-            response = await LLMTool().execute({
-                "prompt": prompt,
-                "system_prompt": system_prompt,
-                "response_format": {"type": "json_object"},
-            })
+            llm_config = get_user_provider_config(owner_id, "openai/gpt-4o") if owner_id else None
+            model = (llm_config or {}).get("model") or "openai/gpt-4o"
+            response = await LLMTool().execute(
+                {
+                    "prompt": prompt,
+                    "system_prompt": system_prompt,
+                    "model": model,
+                    "response_format": {"type": "json_object"},
+                },
+                context={"owner_id": owner_id} if owner_id else None,
+            )
             if not response.success:
                 return [prompt]
 

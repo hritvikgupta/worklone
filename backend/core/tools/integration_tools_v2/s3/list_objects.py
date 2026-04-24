@@ -1,5 +1,8 @@
 from typing import Any, Dict
-import boto3
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 import json
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
@@ -75,6 +78,9 @@ class S3ListObjectsTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if boto3 is None:
+            return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
         access_key_id = (parameters.get("accessKeyId") or "").strip()
         secret_access_key = (parameters.get("secretAccessKey") or "").strip()
         region = (parameters.get("region") or "").strip()

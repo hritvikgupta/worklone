@@ -14,6 +14,18 @@ const features = [
       'View active sprint execution, move tasks across stages, and coordinate multiple AI employees from the same board.',
     image: '/card1.png',
   },
+  {
+    title: 'Build teams and assign workstreams',
+    description:
+      'Create a team with multiple employees, assign distinct tasks to each one, and track how work progresses across the full workflow.',
+    image: '/card3.png',
+  },
+  {
+    title: 'Train each employee with custom skills',
+    description:
+      'Manage every employee agent with its own skill set and training so each role performs with the right context and operating standards.',
+    image: '/card4.png',
+  },
 ];
 
 export function WorkflowShowcaseSection() {
@@ -43,7 +55,10 @@ export function WorkflowShowcaseSection() {
                   onClick={() => setActiveIndex(index)}
                   className="block text-left"
                 >
-                  <h3 className={`text-[24px] sm:text-[30px] font-medium leading-[1.15] tracking-tight transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'}`}>
+                  <h3
+                    className={`text-[24px] sm:text-[30px] font-normal leading-[1.15] tracking-tight transition-colors ${isActive ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-600'}`}
+                    style={{ fontWeight: 400 }}
+                  >
                     {feature.title}
                   </h3>
                   {isActive && (

@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GoogleMapsPlaceDetailsTool(BaseTool):
-    name = "Google Maps Place Details"
+    name = "google_maps_place_details"
     description = "Get detailed information about a specific place"
     category = "integration"
 

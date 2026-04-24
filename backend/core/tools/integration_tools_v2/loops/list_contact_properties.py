@@ -6,7 +6,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class LoopsListContactPropertiesTool(BaseTool):
-    name = "Loops List Contact Properties"
+    name = "loops_list_contact_properties"
     description = "Retrieve a list of contact properties from your Loops account. Returns each property with its key, label, and data type. Can filter to show all properties or only custom ones."
     category = "integration"
 
@@ -30,8 +30,8 @@ class LoopsListContactPropertiesTool(BaseTool):
         connection = await resolve_oauth_connection(
             "loops",
             context=context,
-            context_token_keys=("apiKey",},
-            env_token_keys=("LOOPS_API_KEY",},
+            context_token_keys=("apiKey",),
+            env_token_keys=("LOOPS_API_KEY",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=False,
         )

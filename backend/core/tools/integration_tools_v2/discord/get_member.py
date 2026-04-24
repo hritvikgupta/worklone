@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class DiscordGetMemberTool(BaseTool):
-    name = "Discord Get Member"
+    name = "discord_get_member"
     description = "Get information about a member in a Discord server"
     category = "integration"
 

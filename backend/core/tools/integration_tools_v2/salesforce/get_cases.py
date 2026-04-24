@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection
 
 class SalesforceGetCasesTool(BaseTool):
-    name = "Get Cases from Salesforce"
+    name = "get_cases_from_salesforce"
     description = "Get case(s) from Salesforce"
     category = "integration"
 

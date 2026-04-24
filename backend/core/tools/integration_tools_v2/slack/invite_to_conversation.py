@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class SlackInviteToConversationTool(BaseTool):
-    name = "Slack Invite to Conversation"
+    name = "slack_invite_to_conversation"
     description = "Invite one or more users to a Slack channel. Supports up to 100 users at a time."
     category = "integration"
 

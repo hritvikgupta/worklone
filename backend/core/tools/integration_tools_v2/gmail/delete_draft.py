@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GmailDeleteDraftTool(BaseTool):
-    name = "Gmail Delete Draft"
+    name = "gmail_delete_draft"
     description = "Delete a specific draft from Gmail"
     category = "integration"
 

@@ -29,8 +29,8 @@ class AshbyListArchiveReasonsTool(BaseTool):
         connection = await resolve_oauth_connection(
             "ashby",
             context=context,
-            context_token_keys=("ashby_api_key",},
-            env_token_keys=("ASHBY_API_KEY",},
+            context_token_keys=("ashby_api_key",),
+            env_token_keys=("ASHBY_API_KEY",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=False,
         )

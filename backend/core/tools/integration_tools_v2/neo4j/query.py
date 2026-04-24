@@ -1,8 +1,12 @@
 from typing import Any, Dict, List
 import json
 import asyncio
-from neo4j import GraphDatabase, Node, Relationship, Path
-from neo4j.time import Duration, DateTime, Date, Time
+try:
+    from neo4j import GraphDatabase, Node, Relationship, Path
+    from neo4j.time import Duration, DateTime, Date, Time
+except ImportError:
+    GraphDatabase = None
+    Node = Relationship = Path = Duration = DateTime = Date = Time = ()
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class Neo4jQueryTool(BaseTool):
@@ -160,6 +164,9 @@ class Neo4jQueryTool(BaseTool):
                 driver.close()
 
     async def execute(self, parameters: Dict[str, Any], context: dict = None) -> ToolResult:
+        if GraphDatabase is None:
+            return ToolResult(success=False, output="", error="neo4j is not installed. Install it to use Neo4j tools.")
+
         loop = asyncio.get_running_loop()
         try:
             data = await loop.run_in_executor(None, self._execute_sync, parameters)

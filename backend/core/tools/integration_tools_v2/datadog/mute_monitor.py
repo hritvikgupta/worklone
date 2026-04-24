@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DatadogMuteMonitorTool(BaseTool):
-    name = "Datadog Mute Monitor"
+    name = "datadog_mute_monitor"
     description = "Mute a monitor to temporarily suppress notifications."
     category = "integration"
 

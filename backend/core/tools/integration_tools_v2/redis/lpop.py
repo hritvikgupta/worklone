@@ -3,7 +3,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from redis.asyncio import Redis
 
 class RedisLPopTool(BaseTool):
-    name = "Redis LPOP"
+    name = "redis_lpop"
     description = "Remove and return the first element of a list stored at a key in Redis."
     category = "integration"
 

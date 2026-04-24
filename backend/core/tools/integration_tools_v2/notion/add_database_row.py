@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class NotionAddDatabaseRowTool(BaseTool):
-    name = "Add Notion Database Row"
+    name = "add_notion_database_row"
     description = "Add a new row to a Notion database with specified properties"
     category = "integration"
 

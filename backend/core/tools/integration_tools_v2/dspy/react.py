@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DSPyReActTool(BaseTool):
-    name = "DSPy ReAct"
+    name = "dspy_react"
     description = "Run a ReAct agent using a self-hosted DSPy ReAct program endpoint for multi-step reasoning and action"
     category = "integration"
 

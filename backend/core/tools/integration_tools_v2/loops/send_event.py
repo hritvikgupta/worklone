@@ -4,7 +4,7 @@ import json
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class LoopsSendEventTool(BaseTool):
-    name = "Loops Send Event"
+    name = "loops_send_event"
     description = "Send an event to Loops to trigger automated email sequences for a contact. Identify the contact by email or userId and include optional event properties and mailing list changes."
     category = "integration"
 

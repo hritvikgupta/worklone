@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class StripeUpdateCustomerTool(BaseTool):
-    name = "Stripe Update Customer"
+    name = "stripe_update_customer"
     description = "Update an existing customer"
     category = "integration"
 

@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class AgentmailUpdateInboxTool(BaseTool):
-    name = "Update Inbox"
+    name = "update_inbox"
     description = "Update the display name of an email inbox in AgentMail"
     category = "integration"
 

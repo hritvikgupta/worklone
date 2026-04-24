@@ -44,8 +44,8 @@ class TrelloUpdateCardTool(BaseTool):
         connection = await resolve_oauth_connection(
             "trello",
             context=context,
-            context_token_keys=("accessToken",},
-            env_token_keys=("TRELLO_ACCESS_TOKEN",},
+            context_token_keys=("accessToken",),
+            env_token_keys=("TRELLO_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class HunterEmailFinderTool(BaseTool):
-    name = "Hunter Email Finder"
+    name = "hunter_email_finder"
     description = "Finds the most likely email address for a person given their name and company domain."
     category = "integration"
 

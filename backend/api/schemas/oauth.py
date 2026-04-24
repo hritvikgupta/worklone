@@ -14,6 +14,8 @@ class IntegrationStatus(BaseModel):
     provider_email: Optional[str] = None
     client_credentials_required: bool = False
     has_client_credentials: bool = False
+    auth_type: str = "oauth"
+    fields: Optional[List[dict]] = None
 
 
 class IntegrationsResponse(BaseModel):

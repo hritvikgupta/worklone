@@ -90,7 +90,7 @@ export function Sidebar() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between h-9 px-2 border-sidebar-border/70 bg-sidebar-accent/30 text-sidebar-foreground hover:bg-sidebar-accent font-medium group"
+                className="w-full justify-between h-9 px-2 border-sidebar-border/70 bg-sidebar-accent/30 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground font-medium group"
               >
                 <div className="flex items-center gap-2">
                   <LayoutDashboard className="w-4 h-4 shrink-0 text-sidebar-foreground/70 group-hover:text-sidebar-foreground transition-colors" />

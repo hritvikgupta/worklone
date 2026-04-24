@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioRolesShowTool(BaseTool):
-    name = "Show Incident Role"
+    name = "show_incident_role"
     description = "Get details of a specific incident role in incident.io"
     category = "integration"
 

@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioCustomFieldsCreateTool(BaseTool):
-    name = "incident.io Custom Fields Create"
+    name = "incident_io_custom_fields_create"
     description = "Create a new custom field in incident.io."
     category = "integration"
 

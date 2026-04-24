@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class ApolloOpportunitySearchTool(BaseTool):
-    name = "Apollo Search Opportunities"
+    name = "apollo_search_opportunities"
     description = "Search and list all deals/opportunities in your team's Apollo account"
     category = "integration"
 

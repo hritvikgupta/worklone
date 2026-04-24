@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordRemoveRoleTool(BaseTool):
-    name = "Discord Remove Role"
+    name = "discord_remove_role"
     description = "Remove a role from a member in a Discord server"
     category = "integration"
 

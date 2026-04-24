@@ -1,6 +1,9 @@
 from typing import Any, Dict
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
-from neo4j import AsyncGraphDatabase
+try:
+    from neo4j import AsyncGraphDatabase
+except ImportError:
+    AsyncGraphDatabase = None
 
 class Neo4jCreateTool(BaseTool):
     name = "neo4j_create"
@@ -82,6 +85,9 @@ class Neo4jCreateTool(BaseTool):
         return value
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if AsyncGraphDatabase is None:
+            return ToolResult(success=False, output="", error="neo4j is not installed. Install it to use Neo4j tools.")
+
         try:
             host = parameters["host"]
             port = int(parameters["port"])

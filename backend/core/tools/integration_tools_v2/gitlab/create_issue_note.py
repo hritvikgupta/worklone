@@ -5,7 +5,7 @@ from urllib.parse import quote
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GitLabCreateIssueNoteTool(BaseTool):
-    name = "GitLab Create Issue Comment"
+    name = "gitlab_create_issue_comment"
     description = "Add a comment to a GitLab issue"
     category = "integration"
 

@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection
 
 class MinimaxVideoTool(BaseTool):
-    name = "MiniMax Hailuo Video"
+    name = "minimax_hailuo_video"
     description = "Generate videos using MiniMax Hailuo through MiniMax Platform API with advanced realism and prompt optimization"
     category = "integration"
 

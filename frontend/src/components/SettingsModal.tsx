@@ -24,6 +24,7 @@ import {
   LLMProvider,
   ModelOption,
 } from '@/src/api/settings'
+import { getIntegrations } from '@/lib/auth-api'
 
 type Tab = 'general' | 'llm'
 
@@ -34,6 +35,7 @@ interface Props {
 
 export function SettingsModal({ open, onClose }: Props) {
   const [tab, setTab] = useState<Tab>('general')
+  const [deploymentMode, setDeploymentMode] = useState<'cloud' | 'self_hosted'>('self_hosted')
 
   // LLM state
   const [providers, setProviders] = useState<LLMProvider[]>([])
@@ -62,6 +64,12 @@ export function SettingsModal({ open, onClose }: Props) {
   useEffect(() => {
     if (!open) return
     setApiKey('')
+
+    const token = localStorage.getItem('auth_token') || ''
+    getIntegrations(token)
+      .then((d) => setDeploymentMode(d.deployment_mode))
+      .catch(() => {})
+
     listLLMProviders().then(setProviders).catch(() => {})
     getLLMSettings()
       .then((s) => {
@@ -73,7 +81,6 @@ export function SettingsModal({ open, onClose }: Props) {
       .catch(() => {})
   }, [open])
 
-  // When provider changes: update key status + load saved model for that provider
   useEffect(() => {
     if (!selectedProvider || !open) return
     setApiKey('')
@@ -87,7 +94,6 @@ export function SettingsModal({ open, onClose }: Props) {
       .catch(() => {})
   }, [selectedProvider]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch live models whenever provider or api_key changes
   useEffect(() => {
     if (!selectedProvider) { setLiveModels([]); return }
     setModelsLoading(true)
@@ -141,6 +147,16 @@ export function SettingsModal({ open, onClose }: Props) {
     }
   }
 
+  const isCloud = deploymentMode === 'cloud'
+
+  // In cloud mode, only show General tab (no LLM config needed)
+  const tabs: { id: Tab; label: string; icon: any }[] = isCloud
+    ? [{ id: 'general', label: 'General', icon: Lock }]
+    : [
+        { id: 'general', label: 'General', icon: Lock },
+        { id: 'llm', label: 'LLM Config', icon: Cpu },
+      ]
+
   const modal = (
     <AnimatePresence>
       {open && (
@@ -163,10 +179,7 @@ export function SettingsModal({ open, onClose }: Props) {
             {/* Left sidebar */}
             <div className="w-44 border-r border-border bg-muted/30 flex flex-col p-3 gap-1 shrink-0">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest px-2 mb-1 mt-1">Settings</p>
-              {([
-                { id: 'general', label: 'General', icon: Lock },
-                { id: 'llm', label: 'LLM Config', icon: Cpu },
-              ] as { id: Tab; label: string; icon: any }[]).map(({ id, label, icon: Icon }) => (
+              {tabs.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setTab(id)}
@@ -185,7 +198,6 @@ export function SettingsModal({ open, onClose }: Props) {
 
             {/* Content */}
             <div className="flex-1 flex flex-col min-w-0">
-              {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <h2 className="text-sm font-semibold">
                   {tab === 'general' ? 'General' : 'LLM Configuration'}
@@ -196,6 +208,8 @@ export function SettingsModal({ open, onClose }: Props) {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+                {/* General tab */}
                 {tab === 'general' && (
                   <div className="space-y-5">
                     <div>
@@ -224,7 +238,8 @@ export function SettingsModal({ open, onClose }: Props) {
                   </div>
                 )}
 
-                {tab === 'llm' && (
+                {/* LLM Config tab — self-hosted only */}
+                {tab === 'llm' && !isCloud && (
                   <div className="space-y-5">
                     <div>
                       <h3 className="text-sm font-semibold mb-1">LLM Provider</h3>
@@ -340,8 +355,7 @@ export function SettingsModal({ open, onClose }: Props) {
                                     size="sm"
                                     className="w-full h-8 text-xs justify-start"
                                     onClick={() => {
-                                      const customModel = modelQuery.trim()
-                                      setDefaultModel(customModel)
+                                      setDefaultModel(modelQuery.trim())
                                       setModelPickerOpen(false)
                                     }}
                                   >
@@ -363,6 +377,7 @@ export function SettingsModal({ open, onClose }: Props) {
                     </div>
                   </div>
                 )}
+
               </div>
             </div>
           </motion.div>

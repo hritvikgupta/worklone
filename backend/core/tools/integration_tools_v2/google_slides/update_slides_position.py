@@ -25,8 +25,7 @@ class GoogleSlidesUpdateSlidesPositionTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google-drive",
+        connection = await resolve_oauth_connection("google_slides",
             context=context,
             context_token_keys=("google_drive_access_token",),
             env_token_keys=("GOOGLE_DRIVE_ACCESS_TOKEN",),

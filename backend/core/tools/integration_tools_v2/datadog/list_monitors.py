@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DatadogListMonitorsTool(BaseTool):
-    name = "Datadog List Monitors"
+    name = "datadog_list_monitors"
     description = "List all monitors in Datadog with optional filtering by name, tags, or state."
     category = "integration"
 

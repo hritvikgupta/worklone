@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class SlackGetUserPresenceTool(BaseTool):
-    name = "Slack Get User Presence"
+    name = "slack_get_user_presence"
     description = "Check whether a Slack user is currently active or away"
     category = "integration"
 

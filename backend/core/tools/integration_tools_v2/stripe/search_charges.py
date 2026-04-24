@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class StripeSearchChargesTool(BaseTool):
-    name = "Stripe Search Charges"
+    name = "stripe_search_charges"
     description = "Search for charges using query syntax"
     category = "integration"
 

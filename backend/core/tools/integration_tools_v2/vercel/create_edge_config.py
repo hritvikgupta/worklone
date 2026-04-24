@@ -4,7 +4,7 @@ import urllib.parse
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class VercelCreateEdgeConfigTool(BaseTool):
-    name = "Vercel Create Edge Config"
+    name = "vercel_create_edge_config"
     description = "Create a new Edge Config store"
     category = "integration"
 

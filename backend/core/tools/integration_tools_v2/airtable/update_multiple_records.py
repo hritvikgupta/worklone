@@ -28,8 +28,8 @@ class AirtableUpdateMultipleRecordsTool(BaseTool):
         connection = await resolve_oauth_connection(
             "airtable",
             context=context,
-            context_token_keys=("provider_token",},
-            env_token_keys=("AIRTABLE_ACCESS_TOKEN",},
+            context_token_keys=("provider_token",),
+            env_token_keys=("AIRTABLE_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

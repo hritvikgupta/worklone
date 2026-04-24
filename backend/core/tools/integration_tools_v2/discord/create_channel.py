@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordCreateChannelTool(BaseTool):
-    name = "Discord Create Channel"
+    name = "discord_create_channel"
     description = "Create a new channel in a Discord server"
     category = "integration"
 

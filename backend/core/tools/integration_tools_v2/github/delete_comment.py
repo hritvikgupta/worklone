@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GitHubDeleteCommentTool(BaseTool):
-    name = "GitHub Comment Deleter"
+    name = "github_comment_deleter"
     description = "Delete a comment on a GitHub issue or pull request"
     category = "integration"
 

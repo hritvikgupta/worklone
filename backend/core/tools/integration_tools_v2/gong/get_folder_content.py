@@ -5,7 +5,7 @@ import json
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GongGetFolderContentTool(BaseTool):
-    name = "Gong Get Folder Content"
+    name = "gong_get_folder_content"
     description = "Retrieve the list of calls in a specific library folder from Gong."
     category = "integration"
 

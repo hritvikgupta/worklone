@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class MicrosoftTeamsUpdateChannelMessageTool(BaseTool):
-    name = "Update Microsoft Teams Channel Message"
+    name = "update_microsoft_teams_channel_message"
     description = "Update an existing message in a Microsoft Teams channel"
     category = "integration"
 

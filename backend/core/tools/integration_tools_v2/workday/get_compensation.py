@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class WorkdayGetCompensationTool(BaseTool):
-    name = "Get Workday Compensation"
+    name = "get_workday_compensation"
     description = "Retrieve compensation plan details for a specific worker."
     category = "integration"
 

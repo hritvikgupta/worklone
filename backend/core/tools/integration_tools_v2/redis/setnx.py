@@ -4,7 +4,7 @@ from redis.asyncio import Redis
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class RedisSetnxTool(BaseTool):
-    name = "Redis SETNX"
+    name = "redis_setnx"
     description = "Set the value of a key in Redis only if the key does not already exist."
     category = "integration"
 

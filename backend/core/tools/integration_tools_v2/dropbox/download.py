@@ -30,8 +30,8 @@ class DropboxDownloadTool(BaseTool):
         connection = await resolve_oauth_connection(
             "dropbox",
             context=context,
-            context_token_keys=("provider_token",},
-            env_token_keys=("DROPBOX_ACCESS_TOKEN",},
+            context_token_keys=("provider_token",),
+            env_token_keys=("DROPBOX_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

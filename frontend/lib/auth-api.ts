@@ -154,6 +154,13 @@ export async function getOAuthUrl(token: string, provider: string, frontendUrl: 
 /**
  * Get integration statuses
  */
+export interface IntegrationField {
+  key: string;
+  label: string;
+  secret: boolean;
+  required: boolean;
+}
+
 export interface IntegrationStatus {
   id: string;
   name: string;
@@ -163,6 +170,8 @@ export interface IntegrationStatus {
   provider_email?: string;
   client_credentials_required?: boolean;
   has_client_credentials?: boolean;
+  auth_type?: 'oauth' | 'api_key';
+  fields?: IntegrationField[];
 }
 
 export interface IntegrationsResponse {
@@ -213,6 +222,29 @@ export async function disconnectIntegration(token: string, provider: string): Pr
       throw error;
     }
     console.error('Disconnect integration error:', error);
+    return false;
+  }
+}
+
+export async function saveProviderApiKey(
+  token: string,
+  provider: string,
+  fields: Record<string, string>,
+): Promise<boolean> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/integrations/api-key`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ provider, fields }),
+    });
+    if (response.status === 401) throw new Error(AUTH_EXPIRED_ERROR);
+    return response.ok;
+  } catch (error) {
+    if (error instanceof Error && error.message === AUTH_EXPIRED_ERROR) throw error;
+    console.error('Save API key error:', error);
     return false;
   }
 }

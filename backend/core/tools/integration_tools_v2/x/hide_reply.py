@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection
 
 class XHideReplyTool(BaseTool):
-    name = "X Hide Reply"
+    name = "x_hide_reply"
     description = "Hide or unhide a reply to a tweet authored by the authenticated user"
     category = "integration"
 

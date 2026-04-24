@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IncidentioSchedulesShowTool(BaseTool):
-    name = "Show Schedule"
+    name = "show_schedule"
     description = "Get details of a specific schedule in incident.io"
     category = "integration"
 

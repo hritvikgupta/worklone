@@ -6,7 +6,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GoogleBigQueryInsertRowsTool(BaseTool):
-    name = "BigQuery Insert Rows"
+    name = "bigquery_insert_rows"
     description = "Insert rows into a Google BigQuery table using streaming insert"
     category = "integration"
 

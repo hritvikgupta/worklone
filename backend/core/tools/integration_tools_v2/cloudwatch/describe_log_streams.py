@@ -1,10 +1,13 @@
 from typing import Any, Dict
 import json
-import boto3
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class CloudWatchDescribeLogStreamsTool(BaseTool):
-    name = "CloudWatch Describe Log Streams"
+    name = "cloudwatch_describe_log_streams"
     description = "List log streams within a CloudWatch log group"
     category = "integration"
 
@@ -65,6 +68,9 @@ class CloudWatchDescribeLogStreamsTool(BaseTool):
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
         try:
+            if boto3 is None:
+                return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
             aws_region = parameters["awsRegion"]
             access_key_id = parameters["awsAccessKeyId"]
             secret_access_key = parameters["awsSecretAccessKey"]

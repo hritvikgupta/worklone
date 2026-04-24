@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioIncidentsListTool(BaseTool):
-    name = "incident.io Incidents List"
+    name = "incident_io_incidents_list"
     description = "List incidents from incident.io. Returns a list of incidents with their details including severity, status, and timestamps."
     category = "integration"
 

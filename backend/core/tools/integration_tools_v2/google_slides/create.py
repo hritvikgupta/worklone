@@ -26,8 +26,7 @@ class GoogleSlidesCreateTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google-drive",
+        connection = await resolve_oauth_connection("google_slides",
             context=context,
             context_token_keys=("access_token",),
             env_token_keys=("GOOGLE_DRIVE_ACCESS_TOKEN",),

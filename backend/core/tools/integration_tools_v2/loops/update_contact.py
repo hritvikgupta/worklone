@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class LoopsUpdateContactTool(BaseTool):
-    name = "Loops Update Contact"
+    name = "loops_update_contact"
     description = """Update an existing contact in Loops by email or userId. Creates a new contact if no match is found (upsert). Can update name, subscription status, user group, mailing lists, and custom properties."""
     category = "integration"
 

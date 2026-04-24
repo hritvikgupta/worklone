@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GitLabCreateMergeRequestNoteTool(BaseTool):
-    name = "GitLab Create Merge Request Comment"
+    name = "gitlab_create_merge_request_comment"
     description = "Add a comment to a GitLab merge request"
     category = "integration"
 

@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DatadogCreateEventTool(BaseTool):
-    name = "Datadog Create Event"
+    name = "datadog_create_event"
     description = "Post an event to the Datadog event stream. Use for deployment notifications, alerts, or any significant occurrences."
     category = "integration"
 

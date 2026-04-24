@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Search, CheckCircle2, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { IntegrationIcon } from '@/src/components/IntegrationIcon';
 import {
   getIntegrations,
   disconnectIntegration,
   getOAuthUrl,
   saveOAuthProviderCredentials,
+  saveProviderApiKey,
   AUTH_EXPIRED_ERROR,
   type IntegrationStatus,
+  type IntegrationField,
 } from '@/lib/auth-api';
 
 const PROVIDER_DESCRIPTIONS: Record<string, string> = {
@@ -26,82 +28,30 @@ const PROVIDER_DESCRIPTIONS: Record<string, string> = {
   google_calendar: 'Connect Google Calendar for event scheduling, availability, and calendar management.',
 };
 
-function getSimpleIconUrl(id: string): string {
-  const overrides: Record<string, string> = {
-    google: 'gmail/EA4333',
-    slack: '/slackicon.png',
-    notion: 'notion/000000',
-    github: 'github/181717',
-    jira: 'jira/0052CC',
-    salesforce: 'salesforce/00A1E0',
-    linear: 'linear/5E6AD2',
-    hubspot: 'hubspot/FF7A59',
-    stripe: 'stripe/635BFF',
-    google_drive: 'googledrive/4285F4',
-    google_calendar: 'googlecalendar/4285F4',
-    aws: 'amazonaws/232F3E',
-    zendesk: 'zendesk/03363D',
-    confluence: 'confluence/172B4D',
-    airtable: 'airtable/18BFFF',
-    figma: 'figma/F24E1E',
-    snowflake: 'snowflake/29B5E8',
-    postgres: 'postgresql/4169E1',
-    postgresql: 'postgresql/4169E1',
-    bigquery: 'googlebigquery/669DF6',
-    clickup: 'clickup/7B68EE',
-    intercom: 'intercom/6AF13A',
-    dropbox: 'dropbox/0061FF',
-    trello: 'trello/0052CC',
-    zapier: 'zapier/FF4A00',
-    discord: 'discord/5865F2',
-    vercel: 'vercel/000000',
-    gitlab: 'gitlab/FC6D26',
-    twilio: 'twilio/F22F46',
-    shopify: 'shopify/95BF47',
-    zoom: 'zoom/0B5CFF',
-    asana: 'asana/F06A6A',
-    x: 'x/000000',
-    linkedin: 'linkedin/0A66C2',
-    wordpress: 'wordpress/21759B',
-    mailchimp: 'mailchimp/FFE01B',
-    datadog: 'datadog/632CA6',
-    cloudflare: 'cloudflare/F38020',
-  };
+// IDs now handled as real integrations (OAuth or API key) — kept out of coming soon
+const CONFIGURED_INTEGRATION_IDS = new Set([
+  // OAuth providers (original)
+  "google","slack","notion","github","jira","salesforce","linear","hubspot","stripe","google_drive","google_calendar",
+  // OAuth providers (new)
+  "airtable","asana","attio","box","box_sign","calcom","confluence","docusign","dropbox",
+  "google_ads","google_bigquery","google_docs","google_forms","google_meet","google_sheets","google_slides","google_tasks",
+  "microsoft_dataverse","microsoft_excel","microsoft_planner","microsoft_teams","outlook",
+  "pipedrive","reddit","shopify","webflow","wordpress","x","zoom",
+  // API key providers
+  "agentmail","ahrefs","airweave","apollo","ashby","cursor","datadog","devin","discord",
+  "evernote","exa","extend","firecrawl","gamma","gitlab","gong","google_maps","granola",
+  "greenhouse","hex","hunter","incidentio","intercom","kalshi","langsmith","loops","luma",
+  "pagerduty","reducto","sixtyfour","trello","vercel","youtube","zendesk","zep",
+  // Infrastructure / connection providers
+  "aws","neo4j","postgresql","redis","databricks","workday","video","sms",
+]);
 
-  if (overrides[id]) {
-    return overrides[id].startsWith('/') ? overrides[id] : `https://cdn.simpleicons.org/${overrides[id]}`;
-  }
-  return `https://cdn.simpleicons.org/${id.replace(/_/g, '')}/71717A`; 
-}
-
-function IntegrationIcon({ id, name, className }: { id: string; name: string; className?: string }) {
-  const [error, setError] = useState(false);
-  const iconUrl = getSimpleIconUrl(id);
-
-  if (error) {
-    return (
-      <div className={cn("flex items-center justify-center rounded-md border border-border bg-muted text-[10px] font-semibold text-muted-foreground", className)}>
-        {name.slice(0, 2).toUpperCase()}
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={iconUrl}
-      alt={`${name} icon`}
-      className={cn("object-contain rounded-md", className)}
-      onError={() => setError(true)}
-    />
-  );
-}
-
-const COMING_SOON_INTEGRATIONS = [{"id": "a2a", "name": "A2A"}, {"id": "agentmail", "name": "Agentmail"}, {"id": "ahrefs", "name": "Ahrefs"}, {"id": "airtable", "name": "Airtable"}, {"id": "airweave", "name": "Airweave"}, {"id": "algolia", "name": "Algolia"}, {"id": "amplitude", "name": "Amplitude"}, {"id": "apify", "name": "Apify"}, {"id": "apollo", "name": "Apollo"}, {"id": "arxiv", "name": "Arxiv"}, {"id": "asana", "name": "Asana"}, {"id": "ashby", "name": "Ashby"}, {"id": "attio", "name": "Attio"}, {"id": "box", "name": "Box"}, {"id": "box_sign", "name": "Box Sign"}, {"id": "brandfetch", "name": "Brandfetch"}, {"id": "browser_use", "name": "Browser Use"}, {"id": "calcom", "name": "Calcom"}, {"id": "calendly", "name": "Calendly"}, {"id": "clay", "name": "Clay"}, {"id": "clerk", "name": "Clerk"}, {"id": "cloudflare", "name": "Cloudflare"}, {"id": "cloudformation", "name": "Cloudformation"}, {"id": "cloudwatch", "name": "Cloudwatch"}, {"id": "confluence", "name": "Confluence"}, {"id": "cursor", "name": "Cursor"}, {"id": "databricks", "name": "Databricks"}, {"id": "datadog", "name": "Datadog"}, {"id": "devin", "name": "Devin"}, {"id": "discord", "name": "Discord"}, {"id": "docusign", "name": "Docusign"}, {"id": "dropbox", "name": "Dropbox"}, {"id": "dspy", "name": "Dspy"}, {"id": "dub", "name": "Dub"}, {"id": "duckduckgo", "name": "Duckduckgo"}, {"id": "dynamodb", "name": "Dynamodb"}, {"id": "elasticsearch", "name": "Elasticsearch"}, {"id": "elevenlabs", "name": "Elevenlabs"}, {"id": "enrich", "name": "Enrich"}, {"id": "evernote", "name": "Evernote"}, {"id": "exa", "name": "Exa"}, {"id": "extend", "name": "Extend"}, {"id": "fathom", "name": "Fathom"}, {"id": "file", "name": "File"}, {"id": "firecrawl", "name": "Firecrawl"}, {"id": "fireflies", "name": "Fireflies"}, {"id": "function", "name": "Function"}, {"id": "gamma", "name": "Gamma"}, {"id": "gitlab", "name": "GitLab"}, {"id": "gong", "name": "Gong"}, {"id": "grafana", "name": "Grafana"}, {"id": "grain", "name": "Grain"}, {"id": "granola", "name": "Granola"}, {"id": "greenhouse", "name": "Greenhouse"}, {"id": "greptile", "name": "Greptile"}, {"id": "guardrails", "name": "Guardrails"}, {"id": "hex", "name": "Hex"}, {"id": "http", "name": "Http"}, {"id": "huggingface", "name": "Huggingface"}, {"id": "hunter", "name": "Hunter"}, {"id": "incidentio", "name": "Incidentio"}, {"id": "infisical", "name": "Infisical"}, {"id": "intercom", "name": "Intercom"}, {"id": "jina", "name": "Jina"}, {"id": "jsm", "name": "Jsm"}, {"id": "kalshi", "name": "Kalshi"}, {"id": "ketch", "name": "Ketch"}, {"id": "knowledge", "name": "Knowledge"}, {"id": "langsmith", "name": "Langsmith"}, {"id": "launchdarkly", "name": "Launchdarkly"}, {"id": "lemlist", "name": "Lemlist"}, {"id": "linkedin", "name": "Linkedin"}, {"id": "linkup", "name": "Linkup"}, {"id": "llm", "name": "Llm"}, {"id": "loops", "name": "Loops"}, {"id": "luma", "name": "Luma"}, {"id": "mailchimp", "name": "Mailchimp"}, {"id": "mailgun", "name": "Mailgun"}, {"id": "mem0", "name": "Mem0"}, {"id": "memory", "name": "Memory"}, {"id": "microsoft_ad", "name": "Microsoft Ad"}, {"id": "microsoft_dataverse", "name": "Microsoft Dataverse"}, {"id": "microsoft_excel", "name": "Microsoft Excel"}, {"id": "microsoft_planner", "name": "Microsoft Planner"}, {"id": "microsoft_teams", "name": "Microsoft Teams"}, {"id": "mistral", "name": "Mistral"}, {"id": "mongodb", "name": "Mongodb"}, {"id": "mysql", "name": "Mysql"}, {"id": "neo4j", "name": "Neo4J"}, {"id": "obsidian", "name": "Obsidian"}, {"id": "okta", "name": "Okta"}, {"id": "onedrive", "name": "Onedrive"}, {"id": "onepassword", "name": "Onepassword"}, {"id": "openai", "name": "Openai"}, {"id": "outlook", "name": "Outlook"}, {"id": "pagerduty", "name": "Pagerduty"}, {"id": "parallel", "name": "Parallel"}, {"id": "perplexity", "name": "Perplexity"}, {"id": "pinecone", "name": "Pinecone"}, {"id": "pipedrive", "name": "Pipedrive"}, {"id": "polymarket", "name": "Polymarket"}, {"id": "postgresql", "name": "Postgresql"}, {"id": "posthog", "name": "Posthog"}, {"id": "profound", "name": "Profound"}, {"id": "pulse", "name": "Pulse"}, {"id": "qdrant", "name": "Qdrant"}, {"id": "quiver", "name": "Quiver"}, {"id": "rds", "name": "Rds"}, {"id": "reddit", "name": "Reddit"}, {"id": "redis", "name": "Redis"}, {"id": "reducto", "name": "Reducto"}, {"id": "resend", "name": "Resend"}, {"id": "response", "name": "Response"}, {"id": "revenuecat", "name": "Revenuecat"}, {"id": "rippling", "name": "Rippling"}, {"id": "rootly", "name": "Rootly"}, {"id": "s3", "name": "S3"}, {"id": "search", "name": "Search"}, {"id": "secrets_manager", "name": "Secrets Manager"}, {"id": "sendgrid", "name": "Sendgrid"}, {"id": "sentry", "name": "Sentry"}, {"id": "serper", "name": "Serper"}, {"id": "servicenow", "name": "Servicenow"}, {"id": "sftp", "name": "Sftp"}, {"id": "shared", "name": "Shared"}, {"id": "sharepoint", "name": "Sharepoint"}, {"id": "shopify", "name": "Shopify"}, {"id": "similarweb", "name": "Similarweb"}, {"id": "sixtyfour", "name": "Sixtyfour"}, {"id": "sms", "name": "Sms"}, {"id": "smtp", "name": "Smtp"}, {"id": "spotify", "name": "Spotify"}, {"id": "sqs", "name": "Sqs"}, {"id": "ssh", "name": "Ssh"}, {"id": "stagehand", "name": "Stagehand"}, {"id": "stt", "name": "Stt"}, {"id": "supabase", "name": "Supabase"}, {"id": "table", "name": "Table"}, {"id": "tailscale", "name": "Tailscale"}, {"id": "tavily", "name": "Tavily"}, {"id": "telegram", "name": "Telegram"}, {"id": "textract", "name": "Textract"}, {"id": "thinking", "name": "Thinking"}, {"id": "tinybird", "name": "Tinybird"}, {"id": "trello", "name": "Trello"}, {"id": "tts", "name": "Tts"}, {"id": "twilio", "name": "Twilio"}, {"id": "twilio_voice", "name": "Twilio Voice"}, {"id": "typeform", "name": "Typeform"}, {"id": "upstash", "name": "Upstash"}, {"id": "vercel", "name": "Vercel"}, {"id": "video", "name": "Video"}, {"id": "vision", "name": "Vision"}, {"id": "wealthbox", "name": "Wealthbox"}, {"id": "webflow", "name": "Webflow"}, {"id": "whatsapp", "name": "Whatsapp"}, {"id": "wikipedia", "name": "Wikipedia"}, {"id": "wordpress", "name": "Wordpress"}, {"id": "workday", "name": "Workday"}, {"id": "workflow", "name": "Workflow"}, {"id": "x", "name": "X"}, {"id": "youtube", "name": "Youtube"}, {"id": "zendesk", "name": "Zendesk"}, {"id": "zep", "name": "Zep"}, {"id": "zoom", "name": "Zoom"}];
 const COMING_SOON_PRIORITY = [{ id: "salesforce", name: "Salesforce" }];
 
 export function Integrations() {
   const { token, logout } = useAuth();
   const [integrations, setIntegrations] = useState<IntegrationStatus[]>([]);
+  const [simToolCatalog, setSimToolCatalog] = useState<Array<{ id: string; name: string }>>([]);
   const [deploymentMode, setDeploymentMode] = useState<'cloud' | 'self_hosted'>('self_hosted');
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -112,6 +62,11 @@ export function Integrations() {
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
   const [savingCredentials, setSavingCredentials] = useState(false);
+  // API key modal state
+  const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+  const [apiKeyProvider, setApiKeyProvider] = useState<IntegrationStatus | null>(null);
+  const [apiKeyInputs, setApiKeyInputs] = useState<Record<string, string>>({});
+  const [savingApiKey, setSavingApiKey] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -128,6 +83,25 @@ export function Integrations() {
         .finally(() => setLoading(false));
     }
   }, [token, logout]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/integrations/sim-tools.json')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((rows: Array<{ id: string; name: string }>) => {
+        if (!cancelled && Array.isArray(rows)) {
+          setSimToolCatalog(rows);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSimToolCatalog([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const startOAuthConnect = async (provider: string) => {
     setConnecting(provider);
@@ -156,6 +130,14 @@ export function Integrations() {
       return;
     }
 
+    // API key provider — show API key modal
+    if (integration.auth_type === 'api_key') {
+      setApiKeyProvider(integration);
+      setApiKeyInputs({});
+      setApiKeyModalOpen(true);
+      return;
+    }
+
     if (
       deploymentMode === 'self_hosted'
       && integration.client_credentials_required
@@ -169,6 +151,27 @@ export function Integrations() {
     }
 
     await startOAuthConnect(provider);
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKeyProvider || !token) return;
+    setSavingApiKey(true);
+    setConnectError(null);
+    try {
+      const saved = await saveProviderApiKey(token, apiKeyProvider.id, apiKeyInputs);
+      if (!saved) {
+        setConnectError(`Failed to save API key for ${apiKeyProvider.name}.`);
+        return;
+      }
+      setIntegrations((prev) =>
+        prev.map((item) => item.id === apiKeyProvider.id ? { ...item, connected: true } : item)
+      );
+      setApiKeyModalOpen(false);
+      setApiKeyProvider(null);
+      setApiKeyInputs({});
+    } finally {
+      setSavingApiKey(false);
+    }
   };
 
   const closeCredentialModal = () => {
@@ -236,8 +239,11 @@ export function Integrations() {
     (PROVIDER_DESCRIPTIONS[int.id] || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const mergedComingSoon = [...COMING_SOON_PRIORITY, ...COMING_SOON_INTEGRATIONS.filter((int) => int.id !== "salesforce")];
-  const filteredComingSoon = mergedComingSoon.filter(int => 
+  const configuredIds = new Set(integrations.map((i) => i.id));
+  const catalogFallback = simToolCatalog.length ? simToolCatalog : [];
+  const mergedComingSoon = [...COMING_SOON_PRIORITY, ...catalogFallback.filter((int) => int.id !== "salesforce")]
+    .filter((int) => !configuredIds.has(int.id) && !CONFIGURED_INTEGRATION_IDS.has(int.id));
+  const filteredComingSoon = mergedComingSoon.filter(int =>
     int.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -300,8 +306,57 @@ export function Integrations() {
           </div>
         </div>
       )}
+
+      {/* API Key Modal */}
+      {apiKeyModalOpen && apiKeyProvider && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-white p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">Connect {apiKeyProvider.name}</h3>
+                <p className="text-xs text-muted-foreground mt-1">Enter your API credentials to connect.</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => { setApiKeyModalOpen(false); setApiKeyProvider(null); setApiKeyInputs({}); }}
+                disabled={savingApiKey}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {(apiKeyProvider.fields || []).map((field) => (
+                <div key={field.key}>
+                  <label className="mb-1 block text-xs font-medium text-foreground">
+                    {field.label}{field.required && <span className="text-destructive ml-0.5">*</span>}
+                  </label>
+                  <input
+                    type={field.secret ? 'password' : 'text'}
+                    value={apiKeyInputs[field.key] || ''}
+                    onChange={(e) => setApiKeyInputs((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                    placeholder={`Enter ${field.label}`}
+                    className="w-full h-10 rounded-lg border border-border bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    disabled={savingApiKey}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setApiKeyModalOpen(false); setApiKeyProvider(null); setApiKeyInputs({}); }} disabled={savingApiKey}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveApiKey} disabled={savingApiKey}>
+                {savingApiKey ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save & Connect'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-300">
-        
+
         {/* Header & Search */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border/50 pb-6">
           <div className="space-y-1.5">

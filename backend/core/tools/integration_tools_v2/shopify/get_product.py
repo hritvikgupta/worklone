@@ -29,8 +29,8 @@ class ShopifyGetProductTool(BaseTool):
         connection = await resolve_oauth_connection(
             "shopify",
             context=context,
-            context_token_keys=("provider_token",},
-            env_token_keys=("SHOPIFY_ACCESS_TOKEN",},
+            context_token_keys=("provider_token",),
+            env_token_keys=("SHOPIFY_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

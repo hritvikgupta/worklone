@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class MemoryGetTool(BaseTool):
-    name = "Get Memory"
+    name = "get_memory"
     description = "Retrieve memory by conversationId. Returns matching memories."
     category = "integration"
 

@@ -49,7 +49,14 @@ class GmailListThreadsTool(BaseTool):
                 },
                 "query": {
                     "type": "string",
-                    "description": "Search query to filter threads (same syntax as Gmail search)",
+                    "description": (
+                        "Gmail search query to filter threads. "
+                        "Use bare keywords (e.g. 'deloitte', 'invoice march') to search subject, body, AND sender — this is the safest default. "
+                        "Use 'from:email@domain.com' ONLY when you know the exact sender address. "
+                        "Use 'subject:keyword' to search only the subject line. "
+                        "Combine: 'from:alice subject:report'. "
+                        "Do NOT use 'from:company' to find emails mentioning a company — use a bare keyword instead."
+                    ),
                 },
                 "labelIds": {
                     "type": "string",

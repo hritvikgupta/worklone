@@ -1,6 +1,9 @@
 from typing import Any, Dict
 import json
-import boto3
+try:
+    import boto3
+except ImportError:
+    boto3 = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class CloudWatchDescribeAlarmsTool(BaseTool):
@@ -53,6 +56,9 @@ class CloudWatchDescribeAlarmsTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if boto3 is None:
+            return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
         aws_region = parameters["awsRegion"]
         aws_access_key_id = parameters["awsAccessKeyId"]
         aws_secret_access_key = parameters["awsSecretAccessKey"]

@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class DiscordUpdateChannelTool(BaseTool):
-    name = "Discord Update Channel"
+    name = "discord_update_channel"
     description = "Update a Discord channel"
     category = "integration"
 

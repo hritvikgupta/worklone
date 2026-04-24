@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class MicrosoftDataverseWhoAmITool(BaseTool):
-    name = "Microsoft Dataverse WhoAmI"
+    name = "microsoft_dataverse_whoami"
     description = "Retrieve the current authenticated user information from Microsoft Dataverse. Useful for testing connectivity and getting the user ID, business unit ID, and organization ID."
     category = "integration"
 

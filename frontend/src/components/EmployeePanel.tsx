@@ -1,14 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Trash2, Save, Loader2, Sparkles, Paperclip, Mic, Send, BookOpen, FileText, Check, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from '@/components/ui/item';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getToolsCatalog, EmployeeModelOption } from '@/src/api/employees';
+import { getToolsCatalog, EmployeeModelOption, ProviderInfo } from '@/src/api/employees';
 import { listLLMProviders, fetchModelsForProvider } from '@/src/api/settings';
 import { ModelSelect } from '@/src/components/ModelSelect';
 import { FileTree } from '@/src/components/FileTree';
@@ -16,6 +26,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { listPublicSkills, type PublicSkillListItem, getPublicSkillDetail, type PublicSkillDetail, getMarkdownTree, type MarkdownTreeNode } from '@/lib/api';
+import { getIntegrations, getOAuthUrl, type IntegrationStatus } from '@/lib/auth-api';
+import { IntegrationIcon, resolveIntegrationIdFromTool } from '@/src/components/IntegrationIcon';
+import { useAuth } from '../contexts/AuthContext';
 
 interface EmployeePanelProps {
   open: boolean;
@@ -49,73 +62,23 @@ interface AvailableTool {
   category: string;
 }
 
-const TOOL_PROVIDER_ICON_ID: Record<string, string> = {
-  gmailtool: "google",
-  slacktool: "slack",
-  notiontool: "notion",
-  githubtool: "github",
-  jiratool: "jira",
-  salesforcetool: "salesforce",
-  lineartool: "linear",
-  hubspottool: "hubspot",
-  stripetool: "stripe",
-  google_drivetool: "google_drive",
-  googlecalendartool: "google_calendar",
-  googlecalendartooltool: "google_calendar",
-};
-
-function getSimpleIconUrl(id: string): string {
-  const overrides: Record<string, string> = {
-    google: "gmail/EA4333",
-    slack: "/slackicon.png",
-    notion: "notion/000000",
-    github: "github/181717",
-    jira: "jira/0052CC",
-    salesforce: "salesforce/00A1E0",
-    linear: "linear/5E6AD2",
-    hubspot: "hubspot/FF7A59",
-    stripe: "stripe/635BFF",
-    google_drive: "googledrive/4285F4",
-    google_calendar: "googlecalendar/4285F4",
-  };
-  if (overrides[id]) {
-    return overrides[id].startsWith("/") ? overrides[id] : `https://cdn.simpleicons.org/${overrides[id]}`;
-  }
-  return `https://cdn.simpleicons.org/${id.replace(/_/g, "")}/71717A`;
-}
-
 function toToolDisplayName(rawName: string): string {
   const withoutSuffix = rawName.replace(/tool$/i, "");
   const spaced = withoutSuffix
     .replace(/_/g, " ")
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .trim();
-  return spaced || rawName;
-}
-
-function resolveProviderIconId(tool: AvailableTool): string | null {
-  const key = (tool.name || "").toLowerCase();
-  const runtime = (tool.runtime_name || "").toLowerCase();
-  return TOOL_PROVIDER_ICON_ID[key] || TOOL_PROVIDER_ICON_ID[runtime] || null;
+  if (!spaced) return rawName;
+  return spaced
+    .split(/\s+/)
+    .map((w) => (w.length === 0 ? w : w[0].toUpperCase() + w.slice(1).toLowerCase()))
+    .join(" ");
 }
 
 function ToolIcon({ tool, label }: { tool: AvailableTool; label: string }) {
-  const providerId = resolveProviderIconId(tool);
-  const [error, setError] = useState(false);
-  if (!providerId || error) {
-    return (
-      <div className="h-8 w-8 rounded-md border border-border bg-muted flex items-center justify-center text-[10px] font-semibold text-muted-foreground">
-        {label.slice(0, 2).toUpperCase()}
-      </div>
-    );
-  }
+  const providerId = resolveIntegrationIdFromTool(tool);
   return (
-    <img
-      src={getSimpleIconUrl(providerId)}
-      alt={`${label} icon`}
-      className="h-8 w-8 rounded-md object-contain"
-      onError={() => setError(true)}
-    />
+    <IntegrationIcon id={providerId} name={label} className="h-8 w-8" />
   );
 }
 
@@ -176,6 +139,8 @@ const emptyForm: EmployeeFormData = {
 };
 
 export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode = 'modal' }: EmployeePanelProps) {
+  const { token } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState<EmployeeFormData>(emptyForm);
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [showSavedHint, setShowSavedHint] = useState(false);
@@ -198,6 +163,9 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
   const [agentFiles, setAgentFiles] = useState<FileItem[]>([]);
   const [toolSearch, setToolSearch] = useState('');
   const [publicSkillSearch, setPublicSkillSearch] = useState('');
+  const [integrationMap, setIntegrationMap] = useState<Record<string, IntegrationStatus>>({});
+  const [deploymentMode, setDeploymentMode] = useState<'cloud' | 'self_hosted'>('self_hosted');
+  const [connectingIntegration, setConnectingIntegration] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -283,6 +251,32 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
   }, [open]);
 
   useEffect(() => {
+    let cancelled = false;
+    if (!open || !token) return;
+
+    getIntegrations(token)
+      .then((data) => {
+        if (cancelled) return;
+        const nextMap: Record<string, IntegrationStatus> = {};
+        for (const integration of data.integrations || []) {
+          nextMap[integration.id] = integration;
+        }
+        setIntegrationMap(nextMap);
+        setDeploymentMode(data.deployment_mode);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIntegrationMap({});
+          setDeploymentMode('self_hosted');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, token]);
+
+  useEffect(() => {
     if (employee) {
       const savedProvider = employee.provider || '';
       setForm({
@@ -345,13 +339,57 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
     }));
   };
 
+  const MAX_TOOLS_PER_EMPLOYEE = 10;
+
   const toggleTool = (toolName: string) => {
-    setForm((prev) => ({
-      ...prev,
-      tools: prev.tools.includes(toolName)
-        ? prev.tools.filter((t) => t !== toolName)
-        : [...prev.tools, toolName],
-    }));
+    setForm((prev) => {
+      const isSelected = prev.tools.includes(toolName);
+      if (!isSelected && prev.tools.length >= MAX_TOOLS_PER_EMPLOYEE) {
+        return prev;
+      }
+      return {
+        ...prev,
+        tools: isSelected
+          ? prev.tools.filter((t) => t !== toolName)
+          : [...prev.tools, toolName],
+      };
+    });
+  };
+
+  const handleConnectIntegration = async (providerId: string) => {
+    const integration = integrationMap[providerId];
+    if (!integration) {
+      navigate('/integrations');
+      return;
+    }
+
+    const needsCredentials =
+      deploymentMode === 'self_hosted'
+      && integration.client_credentials_required
+      && !integration.has_client_credentials;
+    if (integration.auth_type === 'api_key' || needsCredentials) {
+      navigate('/integrations');
+      return;
+    }
+
+    if (!token) {
+      navigate('/integrations');
+      return;
+    }
+
+    setConnectingIntegration(providerId);
+    try {
+      const authUrl = await getOAuthUrl(token, providerId, window.location.origin);
+      if (authUrl) {
+        window.location.href = authUrl;
+      } else {
+        navigate('/integrations');
+      }
+    } catch {
+      navigate('/integrations');
+    } finally {
+      setConnectingIntegration(null);
+    }
   };
 
   const addSkill = () => {
@@ -382,6 +420,35 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
     : [{ id: form.model, name: form.model, description: 'Currently selected model', context_length: 0 }, ...availableModels];
   const selectedAvatarValue = AVATAR_URL_OPTIONS.includes(form.avatar_url) ? form.avatar_url : '';
   const isSaved = savedSignature !== null && savedSignature === JSON.stringify(form);
+  const toolQuery = toolSearch.toLowerCase();
+  const filteredTools = availableTools
+    .filter((tool) => {
+      const displayName = toToolDisplayName(tool.name).toLowerCase();
+      return (
+        displayName.includes(toolQuery) ||
+        (tool.runtime_name || '').toLowerCase().includes(toolQuery) ||
+        tool.name.toLowerCase().includes(toolQuery) ||
+        tool.description.toLowerCase().includes(toolQuery) ||
+        tool.category.toLowerCase().includes(toolQuery)
+      );
+    })
+    .sort((a, b) => toToolDisplayName(a.name).localeCompare(toToolDisplayName(b.name)));
+  const selectedTools = filteredTools.filter((tool) => form.tools.includes(tool.name));
+  const unselectedTools = filteredTools.filter((tool) => !form.tools.includes(tool.name));
+  const resolveConnectProviderId = (tool: AvailableTool): string | null => {
+    const primary = resolveIntegrationIdFromTool(tool);
+    const raw = `${tool.name} ${(tool.runtime_name || '')}`.toLowerCase();
+    const candidates = [primary];
+
+    if (primary === 'gmail' || raw.includes('gmail')) candidates.unshift('google');
+    if (primary.startsWith('google_')) candidates.push('google');
+    if (primary === 'x') candidates.push('twitter');
+
+    for (const candidate of candidates) {
+      if (candidate && integrationMap[candidate]) return candidate;
+    }
+    return null;
+  };
 
   return (
     <AnimatePresence>
@@ -520,13 +587,15 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
                         models={modelOptions}
                         loading={modelsLoading}
                         error={modelsError}
-                        provider={selectedProvider}
-                        onProviderChange={(provider) => {
-                          setSelectedProvider(provider);
-                          updateField('model', '');
-                          updateField('provider', provider);
-                        }}
-                        availableProviders={availableProviders}
+                        provider={deploymentMode === 'cloud' ? 'openrouter' : selectedProvider}
+                        {...(deploymentMode !== 'cloud' && {
+                          onProviderChange: (provider: string) => {
+                            setSelectedProvider(provider);
+                            updateField('model', '');
+                            updateField('provider', provider);
+                          },
+                          availableProviders,
+                        })}
                       />
                     </div>
 
@@ -585,7 +654,20 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
                 {activeTab === 'tools' && (
                   <div className="space-y-4">
                     <div className="flex flex-col gap-3">
-                      <p className="text-xs text-muted-foreground">Configure the capabilities and tools accessible to this employee.</p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-muted-foreground">Configure the capabilities and tools accessible to this employee.</p>
+                        <span className={cn(
+                          "text-[11px] font-semibold uppercase tracking-wider shrink-0",
+                          form.tools.length >= MAX_TOOLS_PER_EMPLOYEE ? "text-destructive" : "text-muted-foreground"
+                        )}>
+                          {form.tools.length}/{MAX_TOOLS_PER_EMPLOYEE}
+                        </span>
+                      </div>
+                      {form.tools.length >= MAX_TOOLS_PER_EMPLOYEE && (
+                        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                          Tool limit reached. Remove a tool before adding another.
+                        </div>
+                      )}
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <input
@@ -608,51 +690,141 @@ export function EmployeePanel({ open, onClose, employee, onSave, isSaving, mode 
                         Loading tools...
                       </div>
                     )}
-                    <div className="grid gap-2">
-                      {availableTools
-                        .filter((tool) => {
-                          const displayName = toToolDisplayName(tool.name).toLowerCase();
-                          return (
-                            displayName.includes(toolSearch.toLowerCase()) ||
-                            (tool.runtime_name || "").toLowerCase().includes(toolSearch.toLowerCase()) ||
-                            tool.name.toLowerCase().includes(toolSearch.toLowerCase()) ||
-                            tool.description.toLowerCase().includes(toolSearch.toLowerCase()) ||
-                            tool.category.toLowerCase().includes(toolSearch.toLowerCase())
-                          );
-                        })
-                        .map((tool) => {
-                        const isSelected = form.tools.includes(tool.name);
-                        const displayName = toToolDisplayName(tool.name);
-                        return (
-                          <button
-                            key={tool.name}
-                            type="button"
-                            onClick={() => toggleTool(tool.name)}
-                            className={cn(
-                              "flex flex-col gap-1 rounded-xl border p-4 text-left transition-all",
-                              isSelected
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
-                            )}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <ToolIcon tool={tool} label={displayName} />
-                                <div className="min-w-0">
-                                  <div className="text-sm font-semibold text-foreground truncate">{displayName}</div>
-                                </div>
-                              </div>
-                              {isSelected && <Check className="h-4 w-4 text-primary" />}
-                            </div>
-                            <div className="text-xs leading-relaxed opacity-70">{tool.description}</div>
-                            <div className="mt-2 flex items-center gap-2">
-                              <Badge variant="outline" className="text-[9px] uppercase tracking-wider px-1.5 py-0">
-                                {tool.category.replace(/_/g, ' ')}
-                              </Badge>
-                            </div>
-                          </button>
-                        );
-                      })}
+                    <div className="space-y-4 min-w-0">
+                      {selectedTools.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                            Selected Tools ({selectedTools.length})
+                          </div>
+                          <ItemGroup className="gap-2 min-w-0">
+                            {selectedTools.map((tool) => {
+                              const isSelected = true;
+                              const displayName = toToolDisplayName(tool.name);
+                              const connectProviderId = resolveConnectProviderId(tool);
+                              const integration = connectProviderId ? integrationMap[connectProviderId] : undefined;
+                              const showConnect = Boolean(connectProviderId && integration && !integration.connected);
+                              return (
+                                <Item
+                                  key={tool.name}
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  className={cn(
+                                    "w-full min-w-0 rounded-xl p-3 transition-all",
+                                    isSelected
+                                      ? "border-primary bg-primary/5 shadow-sm"
+                                      : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                                  )}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleTool(tool.name)}
+                                    className="w-full text-left"
+                                  >
+                                    <div className="flex w-full items-center justify-between">
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <ItemMedia className="size-8">
+                                          <ToolIcon tool={tool} label={displayName} />
+                                        </ItemMedia>
+                                        <ItemContent className="min-w-0 gap-0">
+                                          <ItemTitle className="truncate text-sm font-semibold text-foreground">{displayName}</ItemTitle>
+                                        </ItemContent>
+                                      </div>
+                                      {showConnect ? (
+                                        <ItemActions>
+                                          <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 px-2.5 text-[11px]"
+                                            disabled={connectingIntegration === connectProviderId}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (connectProviderId) void handleConnectIntegration(connectProviderId);
+                                            }}
+                                          >
+                                            {connectingIntegration === connectProviderId ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Connect'}
+                                          </Button>
+                                        </ItemActions>
+                                      ) : (
+                                        isSelected && <Check className="h-4 w-4 text-primary" />
+                                      )}
+                                    </div>
+                                  </button>
+                                </Item>
+                              );
+                            })}
+                          </ItemGroup>
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Available Tools ({unselectedTools.length})
+                        </div>
+                        <ItemGroup className="gap-2 min-w-0">
+                          {unselectedTools.map((tool) => {
+                            const displayName = toToolDisplayName(tool.name);
+                            const connectProviderId = resolveConnectProviderId(tool);
+                            const integration = connectProviderId ? integrationMap[connectProviderId] : undefined;
+                            const showConnect = Boolean(connectProviderId && integration && !integration.connected);
+                            const atCap = form.tools.length >= MAX_TOOLS_PER_EMPLOYEE;
+                            return (
+                              <Item
+                                key={tool.name}
+                                asChild
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                  "w-full min-w-0 rounded-xl p-3 transition-all",
+                                  atCap
+                                    ? "border-border/40 bg-background/40 text-muted-foreground/50 cursor-not-allowed"
+                                    : "border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                                )}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => toggleTool(tool.name)}
+                                  disabled={atCap}
+                                  className="w-full text-left disabled:cursor-not-allowed"
+                                >
+                                  <div className="flex w-full items-center justify-between">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <ItemMedia className="size-8">
+                                        <ToolIcon tool={tool} label={displayName} />
+                                      </ItemMedia>
+                                      <ItemContent className="min-w-0 gap-0">
+                                        <ItemTitle className="truncate text-sm font-semibold text-foreground">{displayName}</ItemTitle>
+                                      </ItemContent>
+                                    </div>
+                                    {showConnect && (
+                                      <ItemActions>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-7 px-2.5 text-[11px]"
+                                          disabled={connectingIntegration === connectProviderId}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (connectProviderId) void handleConnectIntegration(connectProviderId);
+                                          }}
+                                        >
+                                          {connectingIntegration === connectProviderId ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Connect'}
+                                        </Button>
+                                      </ItemActions>
+                                    )}
+                                  </div>
+                                </button>
+                              </Item>
+                            );
+                          })}
+                        </ItemGroup>
+                      </div>
+                      {!toolsLoading && filteredTools.length === 0 && (
+                        <div className="rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                          No tools match "{toolSearch}".
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

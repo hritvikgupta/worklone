@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class DiscordUnpinMessageTool(BaseTool):
-    name = "Discord Unpin Message"
+    name = "discord_unpin_message"
     description = "Unpin a message in a Discord channel"
     category = "integration"
 

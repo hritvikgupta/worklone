@@ -460,6 +460,963 @@ from backend.core.tools.workflow_tools.monitoring_tools import (
     ResumeWorkflowTool,
 )
 
+from backend.core.tools.integration_tools_v2.agentmail.create_draft import AgentmailCreateDraftTool
+from backend.core.tools.integration_tools_v2.agentmail.create_inbox import AgentmailCreateInboxTool
+from backend.core.tools.integration_tools_v2.agentmail.delete_draft import AgentmailDeleteDraftTool
+from backend.core.tools.integration_tools_v2.agentmail.delete_inbox import AgentmailDeleteInboxTool
+from backend.core.tools.integration_tools_v2.agentmail.delete_thread import AgentmailDeleteThreadTool
+from backend.core.tools.integration_tools_v2.agentmail.forward_message import AgentMailForwardMessageTool
+from backend.core.tools.integration_tools_v2.agentmail.get_draft import AgentMailGetDraftTool
+from backend.core.tools.integration_tools_v2.agentmail.get_inbox import AgentmailGetInboxTool
+from backend.core.tools.integration_tools_v2.agentmail.get_message import AgentmailGetMessageTool
+from backend.core.tools.integration_tools_v2.agentmail.get_thread import AgentmailGetThreadTool
+from backend.core.tools.integration_tools_v2.agentmail.list_drafts import AgentMailListDraftsTool
+from backend.core.tools.integration_tools_v2.agentmail.list_inboxes import AgentmailListInboxesTool
+from backend.core.tools.integration_tools_v2.agentmail.list_messages import AgentmailListMessagesTool
+from backend.core.tools.integration_tools_v2.agentmail.list_threads import AgentmailListThreadsTool
+from backend.core.tools.integration_tools_v2.agentmail.reply_message import AgentmailReplyMessageTool
+from backend.core.tools.integration_tools_v2.agentmail.send_draft import AgentmailSendDraftTool
+from backend.core.tools.integration_tools_v2.agentmail.send_message import AgentmailSendMessageTool
+from backend.core.tools.integration_tools_v2.agentmail.update_draft import AgentmailUpdateDraftTool
+from backend.core.tools.integration_tools_v2.agentmail.update_inbox import AgentmailUpdateInboxTool
+from backend.core.tools.integration_tools_v2.agentmail.update_message import AgentmailUpdateMessageTool
+from backend.core.tools.integration_tools_v2.agentmail.update_thread import AgentmailUpdateThreadTool
+from backend.core.tools.integration_tools_v2.ahrefs.backlinks import AhrefsBacklinksTool
+from backend.core.tools.integration_tools_v2.ahrefs.backlinks_stats import AhrefsBacklinksStatsTool
+from backend.core.tools.integration_tools_v2.ahrefs.broken_backlinks import AhrefsBrokenBacklinksTool
+from backend.core.tools.integration_tools_v2.ahrefs.domain_rating import AhrefsDomainRatingTool
+from backend.core.tools.integration_tools_v2.ahrefs.keyword_overview import AhrefsKeywordOverviewTool
+from backend.core.tools.integration_tools_v2.ahrefs.organic_keywords import AhrefsOrganicKeywordsTool
+from backend.core.tools.integration_tools_v2.ahrefs.referring_domains import AhrefsReferringDomainsTool
+from backend.core.tools.integration_tools_v2.ahrefs.top_pages import AhrefsTopPagesTool
+from backend.core.tools.integration_tools_v2.airtable.create_records import AirtableCreateRecordsTool
+from backend.core.tools.integration_tools_v2.airtable.get_base_schema import AirtableGetBaseSchemaTool
+from backend.core.tools.integration_tools_v2.airtable.get_record import AirtableGetRecordTool
+from backend.core.tools.integration_tools_v2.airtable.list_bases import AirtableListBasesTool
+from backend.core.tools.integration_tools_v2.airtable.list_records import AirtableListRecordsTool
+from backend.core.tools.integration_tools_v2.airtable.list_tables import AirtableListTablesTool
+from backend.core.tools.integration_tools_v2.airtable.update_multiple_records import AirtableUpdateMultipleRecordsTool
+from backend.core.tools.integration_tools_v2.airtable.update_record import AirtableUpdateRecordTool
+from backend.core.tools.integration_tools_v2.airweave.search import AirweaveSearchTool
+from backend.core.tools.integration_tools_v2.apollo.account_bulk_create import ApolloAccountBulkCreateTool
+from backend.core.tools.integration_tools_v2.apollo.account_bulk_update import ApolloAccountBulkUpdateTool
+from backend.core.tools.integration_tools_v2.apollo.account_create import ApolloAccountCreateTool
+from backend.core.tools.integration_tools_v2.apollo.account_search import ApolloAccountSearchTool
+from backend.core.tools.integration_tools_v2.apollo.account_update import ApolloAccountUpdateTool
+from backend.core.tools.integration_tools_v2.apollo.contact_bulk_create import ApolloContactBulkCreateTool
+from backend.core.tools.integration_tools_v2.apollo.contact_bulk_update import ApolloContactBulkUpdateTool
+from backend.core.tools.integration_tools_v2.apollo.contact_create import ApolloContactCreateTool
+from backend.core.tools.integration_tools_v2.apollo.contact_search import ApolloContactSearchTool
+from backend.core.tools.integration_tools_v2.apollo.contact_update import ApolloContactUpdateTool
+from backend.core.tools.integration_tools_v2.apollo.email_accounts import ApolloEmailAccountsTool
+from backend.core.tools.integration_tools_v2.apollo.opportunity_get import ApolloOpportunityGetTool
+from backend.core.tools.integration_tools_v2.apollo.opportunity_search import ApolloOpportunitySearchTool
+from backend.core.tools.integration_tools_v2.apollo.opportunity_update import ApolloOpportunityUpdateTool
+from backend.core.tools.integration_tools_v2.apollo.organization_bulk_enrich import ApolloOrganizationBulkEnrichTool
+from backend.core.tools.integration_tools_v2.apollo.organization_enrich import ApolloOrganizationEnrichTool
+from backend.core.tools.integration_tools_v2.apollo.organization_search import ApolloOrganizationSearchTool
+from backend.core.tools.integration_tools_v2.apollo.people_bulk_enrich import ApolloPeopleBulkEnrichTool
+from backend.core.tools.integration_tools_v2.apollo.people_enrich import ApolloPeopleEnrichTool
+from backend.core.tools.integration_tools_v2.apollo.people_search import ApolloPeopleSearchTool
+from backend.core.tools.integration_tools_v2.apollo.sequence_add_contacts import ApolloSequenceAddContactsTool
+from backend.core.tools.integration_tools_v2.apollo.sequence_search import ApolloSequenceSearchTool
+from backend.core.tools.integration_tools_v2.apollo.task_create import ApolloTaskCreateTool
+from backend.core.tools.integration_tools_v2.apollo.task_search import ApolloTaskSearchTool
+from backend.core.tools.integration_tools_v2.asana.add_comment import AsanaAddCommentTool
+from backend.core.tools.integration_tools_v2.asana.create_task import AsanaCreateTaskTool
+from backend.core.tools.integration_tools_v2.asana.get_projects import AsanaGetProjectsTool
+from backend.core.tools.integration_tools_v2.asana.get_task import AsanaGetTaskTool
+from backend.core.tools.integration_tools_v2.asana.search_tasks import AsanaSearchTasksTool
+from backend.core.tools.integration_tools_v2.asana.update_task import AsanaUpdateTaskTool
+from backend.core.tools.integration_tools_v2.ashby.add_candidate_tag import AshbyAddCandidateTagTool
+from backend.core.tools.integration_tools_v2.ashby.change_application_stage import AshbyChangeApplicationStageTool
+from backend.core.tools.integration_tools_v2.ashby.create_application import AshbyCreateApplicationTool
+from backend.core.tools.integration_tools_v2.ashby.create_candidate import AshbyCreateCandidateTool
+from backend.core.tools.integration_tools_v2.ashby.create_note import AshbyCreateNoteTool
+from backend.core.tools.integration_tools_v2.ashby.get_application import AshbyGetApplicationTool
+from backend.core.tools.integration_tools_v2.ashby.get_candidate import AshbyGetCandidateTool
+from backend.core.tools.integration_tools_v2.ashby.get_job import AshbyGetJobTool
+from backend.core.tools.integration_tools_v2.ashby.get_job_posting import AshbyGetJobPostingTool
+from backend.core.tools.integration_tools_v2.ashby.get_offer import AshbyGetOfferTool
+from backend.core.tools.integration_tools_v2.ashby.list_applications import AshbyListApplicationsTool
+from backend.core.tools.integration_tools_v2.ashby.list_archive_reasons import AshbyListArchiveReasonsTool
+from backend.core.tools.integration_tools_v2.ashby.list_candidate_tags import AshbyListCandidateTagsTool
+from backend.core.tools.integration_tools_v2.ashby.list_candidates import AshbyListCandidatesTool
+from backend.core.tools.integration_tools_v2.ashby.list_custom_fields import AshbyListCustomFieldsTool
+from backend.core.tools.integration_tools_v2.ashby.list_departments import AshbyListDepartmentsTool
+from backend.core.tools.integration_tools_v2.ashby.list_interviews import AshbyListInterviewsTool
+from backend.core.tools.integration_tools_v2.ashby.list_job_postings import AshbyListJobPostingsTool
+from backend.core.tools.integration_tools_v2.ashby.list_jobs import AshbyListJobsTool
+from backend.core.tools.integration_tools_v2.ashby.list_locations import AshbyListLocationsTool
+from backend.core.tools.integration_tools_v2.ashby.list_notes import AshbyListNotesTool
+from backend.core.tools.integration_tools_v2.ashby.list_offers import AshbyListOffersTool
+from backend.core.tools.integration_tools_v2.ashby.list_openings import AshbyListOpeningsTool
+from backend.core.tools.integration_tools_v2.ashby.list_sources import AshbyListSourcesTool
+from backend.core.tools.integration_tools_v2.ashby.list_users import AshbyListUsersTool
+from backend.core.tools.integration_tools_v2.ashby.remove_candidate_tag import AshbyRemoveCandidateTagTool
+from backend.core.tools.integration_tools_v2.ashby.search_candidates import AshbySearchCandidatesTool
+from backend.core.tools.integration_tools_v2.ashby.update_candidate import AshbyUpdateCandidateTool
+from backend.core.tools.integration_tools_v2.attio.assert_record import AttioAssertRecordTool
+from backend.core.tools.integration_tools_v2.attio.create_comment import AttioCreateCommentTool
+from backend.core.tools.integration_tools_v2.attio.create_list import AttioCreateListTool
+from backend.core.tools.integration_tools_v2.attio.create_list_entry import AttioCreateListEntryTool
+from backend.core.tools.integration_tools_v2.attio.create_note import AttioCreateNoteTool
+from backend.core.tools.integration_tools_v2.attio.create_object import AttioCreateObjectTool
+from backend.core.tools.integration_tools_v2.attio.create_record import AttioCreateRecordTool
+from backend.core.tools.integration_tools_v2.attio.create_task import AttioCreateTaskTool
+from backend.core.tools.integration_tools_v2.attio.create_webhook import AttioCreateWebhookTool
+from backend.core.tools.integration_tools_v2.attio.delete_comment import AttioDeleteCommentTool
+from backend.core.tools.integration_tools_v2.attio.delete_list_entry import AttioDeleteListEntryTool
+from backend.core.tools.integration_tools_v2.attio.delete_note import AttioDeleteNoteTool
+from backend.core.tools.integration_tools_v2.attio.delete_record import AttioDeleteRecordTool
+from backend.core.tools.integration_tools_v2.attio.delete_task import AttioDeleteTaskTool
+from backend.core.tools.integration_tools_v2.attio.delete_webhook import AttioDeleteWebhookTool
+from backend.core.tools.integration_tools_v2.attio.get_comment import AttioGetCommentTool
+from backend.core.tools.integration_tools_v2.attio.get_list import AttioGetListTool
+from backend.core.tools.integration_tools_v2.attio.get_list_entry import AttioGetListEntryTool
+from backend.core.tools.integration_tools_v2.attio.get_member import AttioGetMemberTool
+from backend.core.tools.integration_tools_v2.attio.get_note import AttioGetNoteTool
+from backend.core.tools.integration_tools_v2.attio.get_object import AttioGetObjectTool
+from backend.core.tools.integration_tools_v2.attio.get_record import AttioGetRecordTool
+from backend.core.tools.integration_tools_v2.attio.get_task import AttioGetTaskTool
+from backend.core.tools.integration_tools_v2.attio.get_thread import AttioGetThreadTool
+from backend.core.tools.integration_tools_v2.attio.get_webhook import AttioGetWebhookTool
+from backend.core.tools.integration_tools_v2.attio.list_lists import AttioListListsTool
+from backend.core.tools.integration_tools_v2.attio.list_members import AttioListMembersTool
+from backend.core.tools.integration_tools_v2.attio.list_notes import AttioListNotesTool
+from backend.core.tools.integration_tools_v2.attio.list_objects import AttioListObjectsTool
+from backend.core.tools.integration_tools_v2.attio.list_records import AttioListRecordsTool
+from backend.core.tools.integration_tools_v2.attio.list_tasks import AttioListTasksTool
+from backend.core.tools.integration_tools_v2.attio.list_threads import AttioListThreadsTool
+from backend.core.tools.integration_tools_v2.attio.list_webhooks import AttioListWebhooksTool
+from backend.core.tools.integration_tools_v2.attio.query_list_entries import AttioQueryListEntriesTool
+from backend.core.tools.integration_tools_v2.attio.search_records import AttioSearchRecordsTool
+from backend.core.tools.integration_tools_v2.attio.update_list import AttioUpdateListTool
+from backend.core.tools.integration_tools_v2.attio.update_list_entry import AttioUpdateListEntryTool
+from backend.core.tools.integration_tools_v2.attio.update_object import AttioUpdateObjectTool
+from backend.core.tools.integration_tools_v2.attio.update_record import AttioUpdateRecordTool
+from backend.core.tools.integration_tools_v2.attio.update_task import AttioUpdateTaskTool
+from backend.core.tools.integration_tools_v2.attio.update_webhook import AttioUpdateWebhookTool
+from backend.core.tools.integration_tools_v2.box.copy_file import BoxCopyFileTool
+from backend.core.tools.integration_tools_v2.box.create_folder import BoxCreateFolderTool
+from backend.core.tools.integration_tools_v2.box.delete_file import BoxDeleteFileTool
+from backend.core.tools.integration_tools_v2.box.delete_folder import BoxDeleteFolderTool
+from backend.core.tools.integration_tools_v2.box.download_file import BoxDownloadFileTool
+from backend.core.tools.integration_tools_v2.box.get_file_info import BoxGetFileInfoTool
+from backend.core.tools.integration_tools_v2.box.list_folder_items import BoxListFolderItemsTool
+from backend.core.tools.integration_tools_v2.box.search import BoxSearchTool
+from backend.core.tools.integration_tools_v2.box.update_file import BoxUpdateFileTool
+from backend.core.tools.integration_tools_v2.box.upload_file import BoxUploadFileTool
+from backend.core.tools.integration_tools_v2.box_sign.cancel_request import BoxSignCancelRequestTool
+from backend.core.tools.integration_tools_v2.box_sign.create_request import BoxSignCreateRequestTool
+from backend.core.tools.integration_tools_v2.box_sign.get_request import BoxSignGetRequestTool
+from backend.core.tools.integration_tools_v2.box_sign.list_requests import BoxSignListRequestsTool
+from backend.core.tools.integration_tools_v2.box_sign.resend_request import BoxSignResendRequestTool
+from backend.core.tools.integration_tools_v2.calcom.cancel_booking import CalcomCancelBookingTool
+from backend.core.tools.integration_tools_v2.calcom.confirm_booking import CalcomConfirmBookingTool
+from backend.core.tools.integration_tools_v2.calcom.create_booking import CalcomCreateBookingTool
+from backend.core.tools.integration_tools_v2.calcom.create_event_type import CalcomCreateEventTypeTool
+from backend.core.tools.integration_tools_v2.calcom.create_schedule import CalcomCreateScheduleTool
+from backend.core.tools.integration_tools_v2.calcom.decline_booking import CalcomDeclineBookingTool
+from backend.core.tools.integration_tools_v2.calcom.delete_event_type import CalcomDeleteEventTypeTool
+from backend.core.tools.integration_tools_v2.calcom.delete_schedule import CalcomDeleteScheduleTool
+from backend.core.tools.integration_tools_v2.calcom.get_booking import CalcomGetBookingTool
+from backend.core.tools.integration_tools_v2.calcom.get_default_schedule import CalcomGetDefaultScheduleTool
+from backend.core.tools.integration_tools_v2.calcom.get_event_type import CalcomGetEventTypeTool
+from backend.core.tools.integration_tools_v2.calcom.get_schedule import CalcomGetScheduleTool
+from backend.core.tools.integration_tools_v2.calcom.get_slots import CalcomGetSlotsTool
+from backend.core.tools.integration_tools_v2.calcom.list_bookings import CalcomListBookingsTool
+from backend.core.tools.integration_tools_v2.calcom.list_event_types import CalcomListEventTypesTool
+from backend.core.tools.integration_tools_v2.calcom.list_schedules import CalcomListSchedulesTool
+from backend.core.tools.integration_tools_v2.calcom.reschedule_booking import CalcomRescheduleBookingTool
+from backend.core.tools.integration_tools_v2.calcom.update_event_type import CalcomUpdateEventTypeTool
+from backend.core.tools.integration_tools_v2.calcom.update_schedule import CalcomUpdateScheduleTool
+from backend.core.tools.integration_tools_v2.cloudwatch.describe_alarms import CloudWatchDescribeAlarmsTool
+from backend.core.tools.integration_tools_v2.cloudwatch.describe_log_groups import CloudWatchDescribeLogGroupsTool
+from backend.core.tools.integration_tools_v2.cloudwatch.describe_log_streams import CloudWatchDescribeLogStreamsTool
+from backend.core.tools.integration_tools_v2.cloudwatch.get_log_events import CloudWatchGetLogEventsTool
+from backend.core.tools.integration_tools_v2.cloudwatch.get_metric_statistics import CloudWatchGetMetricStatisticsTool
+from backend.core.tools.integration_tools_v2.cloudwatch.list_metrics import CloudWatchListMetricsTool
+from backend.core.tools.integration_tools_v2.cloudwatch.query_logs import CloudWatchQueryLogsTool
+from backend.core.tools.integration_tools_v2.confluence.add_label import ConfluenceAddLabelTool
+from backend.core.tools.integration_tools_v2.confluence.create_blogpost import ConfluenceCreateBlogPostTool
+from backend.core.tools.integration_tools_v2.confluence.create_comment import ConfluenceCreateCommentTool
+from backend.core.tools.integration_tools_v2.confluence.create_page import ConfluenceCreatePageTool
+from backend.core.tools.integration_tools_v2.confluence.create_page_property import ConfluenceCreatePagePropertyTool
+from backend.core.tools.integration_tools_v2.confluence.create_space import ConfluenceCreateSpaceTool
+from backend.core.tools.integration_tools_v2.confluence.create_space_property import ConfluenceCreateSpacePropertyTool
+from backend.core.tools.integration_tools_v2.confluence.delete_attachment import ConfluenceDeleteAttachmentTool
+from backend.core.tools.integration_tools_v2.confluence.delete_blogpost import ConfluenceDeleteBlogPostTool
+from backend.core.tools.integration_tools_v2.confluence.delete_comment import ConfluenceDeleteCommentTool
+from backend.core.tools.integration_tools_v2.confluence.delete_label import ConfluenceDeleteLabelTool
+from backend.core.tools.integration_tools_v2.confluence.delete_page import ConfluenceDeletePageTool
+from backend.core.tools.integration_tools_v2.confluence.delete_page_property import ConfluenceDeletePagePropertyTool
+from backend.core.tools.integration_tools_v2.confluence.delete_space import ConfluenceDeleteSpaceTool
+from backend.core.tools.integration_tools_v2.confluence.delete_space_property import ConfluenceDeleteSpacePropertyTool
+from backend.core.tools.integration_tools_v2.confluence.get_blogpost import ConfluenceGetBlogPostTool
+from backend.core.tools.integration_tools_v2.confluence.get_page_ancestors import ConfluenceGetPageAncestorsTool
+from backend.core.tools.integration_tools_v2.confluence.get_page_children import ConfluenceGetPageChildrenTool
+from backend.core.tools.integration_tools_v2.confluence.get_page_descendants import ConfluenceGetPageDescendantsTool
+from backend.core.tools.integration_tools_v2.confluence.get_page_version import ConfluenceGetPageVersionTool
+from backend.core.tools.integration_tools_v2.confluence.get_pages_by_label import ConfluenceGetPagesByLabelTool
+from backend.core.tools.integration_tools_v2.confluence.get_space import ConfluenceGetSpaceTool
+from backend.core.tools.integration_tools_v2.confluence.get_task import ConfluenceGetTaskTool
+from backend.core.tools.integration_tools_v2.confluence.get_user import ConfluenceGetUserTool
+from backend.core.tools.integration_tools_v2.confluence.list_attachments import ConfluenceListAttachmentsTool
+from backend.core.tools.integration_tools_v2.confluence.list_blogposts import ConfluenceListBlogPostsTool
+from backend.core.tools.integration_tools_v2.confluence.list_blogposts_in_space import ConfluenceListBlogPostsInSpaceTool
+from backend.core.tools.integration_tools_v2.confluence.list_comments import ConfluenceListCommentsTool
+from backend.core.tools.integration_tools_v2.confluence.list_labels import ConfluenceListLabelsTool
+from backend.core.tools.integration_tools_v2.confluence.list_page_properties import ConfluenceListPagePropertiesTool
+from backend.core.tools.integration_tools_v2.confluence.list_page_versions import ConfluenceListPageVersionsTool
+from backend.core.tools.integration_tools_v2.confluence.list_pages_in_space import ConfluenceListPagesInSpaceTool
+from backend.core.tools.integration_tools_v2.confluence.list_space_labels import ConfluenceListSpaceLabelsTool
+from backend.core.tools.integration_tools_v2.confluence.list_space_permissions import ConfluenceListSpacePermissionsTool
+from backend.core.tools.integration_tools_v2.confluence.list_space_properties import ConfluenceListSpacePropertiesTool
+from backend.core.tools.integration_tools_v2.confluence.list_spaces import ConfluenceListSpacesTool
+from backend.core.tools.integration_tools_v2.confluence.list_tasks import ConfluenceListTasksTool
+from backend.core.tools.integration_tools_v2.confluence.retrieve import ConfluenceRetrieveTool
+from backend.core.tools.integration_tools_v2.confluence.search import ConfluenceSearchTool
+from backend.core.tools.integration_tools_v2.confluence.search_in_space import ConfluenceSearchInSpaceTool
+from backend.core.tools.integration_tools_v2.confluence.update import ConfluenceUpdateTool
+from backend.core.tools.integration_tools_v2.confluence.update_blogpost import ConfluenceUpdateBlogPostTool
+from backend.core.tools.integration_tools_v2.confluence.update_comment import ConfluenceUpdateCommentTool
+from backend.core.tools.integration_tools_v2.confluence.update_task import ConfluenceUpdateTaskTool
+from backend.core.tools.integration_tools_v2.confluence.upload_attachment import ConfluenceUploadAttachmentTool
+from backend.core.tools.integration_tools_v2.cursor.add_followup import CursorAddFollowupTool
+from backend.core.tools.integration_tools_v2.cursor.delete_agent import CursorDeleteAgentTool
+from backend.core.tools.integration_tools_v2.cursor.download_artifact import CursorDownloadArtifactTool
+from backend.core.tools.integration_tools_v2.cursor.get_agent import CursorGetAgentTool
+from backend.core.tools.integration_tools_v2.cursor.get_conversation import CursorGetConversationTool
+from backend.core.tools.integration_tools_v2.cursor.launch_agent import CursorLaunchAgentTool
+from backend.core.tools.integration_tools_v2.cursor.list_agents import CursorListAgentsTool
+from backend.core.tools.integration_tools_v2.cursor.list_artifacts import CursorListArtifactsTool
+from backend.core.tools.integration_tools_v2.cursor.stop_agent import CursorStopAgentTool
+from backend.core.tools.integration_tools_v2.databricks.cancel_run import DatabricksCancelRunTool
+from backend.core.tools.integration_tools_v2.databricks.execute_sql import DatabricksExecuteSqlTool
+from backend.core.tools.integration_tools_v2.databricks.get_run import DatabricksGetRunTool
+from backend.core.tools.integration_tools_v2.databricks.get_run_output import DatabricksGetRunOutputTool
+from backend.core.tools.integration_tools_v2.databricks.list_clusters import DatabricksListClustersTool
+from backend.core.tools.integration_tools_v2.databricks.list_jobs import DatabricksListJobsTool
+from backend.core.tools.integration_tools_v2.databricks.list_runs import DatabricksListRunsTool
+from backend.core.tools.integration_tools_v2.databricks.run_job import DatabricksRunJobTool
+from backend.core.tools.integration_tools_v2.datadog.cancel_downtime import DatadogCancelDowntimeTool
+from backend.core.tools.integration_tools_v2.datadog.create_downtime import DatadogCreateDowntimeTool
+from backend.core.tools.integration_tools_v2.datadog.create_event import DatadogCreateEventTool
+from backend.core.tools.integration_tools_v2.datadog.create_monitor import DatadogCreateMonitorTool
+from backend.core.tools.integration_tools_v2.datadog.get_monitor import DatadogGetMonitorTool
+from backend.core.tools.integration_tools_v2.datadog.list_downtimes import DatadogListDowntimesTool
+from backend.core.tools.integration_tools_v2.datadog.list_monitors import DatadogListMonitorsTool
+from backend.core.tools.integration_tools_v2.datadog.mute_monitor import DatadogMuteMonitorTool
+from backend.core.tools.integration_tools_v2.datadog.query_logs import DatadogQueryLogsTool
+from backend.core.tools.integration_tools_v2.datadog.query_timeseries import DatadogQueryTimeseriesTool
+from backend.core.tools.integration_tools_v2.datadog.send_logs import DatadogSendLogsTool
+from backend.core.tools.integration_tools_v2.datadog.submit_metrics import DatadogSubmitMetricsTool
+from backend.core.tools.integration_tools_v2.devin.create_session import DevinCreateSessionTool
+from backend.core.tools.integration_tools_v2.devin.get_session import DevinGetSessionTool
+from backend.core.tools.integration_tools_v2.devin.list_sessions import DevinListSessionsTool
+from backend.core.tools.integration_tools_v2.devin.send_message import DevinSendMessageTool
+from backend.core.tools.integration_tools_v2.discord.add_reaction import DiscordAddReactionTool
+from backend.core.tools.integration_tools_v2.discord.archive_thread import DiscordArchiveThreadTool
+from backend.core.tools.integration_tools_v2.discord.assign_role import DiscordAssignRoleTool
+from backend.core.tools.integration_tools_v2.discord.ban_member import DiscordBanMemberTool
+from backend.core.tools.integration_tools_v2.discord.create_channel import DiscordCreateChannelTool
+from backend.core.tools.integration_tools_v2.discord.create_invite import DiscordCreateInviteTool
+from backend.core.tools.integration_tools_v2.discord.create_role import DiscordCreateRoleTool
+from backend.core.tools.integration_tools_v2.discord.create_thread import DiscordCreateThreadTool
+from backend.core.tools.integration_tools_v2.discord.create_webhook import DiscordCreateWebhookTool
+from backend.core.tools.integration_tools_v2.discord.delete_channel import DiscordDeleteChannelTool
+from backend.core.tools.integration_tools_v2.discord.delete_invite import DiscordDeleteInviteTool
+from backend.core.tools.integration_tools_v2.discord.delete_message import DiscordDeleteMessageTool
+from backend.core.tools.integration_tools_v2.discord.delete_role import DiscordDeleteRoleTool
+from backend.core.tools.integration_tools_v2.discord.delete_webhook import DiscordDeleteWebhookTool
+from backend.core.tools.integration_tools_v2.discord.edit_message import DiscordEditMessageTool
+from backend.core.tools.integration_tools_v2.discord.execute_webhook import DiscordExecuteWebhookTool
+from backend.core.tools.integration_tools_v2.discord.get_channel import DiscordGetChannelTool
+from backend.core.tools.integration_tools_v2.discord.get_invite import DiscordGetInviteTool
+from backend.core.tools.integration_tools_v2.discord.get_member import DiscordGetMemberTool
+from backend.core.tools.integration_tools_v2.discord.get_messages import DiscordGetMessagesTool
+from backend.core.tools.integration_tools_v2.discord.get_server import DiscordGetServerTool
+from backend.core.tools.integration_tools_v2.discord.get_user import DiscordGetUserTool
+from backend.core.tools.integration_tools_v2.discord.get_webhook import DiscordGetWebhookTool
+from backend.core.tools.integration_tools_v2.discord.join_thread import DiscordJoinThreadTool
+from backend.core.tools.integration_tools_v2.discord.kick_member import DiscordKickMemberTool
+from backend.core.tools.integration_tools_v2.discord.leave_thread import DiscordLeaveThreadTool
+from backend.core.tools.integration_tools_v2.discord.pin_message import DiscordPinMessageTool
+from backend.core.tools.integration_tools_v2.discord.remove_reaction import DiscordRemoveReactionTool
+from backend.core.tools.integration_tools_v2.discord.remove_role import DiscordRemoveRoleTool
+from backend.core.tools.integration_tools_v2.discord.send_message import DiscordSendMessageTool
+from backend.core.tools.integration_tools_v2.discord.unban_member import DiscordUnbanMemberTool
+from backend.core.tools.integration_tools_v2.discord.unpin_message import DiscordUnpinMessageTool
+from backend.core.tools.integration_tools_v2.discord.update_channel import DiscordUpdateChannelTool
+from backend.core.tools.integration_tools_v2.discord.update_member import DiscordUpdateMemberTool
+from backend.core.tools.integration_tools_v2.discord.update_role import DiscordUpdateRoleTool
+from backend.core.tools.integration_tools_v2.docusign.create_from_template import DocusignCreateFromTemplateTool
+from backend.core.tools.integration_tools_v2.docusign.download_document import DocuSignDownloadDocumentTool
+from backend.core.tools.integration_tools_v2.docusign.get_envelope import DocuSignGetEnvelopeTool
+from backend.core.tools.integration_tools_v2.docusign.list_envelopes import DocuSignListEnvelopesTool
+from backend.core.tools.integration_tools_v2.docusign.list_recipients import DocuSignListRecipientsTool
+from backend.core.tools.integration_tools_v2.docusign.list_templates import DocusignListTemplatesTool
+from backend.core.tools.integration_tools_v2.docusign.send_envelope import DocuSignSendEnvelopeTool
+from backend.core.tools.integration_tools_v2.docusign.void_envelope import DocuSignVoidEnvelopeTool
+from backend.core.tools.integration_tools_v2.dropbox.copy import DropboxCopyTool
+from backend.core.tools.integration_tools_v2.dropbox.create_folder import DropboxCreateFolderTool
+from backend.core.tools.integration_tools_v2.dropbox.create_shared_link import DropboxCreateSharedLinkTool
+from backend.core.tools.integration_tools_v2.dropbox.delete import DropboxDeleteTool
+from backend.core.tools.integration_tools_v2.dropbox.download import DropboxDownloadTool
+from backend.core.tools.integration_tools_v2.dropbox.get_metadata import DropboxGetMetadataTool
+from backend.core.tools.integration_tools_v2.dropbox.list_folder import DropboxListFolderTool
+from backend.core.tools.integration_tools_v2.dropbox.move import DropboxMoveTool
+from backend.core.tools.integration_tools_v2.dropbox.search import DropboxSearchTool
+from backend.core.tools.integration_tools_v2.dropbox.upload import DropboxUploadTool
+from backend.core.tools.integration_tools_v2.dspy.chain_of_thought import DSPyChainOfThoughtTool
+from backend.core.tools.integration_tools_v2.dspy.predict import DSPyPredictTool
+from backend.core.tools.integration_tools_v2.dspy.react import DSPyReActTool
+from backend.core.tools.integration_tools_v2.duckduckgo.search import DuckDuckGoSearchTool
+from backend.core.tools.integration_tools_v2.evernote.copy_note import EvernoteCopyNoteTool
+from backend.core.tools.integration_tools_v2.evernote.create_note import EvernoteCreateNoteTool
+from backend.core.tools.integration_tools_v2.evernote.create_notebook import EvernoteCreateNotebookTool
+from backend.core.tools.integration_tools_v2.evernote.create_tag import EvernoteCreateTagTool
+from backend.core.tools.integration_tools_v2.evernote.delete_note import EvernoteDeleteNoteTool
+from backend.core.tools.integration_tools_v2.evernote.get_note import EvernoteGetNoteTool
+from backend.core.tools.integration_tools_v2.evernote.get_notebook import EvernoteGetNotebookTool
+from backend.core.tools.integration_tools_v2.evernote.list_notebooks import EvernoteListNotebooksTool
+from backend.core.tools.integration_tools_v2.evernote.list_tags import EvernoteListTagsTool
+from backend.core.tools.integration_tools_v2.evernote.search_notes import EvernoteSearchNotesTool
+from backend.core.tools.integration_tools_v2.evernote.update_note import EvernoteUpdateNoteTool
+from backend.core.tools.integration_tools_v2.exa.answer import ExaAnswerTool
+from backend.core.tools.integration_tools_v2.exa.find_similar_links import ExaFindSimilarLinksTool
+from backend.core.tools.integration_tools_v2.exa.get_contents import ExaGetContentsTool
+from backend.core.tools.integration_tools_v2.exa.research import ExaResearchTool
+from backend.core.tools.integration_tools_v2.exa.search import ExaSearchTool
+from backend.core.tools.integration_tools_v2.extend.parser import ExtendParserTool
+from backend.core.tools.integration_tools_v2.file.append import FileAppendTool
+from backend.core.tools.integration_tools_v2.file.parser import FileParserTool
+from backend.core.tools.integration_tools_v2.file.write import FileWriteTool
+from backend.core.tools.integration_tools_v2.firecrawl.agent import FirecrawlAgentTool
+from backend.core.tools.integration_tools_v2.firecrawl.crawl import FirecrawlCrawlTool
+from backend.core.tools.integration_tools_v2.firecrawl.extract import FirecrawlExtractTool
+from backend.core.tools.integration_tools_v2.firecrawl.map import FirecrawlMapTool
+from backend.core.tools.integration_tools_v2.firecrawl.scrape import FirecrawlScrapeTool
+from backend.core.tools.integration_tools_v2.firecrawl.search import FirecrawlSearchTool
+from backend.core.tools.integration_tools_v2.gamma.check_status import GammaCheckStatusTool
+from backend.core.tools.integration_tools_v2.gamma.generate import GammaGenerateTool
+from backend.core.tools.integration_tools_v2.gamma.generate_from_template import GammaGenerateFromTemplateTool
+from backend.core.tools.integration_tools_v2.gamma.list_folders import GammaListFoldersTool
+from backend.core.tools.integration_tools_v2.gamma.list_themes import GammaListThemesTool
+from backend.core.tools.integration_tools_v2.gitlab.cancel_pipeline import GitLabCancelPipelineTool
+from backend.core.tools.integration_tools_v2.gitlab.create_issue import GitLabCreateIssueTool
+from backend.core.tools.integration_tools_v2.gitlab.create_issue_note import GitLabCreateIssueNoteTool
+from backend.core.tools.integration_tools_v2.gitlab.create_merge_request import GitLabCreateMergeRequestTool
+from backend.core.tools.integration_tools_v2.gitlab.create_merge_request_note import GitLabCreateMergeRequestNoteTool
+from backend.core.tools.integration_tools_v2.gitlab.create_pipeline import GitLabCreatePipelineTool
+from backend.core.tools.integration_tools_v2.gitlab.delete_issue import GitLabDeleteIssueTool
+from backend.core.tools.integration_tools_v2.gitlab.get_issue import GitLabGetIssueTool
+from backend.core.tools.integration_tools_v2.gitlab.get_merge_request import GitLabGetMergeRequestTool
+from backend.core.tools.integration_tools_v2.gitlab.get_pipeline import GitLabGetPipelineTool
+from backend.core.tools.integration_tools_v2.gitlab.get_project import GitLabGetProjectTool
+from backend.core.tools.integration_tools_v2.gitlab.list_issues import GitLabListIssuesTool
+from backend.core.tools.integration_tools_v2.gitlab.list_merge_requests import GitlabListMergeRequestsTool
+from backend.core.tools.integration_tools_v2.gitlab.list_pipelines import GitLabListPipelinesTool
+from backend.core.tools.integration_tools_v2.gitlab.list_projects import GitLabListProjectsTool
+from backend.core.tools.integration_tools_v2.gitlab.merge_merge_request import GitLabMergeMergeRequestTool
+from backend.core.tools.integration_tools_v2.gitlab.retry_pipeline import GitLabRetryPipelineTool
+from backend.core.tools.integration_tools_v2.gitlab.update_issue import GitlabUpdateIssueTool
+from backend.core.tools.integration_tools_v2.gitlab.update_merge_request import GitLabUpdateMergeRequestTool
+from backend.core.tools.integration_tools_v2.gong.aggregate_activity import GongAggregateActivityTool
+from backend.core.tools.integration_tools_v2.gong.answered_scorecards import GongAnsweredScorecardsTool
+from backend.core.tools.integration_tools_v2.gong.get_call import GongGetCallTool
+from backend.core.tools.integration_tools_v2.gong.get_call_transcript import GongGetCallTranscriptTool
+from backend.core.tools.integration_tools_v2.gong.get_coaching import GongGetCoachingTool
+from backend.core.tools.integration_tools_v2.gong.get_extensive_calls import GongGetExtensiveCallsTool
+from backend.core.tools.integration_tools_v2.gong.get_folder_content import GongGetFolderContentTool
+from backend.core.tools.integration_tools_v2.gong.get_user import GongGetUserTool
+from backend.core.tools.integration_tools_v2.gong.interaction_stats import GongInteractionStatsTool
+from backend.core.tools.integration_tools_v2.gong.list_calls import GongListCallsTool
+from backend.core.tools.integration_tools_v2.gong.list_flows import GongListFlowsTool
+from backend.core.tools.integration_tools_v2.gong.list_library_folders import GongListLibraryFoldersTool
+from backend.core.tools.integration_tools_v2.gong.list_scorecards import GongListScorecardsTool
+from backend.core.tools.integration_tools_v2.gong.list_trackers import GongListTrackersTool
+from backend.core.tools.integration_tools_v2.gong.list_users import GongListUsersTool
+from backend.core.tools.integration_tools_v2.gong.list_workspaces import GongListWorkspacesTool
+from backend.core.tools.integration_tools_v2.gong.lookup_email import GongLookupEmailTool
+from backend.core.tools.integration_tools_v2.gong.lookup_phone import GongLookupPhoneTool
+from backend.core.tools.integration_tools_v2.google_ads.ad_performance import GoogleAdsAdPerformanceTool
+from backend.core.tools.integration_tools_v2.google_ads.list_ad_groups import GoogleAdsListAdGroupsTool
+from backend.core.tools.integration_tools_v2.google_ads.list_customers import GoogleAdsListCustomersTool
+from backend.core.tools.integration_tools_v2.google_bigquery.get_table import GoogleBigQueryGetTableTool
+from backend.core.tools.integration_tools_v2.google_bigquery.insert_rows import GoogleBigQueryInsertRowsTool
+from backend.core.tools.integration_tools_v2.google_bigquery.list_datasets import GoogleBigQueryListDatasetsTool
+from backend.core.tools.integration_tools_v2.google_bigquery.list_tables import GoogleBigQueryListTablesTool
+from backend.core.tools.integration_tools_v2.google_bigquery.query import GoogleBigQueryQueryTool
+from backend.core.tools.integration_tools_v2.google_docs.create import GoogleDocsCreateTool
+from backend.core.tools.integration_tools_v2.google_docs.read import GoogleDocsReadTool
+from backend.core.tools.integration_tools_v2.google_docs.write import GoogleDocsWriteTool
+from backend.core.tools.integration_tools_v2.google_forms.batch_update import GoogleFormsBatchUpdateTool
+from backend.core.tools.integration_tools_v2.google_forms.create_form import GoogleFormsCreateFormTool
+from backend.core.tools.integration_tools_v2.google_forms.create_watch import GoogleFormsCreateWatchTool
+from backend.core.tools.integration_tools_v2.google_forms.delete_watch import GoogleFormsDeleteWatchTool
+from backend.core.tools.integration_tools_v2.google_forms.get_form import GoogleFormsGetFormTool
+from backend.core.tools.integration_tools_v2.google_forms.get_responses import GoogleFormsGetResponsesTool
+from backend.core.tools.integration_tools_v2.google_forms.list_watches import GoogleFormsListWatchesTool
+from backend.core.tools.integration_tools_v2.google_forms.renew_watch import GoogleFormsRenewWatchTool
+from backend.core.tools.integration_tools_v2.google_forms.set_publish_settings import GoogleFormsSetPublishSettingsTool
+from backend.core.tools.integration_tools_v2.google_maps.air_quality import GoogleMapsAirQualityTool
+from backend.core.tools.integration_tools_v2.google_maps.directions import GoogleMapsDirectionsTool
+from backend.core.tools.integration_tools_v2.google_maps.distance_matrix import GoogleMapsDistanceMatrixTool
+from backend.core.tools.integration_tools_v2.google_maps.elevation import GoogleMapsElevationTool
+from backend.core.tools.integration_tools_v2.google_maps.geocode import GoogleMapsGeocodeTool
+from backend.core.tools.integration_tools_v2.google_maps.geolocate import GoogleMapsGeolocateTool
+from backend.core.tools.integration_tools_v2.google_maps.place_details import GoogleMapsPlaceDetailsTool
+from backend.core.tools.integration_tools_v2.google_maps.places_search import GoogleMapsPlacesSearchTool
+from backend.core.tools.integration_tools_v2.google_maps.reverse_geocode import GoogleMapsReverseGeocodeTool
+from backend.core.tools.integration_tools_v2.google_maps.snap_to_roads import GoogleMapsSnapToRoadsTool
+from backend.core.tools.integration_tools_v2.google_maps.speed_limits import GoogleMapsSpeedLimitsTool
+from backend.core.tools.integration_tools_v2.google_maps.timezone import GoogleMapsTimezoneTool
+from backend.core.tools.integration_tools_v2.google_maps.validate_address import GoogleMapsValidateAddressTool
+from backend.core.tools.integration_tools_v2.google_meet.create_space import GoogleMeetCreateSpaceTool
+from backend.core.tools.integration_tools_v2.google_meet.end_conference import GoogleMeetEndConferenceTool
+from backend.core.tools.integration_tools_v2.google_meet.get_conference_record import GoogleMeetGetConferenceRecordTool
+from backend.core.tools.integration_tools_v2.google_meet.get_space import GoogleMeetGetSpaceTool
+from backend.core.tools.integration_tools_v2.google_meet.list_conference_records import GoogleMeetListConferenceRecordsTool
+from backend.core.tools.integration_tools_v2.google_meet.list_participants import GoogleMeetListParticipantsTool
+from backend.core.tools.integration_tools_v2.google_sheets.append import GoogleSheetsAppendTool
+from backend.core.tools.integration_tools_v2.google_sheets.batch_clear import GoogleSheetsBatchClearTool
+from backend.core.tools.integration_tools_v2.google_sheets.batch_get import GoogleSheetsBatchGetTool
+from backend.core.tools.integration_tools_v2.google_sheets.batch_update import GoogleSheetsBatchUpdateTool
+from backend.core.tools.integration_tools_v2.google_sheets.clear import GoogleSheetsClearTool
+from backend.core.tools.integration_tools_v2.google_sheets.copy_sheet import GoogleSheetsCopySheetTool
+from backend.core.tools.integration_tools_v2.google_sheets.create_spreadsheet import GoogleSheetsCreateSpreadsheetTool
+from backend.core.tools.integration_tools_v2.google_sheets.delete_rows import GoogleSheetsDeleteRowsTool
+from backend.core.tools.integration_tools_v2.google_sheets.delete_sheet import GoogleSheetsDeleteSheetTool
+from backend.core.tools.integration_tools_v2.google_sheets.delete_spreadsheet import GoogleSheetsDeleteSpreadsheetTool
+from backend.core.tools.integration_tools_v2.google_sheets.get_spreadsheet import GoogleSheetsGetSpreadsheetTool
+from backend.core.tools.integration_tools_v2.google_sheets.read import GoogleSheetsReadTool
+from backend.core.tools.integration_tools_v2.google_sheets.update import GoogleSheetsUpdateTool
+from backend.core.tools.integration_tools_v2.google_sheets.write import GoogleSheetsWriteTool
+from backend.core.tools.integration_tools_v2.google_slides.add_image import GoogleSlidesAddImageTool
+from backend.core.tools.integration_tools_v2.google_slides.add_slide import GoogleSlidesAddSlideTool
+from backend.core.tools.integration_tools_v2.google_slides.create import GoogleSlidesCreateTool
+from backend.core.tools.integration_tools_v2.google_slides.create_shape import GoogleSlidesCreateShapeTool
+from backend.core.tools.integration_tools_v2.google_slides.create_table import GoogleSlidesCreateTableTool
+from backend.core.tools.integration_tools_v2.google_slides.delete_object import GoogleSlidesDeleteObjectTool
+from backend.core.tools.integration_tools_v2.google_slides.duplicate_object import GoogleSlidesDuplicateObjectTool
+from backend.core.tools.integration_tools_v2.google_slides.get_page import GoogleSlidesGetPageTool
+from backend.core.tools.integration_tools_v2.google_slides.get_thumbnail import GoogleSlidesGetThumbnailTool
+from backend.core.tools.integration_tools_v2.google_slides.insert_text import GoogleSlidesInsertTextTool
+from backend.core.tools.integration_tools_v2.google_slides.read import GoogleSlidesReadTool
+from backend.core.tools.integration_tools_v2.google_slides.replace_all_text import GoogleSlidesReplaceAllTextTool
+from backend.core.tools.integration_tools_v2.google_slides.update_slides_position import GoogleSlidesUpdateSlidesPositionTool
+from backend.core.tools.integration_tools_v2.google_slides.write import GoogleSlidesWriteTool
+from backend.core.tools.integration_tools_v2.google_tasks.create import GoogleTasksCreateTool
+from backend.core.tools.integration_tools_v2.google_tasks.delete import GoogleTasksDeleteTool
+from backend.core.tools.integration_tools_v2.google_tasks.get import GoogleTasksGetTool
+from backend.core.tools.integration_tools_v2.google_tasks.list import GoogleTasksListTool
+from backend.core.tools.integration_tools_v2.google_tasks.list_task_lists import GoogleTasksListTaskListsTool
+from backend.core.tools.integration_tools_v2.google_tasks.update import GoogleTasksUpdateTool
+from backend.core.tools.integration_tools_v2.granola.get_note import GranolaGetNoteTool
+from backend.core.tools.integration_tools_v2.granola.list_notes import GranolaListNotesTool
+from backend.core.tools.integration_tools_v2.greenhouse.get_application import GreenhouseGetApplicationTool
+from backend.core.tools.integration_tools_v2.greenhouse.get_candidate import GreenhouseGetCandidateTool
+from backend.core.tools.integration_tools_v2.greenhouse.get_job import GreenhouseGetJobTool
+from backend.core.tools.integration_tools_v2.greenhouse.get_user import GreenhouseGetUserTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_applications import GreenhouseListApplicationsTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_candidates import GreenhouseListCandidatesTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_departments import GreenhouseListDepartmentsTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_job_stages import GreenhouseListJobStagesTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_jobs import GreenhouseListJobsTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_offices import GreenhouseListOfficesTool
+from backend.core.tools.integration_tools_v2.greenhouse.list_users import GreenhouseListUsersTool
+from backend.core.tools.integration_tools_v2.guardrails.validate import GuardrailsValidateTool
+from backend.core.tools.integration_tools_v2.hex.cancel_run import HexCancelRunTool
+from backend.core.tools.integration_tools_v2.hex.create_collection import HexCreateCollectionTool
+from backend.core.tools.integration_tools_v2.hex.get_collection import HexGetCollectionTool
+from backend.core.tools.integration_tools_v2.hex.get_data_connection import HexGetDataConnectionTool
+from backend.core.tools.integration_tools_v2.hex.get_group import HexGetGroupTool
+from backend.core.tools.integration_tools_v2.hex.get_project import HexGetProjectTool
+from backend.core.tools.integration_tools_v2.hex.get_project_runs import HexGetProjectRunsTool
+from backend.core.tools.integration_tools_v2.hex.get_queried_tables import HexGetQueriedTablesTool
+from backend.core.tools.integration_tools_v2.hex.get_run_status import HexGetRunStatusTool
+from backend.core.tools.integration_tools_v2.hex.list_collections import HexListCollectionsTool
+from backend.core.tools.integration_tools_v2.hex.list_data_connections import HexListDataConnectionsTool
+from backend.core.tools.integration_tools_v2.hex.list_groups import HexListGroupsTool
+from backend.core.tools.integration_tools_v2.hex.list_projects import HexListProjectsTool
+from backend.core.tools.integration_tools_v2.hex.list_users import HexListUsersTool
+from backend.core.tools.integration_tools_v2.hex.run_project import HexRunProjectTool
+from backend.core.tools.integration_tools_v2.hex.update_project import HexUpdateProjectTool
+from backend.core.tools.integration_tools_v2.hunter.companies_find import HunterCompaniesFindTool
+from backend.core.tools.integration_tools_v2.hunter.discover import HunterDiscoverTool
+from backend.core.tools.integration_tools_v2.hunter.domain_search import HunterDomainSearchTool
+from backend.core.tools.integration_tools_v2.hunter.email_count import HunterEmailCountTool
+from backend.core.tools.integration_tools_v2.hunter.email_finder import HunterEmailFinderTool
+from backend.core.tools.integration_tools_v2.hunter.email_verifier import HunterEmailVerifierTool
+from backend.core.tools.integration_tools_v2.incidentio.actions_list import IncidentioActionsListTool
+from backend.core.tools.integration_tools_v2.incidentio.actions_show import IncidentioActionsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.custom_fields_create import IncidentioCustomFieldsCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.custom_fields_delete import IncidentioCustomFieldsDeleteTool
+from backend.core.tools.integration_tools_v2.incidentio.custom_fields_list import IncidentioCustomFieldsListTool
+from backend.core.tools.integration_tools_v2.incidentio.custom_fields_show import IncidentioCustomFieldsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.custom_fields_update import IncidentioCustomFieldsUpdateTool
+from backend.core.tools.integration_tools_v2.incidentio.escalation_paths_create import IncidentioEscalationPathsCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.escalation_paths_delete import IncidentioEscalationPathsDeleteTool
+from backend.core.tools.integration_tools_v2.incidentio.escalation_paths_show import IncidentioEscalationPathsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.escalation_paths_update import IncidentioEscalationPathsUpdateTool
+from backend.core.tools.integration_tools_v2.incidentio.escalations_create import IncidentioEscalationsCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.escalations_list import IncidentioEscalationsListTool
+from backend.core.tools.integration_tools_v2.incidentio.escalations_show import IncidentioEscalationsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.follow_ups_list import IncidentioFollowUpsListTool
+from backend.core.tools.integration_tools_v2.incidentio.follow_ups_show import IncidentioFollowUpsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_roles_create import IncidentioIncidentRolesCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_roles_delete import IncidentioIncidentRolesDeleteTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_roles_list import IncidentioIncidentRolesListTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_roles_show import IncidentioRolesShowTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_roles_update import IncidentioRolesUpdateTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_statuses_list import IncidentioIncidentStatusesListTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_timestamps_list import IncidentioIncidentTimestampsListTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_timestamps_show import IncidentioIncidentTimestampsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_types_list import IncidentioIncidentTypesListTool
+from backend.core.tools.integration_tools_v2.incidentio.incident_updates_list import IncidentioIncidentUpdatesListTool
+from backend.core.tools.integration_tools_v2.incidentio.incidents_create import IncidentioIncidentsCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.incidents_list import IncidentioIncidentsListTool
+from backend.core.tools.integration_tools_v2.incidentio.incidents_show import IncidentioIncidentsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.incidents_update import IncidentioIncidentsUpdateTool
+from backend.core.tools.integration_tools_v2.incidentio.schedule_entries_list import IncidentioScheduleEntriesListTool
+from backend.core.tools.integration_tools_v2.incidentio.schedule_overrides_create import IncidentioScheduleOverridesCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.schedules_create import IncidentioSchedulesCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.schedules_delete import IncidentioSchedulesDeleteTool
+from backend.core.tools.integration_tools_v2.incidentio.schedules_list import IncidentioSchedulesListTool
+from backend.core.tools.integration_tools_v2.incidentio.schedules_show import IncidentioSchedulesShowTool
+from backend.core.tools.integration_tools_v2.incidentio.schedules_update import IncidentioSchedulesUpdateTool
+from backend.core.tools.integration_tools_v2.incidentio.severities_list import IncidentioSeveritiesListTool
+from backend.core.tools.integration_tools_v2.incidentio.users_list import IncidentioUsersListTool
+from backend.core.tools.integration_tools_v2.incidentio.users_show import IncidentioUsersShowTool
+from backend.core.tools.integration_tools_v2.incidentio.workflows_create import IncidentioWorkflowsCreateTool
+from backend.core.tools.integration_tools_v2.incidentio.workflows_delete import IncidentioWorkflowsDeleteTool
+from backend.core.tools.integration_tools_v2.incidentio.workflows_list import IncidentioWorkflowsListTool
+from backend.core.tools.integration_tools_v2.incidentio.workflows_show import IncidentioWorkflowsShowTool
+from backend.core.tools.integration_tools_v2.incidentio.workflows_update import IncidentioWorkflowsUpdateTool
+from backend.core.tools.integration_tools_v2.intercom.assign_conversation import IntercomAssignConversationTool
+from backend.core.tools.integration_tools_v2.intercom.attach_contact_to_company import IntercomAttachContactToCompanyTool
+from backend.core.tools.integration_tools_v2.intercom.close_conversation import IntercomCloseConversationTool
+from backend.core.tools.integration_tools_v2.intercom.create_company import IntercomCreateCompanyTool
+from backend.core.tools.integration_tools_v2.intercom.create_contact import IntercomCreateContactTool
+from backend.core.tools.integration_tools_v2.intercom.create_event import IntercomCreateEventTool
+from backend.core.tools.integration_tools_v2.intercom.create_message import IntercomCreateMessageTool
+from backend.core.tools.integration_tools_v2.intercom.create_tag import IntercomCreateTagTool
+from backend.core.tools.integration_tools_v2.intercom.create_ticket import IntercomCreateTicketTool
+from backend.core.tools.integration_tools_v2.intercom.delete_contact import IntercomDeleteContactTool
+from backend.core.tools.integration_tools_v2.intercom.detach_contact_from_company import IntercomDetachContactFromCompanyTool
+from backend.core.tools.integration_tools_v2.intercom.get_company import IntercomGetCompanyTool
+from backend.core.tools.integration_tools_v2.intercom.get_contact import IntercomGetContactTool
+from backend.core.tools.integration_tools_v2.intercom.get_ticket import IntercomGetTicketTool
+from backend.core.tools.integration_tools_v2.intercom.list_admins import IntercomListAdminsTool
+from backend.core.tools.integration_tools_v2.intercom.list_companies import IntercomListCompaniesTool
+from backend.core.tools.integration_tools_v2.intercom.list_contacts import IntercomListContactsTool
+from backend.core.tools.integration_tools_v2.intercom.list_conversations import IntercomListConversationsTool
+from backend.core.tools.integration_tools_v2.intercom.list_tags import IntercomListTagsTool
+from backend.core.tools.integration_tools_v2.intercom.open_conversation import IntercomOpenConversationTool
+from backend.core.tools.integration_tools_v2.intercom.reply_conversation import IntercomReplyConversationTool
+from backend.core.tools.integration_tools_v2.intercom.search_contacts import IntercomSearchContactsTool
+from backend.core.tools.integration_tools_v2.intercom.search_conversations import IntercomSearchConversationsTool
+from backend.core.tools.integration_tools_v2.intercom.snooze_conversation import IntercomSnoozeConversationTool
+from backend.core.tools.integration_tools_v2.intercom.tag_contact import IntercomTagContactTool
+from backend.core.tools.integration_tools_v2.intercom.tag_conversation import IntercomTagConversationTool
+from backend.core.tools.integration_tools_v2.intercom.untag_contact import IntercomUntagContactTool
+from backend.core.tools.integration_tools_v2.intercom.update_contact import IntercomUpdateContactTool
+from backend.core.tools.integration_tools_v2.intercom.update_ticket import IntercomUpdateTicketTool
+from backend.core.tools.integration_tools_v2.kalshi.amend_order import KalshiAmendOrderTool
+from backend.core.tools.integration_tools_v2.kalshi.cancel_order import KalshiCancelOrderTool
+from backend.core.tools.integration_tools_v2.kalshi.create_order import KalshiCreateOrderTool
+from backend.core.tools.integration_tools_v2.kalshi.get_balance import KalshiGetBalanceTool
+from backend.core.tools.integration_tools_v2.kalshi.get_candlesticks import KalshiGetCandlesticksTool
+from backend.core.tools.integration_tools_v2.kalshi.get_event import KalshiGetEventTool
+from backend.core.tools.integration_tools_v2.kalshi.get_events import KalshiGetEventsTool
+from backend.core.tools.integration_tools_v2.kalshi.get_exchange_status import KalshiGetExchangeStatusTool
+from backend.core.tools.integration_tools_v2.kalshi.get_fills import KalshiGetFillsTool
+from backend.core.tools.integration_tools_v2.kalshi.get_market import KalshiGetMarketTool
+from backend.core.tools.integration_tools_v2.kalshi.get_markets import KalshiGetMarketsTool
+from backend.core.tools.integration_tools_v2.kalshi.get_order import KalshiGetOrderTool
+from backend.core.tools.integration_tools_v2.kalshi.get_orderbook import KalshiGetOrderbookTool
+from backend.core.tools.integration_tools_v2.kalshi.get_orders import KalshiGetOrdersTool
+from backend.core.tools.integration_tools_v2.kalshi.get_positions import KalshiGetPositionsTool
+from backend.core.tools.integration_tools_v2.kalshi.get_series_by_ticker import KalshiGetSeriesByTickerTool
+from backend.core.tools.integration_tools_v2.kalshi.get_trades import KalshiGetTradesTool
+from backend.core.tools.integration_tools_v2.langsmith.create_run import LangsmithCreateRunTool
+from backend.core.tools.integration_tools_v2.langsmith.create_runs_batch import LangsmithCreateRunsBatchTool
+from backend.core.tools.integration_tools_v2.llm.chat import LLMChatTool
+from backend.core.tools.integration_tools_v2.loops.create_contact import LoopsCreateContactTool
+from backend.core.tools.integration_tools_v2.loops.create_contact_property import LoopsCreateContactPropertyTool
+from backend.core.tools.integration_tools_v2.loops.delete_contact import LoopsDeleteContactTool
+from backend.core.tools.integration_tools_v2.loops.find_contact import LoopsFindContactTool
+from backend.core.tools.integration_tools_v2.loops.list_contact_properties import LoopsListContactPropertiesTool
+from backend.core.tools.integration_tools_v2.loops.list_mailing_lists import LoopsListMailingListsTool
+from backend.core.tools.integration_tools_v2.loops.list_transactional_emails import LoopsListTransactionalEmailsTool
+from backend.core.tools.integration_tools_v2.loops.send_event import LoopsSendEventTool
+from backend.core.tools.integration_tools_v2.loops.send_transactional_email import LoopsSendTransactionalEmailTool
+from backend.core.tools.integration_tools_v2.loops.update_contact import LoopsUpdateContactTool
+from backend.core.tools.integration_tools_v2.luma.add_guests import LumaAddGuestsTool
+from backend.core.tools.integration_tools_v2.luma.create_event import LumaCreateEventTool
+from backend.core.tools.integration_tools_v2.luma.get_event import LumaGetEventTool
+from backend.core.tools.integration_tools_v2.luma.get_guests import LumaGetGuestsTool
+from backend.core.tools.integration_tools_v2.luma.list_events import LumaListEventsTool
+from backend.core.tools.integration_tools_v2.luma.update_event import LumaUpdateEventTool
+from backend.core.tools.integration_tools_v2.memory.add import MemoryAddTool
+from backend.core.tools.integration_tools_v2.memory.delete import MemoryDeleteTool
+from backend.core.tools.integration_tools_v2.memory.get import MemoryGetTool
+from backend.core.tools.integration_tools_v2.memory.get_all import MemoryGetAllTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.associate import MicrosoftDataverseAssociateTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.create_multiple import MicrosoftDataverseCreateMultipleTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.create_record import MicrosoftDataverseCreateRecordTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.delete_record import MicrosoftDataverseDeleteRecordTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.disassociate import MicrosoftDataverseDisassociateTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.download_file import MicrosoftDataverseDownloadFileTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.execute_action import MicrosoftDataverseExecuteActionTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.execute_function import MicrosoftDataverseExecuteFunctionTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.fetchxml_query import MicrosoftDataverseFetchXmlQueryTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.get_record import MicrosoftDataverseGetRecordTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.list_records import MicrosoftDataverseListRecordsTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.search import MicrosoftDataverseSearchTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.update_multiple import MicrosoftDataverseUpdateMultipleTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.update_record import MicrosoftDataverseUpdateRecordTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.upload_file import MicrosoftDataverseUploadFileTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.upsert_record import MicrosoftDataverseUpsertRecordTool
+from backend.core.tools.integration_tools_v2.microsoft_dataverse.whoami import MicrosoftDataverseWhoAmITool
+from backend.core.tools.integration_tools_v2.microsoft_excel.read import MicrosoftExcelReadTool
+from backend.core.tools.integration_tools_v2.microsoft_excel.table_add import MicrosoftExcelTableAddTool
+from backend.core.tools.integration_tools_v2.microsoft_excel.worksheet_add import MicrosoftExcelWorksheetAddTool
+from backend.core.tools.integration_tools_v2.microsoft_excel.write import MicrosoftExcelWriteTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.create_bucket import MicrosoftPlannerCreateBucketTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.create_task import MicrosoftPlannerCreateTaskTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.delete_bucket import MicrosoftPlannerDeleteBucketTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.delete_task import MicrosoftPlannerDeleteTaskTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.get_task_details import MicrosoftPlannerGetTaskDetailsTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.list_buckets import MicrosoftPlannerListBucketsTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.list_plans import MicrosoftPlannerListPlansTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.read_bucket import MicrosoftPlannerReadBucketTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.read_plan import MicrosoftPlannerReadPlanTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.read_task import MicrosoftPlannerReadTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.update_bucket import MicrosoftPlannerUpdateBucketTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.update_task import MicrosoftPlannerUpdateTaskTool
+from backend.core.tools.integration_tools_v2.microsoft_planner.update_task_details import MicrosoftPlannerUpdateTaskDetailsTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.delete_channel_message import MicrosoftTeamsDeleteChannelMessageTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.delete_chat_message import MicrosoftTeamsDeleteChatMessageTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.get_message import MicrosoftTeamsGetMessageTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.list_channel_members import MicrosoftTeamsListChannelMembersTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.list_team_members import MicrosoftTeamsListMembersTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.read_channel import MicrosoftTeamsReadChannelTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.read_chat import MicrosoftTeamsReadChatTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.reply_to_message import MicrosoftTeamsReplyToMessageTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.server_utils import MicrosoftTeamsFileUploadTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.set_reaction import MicrosoftTeamsSetReactionTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.unset_reaction import MicrosoftTeamsUnsetReactionTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.update_channel_message import MicrosoftTeamsUpdateChannelMessageTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.update_chat_message import MicrosoftTeamsUpdateChatMessageTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.write_channel import MicrosoftTeamsWriteChannelTool
+from backend.core.tools.integration_tools_v2.microsoft_teams.write_chat import MicrosoftTeamsWriteChatTool
+from backend.core.tools.integration_tools_v2.neo4j.create import Neo4jCreateTool
+from backend.core.tools.integration_tools_v2.neo4j.delete import Neo4jDeleteTool
+from backend.core.tools.integration_tools_v2.neo4j.execute import Neo4jExecuteTool
+from backend.core.tools.integration_tools_v2.neo4j.introspect import Neo4jIntrospectTool
+from backend.core.tools.integration_tools_v2.neo4j.merge import Neo4jMergeTool
+from backend.core.tools.integration_tools_v2.neo4j.query import Neo4jQueryTool
+from backend.core.tools.integration_tools_v2.neo4j.update import Neo4jUpdateTool
+from backend.core.tools.integration_tools_v2.outlook.copy import OutlookCopyTool
+from backend.core.tools.integration_tools_v2.outlook.delete import OutlookDeleteTool
+from backend.core.tools.integration_tools_v2.outlook.draft import OutlookDraftTool
+from backend.core.tools.integration_tools_v2.outlook.forward import OutlookForwardTool
+from backend.core.tools.integration_tools_v2.outlook.mark_read import OutlookMarkReadTool
+from backend.core.tools.integration_tools_v2.outlook.mark_unread import OutlookMarkUnreadTool
+from backend.core.tools.integration_tools_v2.outlook.move import OutlookMoveTool
+from backend.core.tools.integration_tools_v2.outlook.read import OutlookReadTool
+from backend.core.tools.integration_tools_v2.outlook.send import OutlookSendTool
+from backend.core.tools.integration_tools_v2.pagerduty.add_note import PagerDutyAddNoteTool
+from backend.core.tools.integration_tools_v2.pagerduty.create_incident import PagerDutyCreateIncidentTool
+from backend.core.tools.integration_tools_v2.pagerduty.list_incidents import PagerDutyListIncidentsTool
+from backend.core.tools.integration_tools_v2.pagerduty.list_oncalls import PagerDutyListOncallsTool
+from backend.core.tools.integration_tools_v2.pagerduty.list_services import PagerDutyListServicesTool
+from backend.core.tools.integration_tools_v2.pagerduty.update_incident import PagerDutyUpdateIncidentTool
+from backend.core.tools.integration_tools_v2.parallel.deep_research import ParallelDeepResearchTool
+from backend.core.tools.integration_tools_v2.parallel.extract import ParallelExtractTool
+from backend.core.tools.integration_tools_v2.parallel.search import ParallelSearchTool
+from backend.core.tools.integration_tools_v2.pipedrive.create_activity import PipedriveCreateActivityTool
+from backend.core.tools.integration_tools_v2.pipedrive.create_deal import PipedriveCreateDealTool
+from backend.core.tools.integration_tools_v2.pipedrive.create_lead import PipedriveCreateLeadTool
+from backend.core.tools.integration_tools_v2.pipedrive.create_project import PipedriveCreateProjectTool
+from backend.core.tools.integration_tools_v2.pipedrive.delete_lead import PipedriveDeleteLeadTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_activities import PipedriveGetActivitiesTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_all_deals import PipedriveGetAllDealsTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_deal import PipedriveGetDealTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_files import PipedriveGetFilesTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_leads import PipedriveGetLeadsTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_mail_messages import PipedriveGetMailMessagesTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_mail_thread import PipedriveGetMailThreadTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_pipeline_deals import PipedriveGetPipelineDealsTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_pipelines import PipedriveGetPipelinesTool
+from backend.core.tools.integration_tools_v2.pipedrive.get_projects import PipedriveGetProjectsTool
+from backend.core.tools.integration_tools_v2.pipedrive.update_activity import PipedriveUpdateActivityTool
+from backend.core.tools.integration_tools_v2.pipedrive.update_deal import PipedriveUpdateDealTool
+from backend.core.tools.integration_tools_v2.pipedrive.update_lead import PipedriveUpdateLeadTool
+from backend.core.tools.integration_tools_v2.postgresql.delete import PostgreSQLDeleteTool
+from backend.core.tools.integration_tools_v2.postgresql.execute import PostgresExecuteTool
+from backend.core.tools.integration_tools_v2.postgresql.insert import PostgreSQLInsertTool
+from backend.core.tools.integration_tools_v2.postgresql.introspect import PostgreSQLIntrospectTool
+from backend.core.tools.integration_tools_v2.postgresql.query import PostgreSQLQueryTool
+from backend.core.tools.integration_tools_v2.postgresql.update import PostgreSQLUpdateTool
+from backend.core.tools.integration_tools_v2.reddit.delete import RedditDeleteTool
+from backend.core.tools.integration_tools_v2.reddit.edit import RedditEditTool
+from backend.core.tools.integration_tools_v2.reddit.get_comments import RedditGetCommentsTool
+from backend.core.tools.integration_tools_v2.reddit.get_controversial import RedditGetControversialTool
+from backend.core.tools.integration_tools_v2.reddit.get_me import RedditGetMeTool
+from backend.core.tools.integration_tools_v2.reddit.get_messages import RedditGetMessagesTool
+from backend.core.tools.integration_tools_v2.reddit.get_posts import RedditGetPostsTool
+from backend.core.tools.integration_tools_v2.reddit.get_subreddit_info import RedditGetSubredditInfoTool
+from backend.core.tools.integration_tools_v2.reddit.get_user import RedditGetUserTool
+from backend.core.tools.integration_tools_v2.reddit.hot_posts import RedditHotPostsTool
+from backend.core.tools.integration_tools_v2.reddit.reply import RedditReplyTool
+from backend.core.tools.integration_tools_v2.reddit.save import RedditSaveTool
+from backend.core.tools.integration_tools_v2.reddit.search import RedditSearchTool
+from backend.core.tools.integration_tools_v2.reddit.send_message import RedditSendMessageTool
+from backend.core.tools.integration_tools_v2.reddit.submit_post import RedditSubmitPostTool
+from backend.core.tools.integration_tools_v2.reddit.subscribe import RedditSubscribeTool
+from backend.core.tools.integration_tools_v2.reddit.vote import RedditVoteTool
+from backend.core.tools.integration_tools_v2.redis.expire import RedisExpireTool
+from backend.core.tools.integration_tools_v2.redis.get import RedisGetTool
+from backend.core.tools.integration_tools_v2.redis.hget import RedisHgetTool
+from backend.core.tools.integration_tools_v2.redis.hgetall import RedisHGetAllTool
+from backend.core.tools.integration_tools_v2.redis.hset import RedisHSetTool
+from backend.core.tools.integration_tools_v2.redis.incr import RedisIncrTool
+from backend.core.tools.integration_tools_v2.redis.incrby import RedisIncrbyTool
+from backend.core.tools.integration_tools_v2.redis.keys import RedisKeysTool
+from backend.core.tools.integration_tools_v2.redis.llen import RedisLLenTool
+from backend.core.tools.integration_tools_v2.redis.lpop import RedisLPopTool
+from backend.core.tools.integration_tools_v2.redis.lpush import RedisLPushTool
+from backend.core.tools.integration_tools_v2.redis.lrange import RedisLRangeTool
+from backend.core.tools.integration_tools_v2.redis.rpop import RedisRPopTool
+from backend.core.tools.integration_tools_v2.redis.rpush import RedisRPushTool
+from backend.core.tools.integration_tools_v2.redis.set import RedisSetTool
+from backend.core.tools.integration_tools_v2.redis.setnx import RedisSetnxTool
+from backend.core.tools.integration_tools_v2.redis.ttl import RedisTtlTool
+from backend.core.tools.integration_tools_v2.reducto.parser import ReductoParserTool
+from backend.core.tools.integration_tools_v2.s3.copy_object import S3CopyObjectTool
+from backend.core.tools.integration_tools_v2.s3.delete_object import S3DeleteObjectTool
+from backend.core.tools.integration_tools_v2.s3.get_object import S3GetObjectTool
+from backend.core.tools.integration_tools_v2.s3.list_objects import S3ListObjectsTool
+from backend.core.tools.integration_tools_v2.s3.put_object import S3PutObjectTool
+from backend.core.tools.integration_tools_v2.shopify.adjust_inventory import ShopifyAdjustInventoryTool
+from backend.core.tools.integration_tools_v2.shopify.cancel_order import ShopifyCancelOrderTool
+from backend.core.tools.integration_tools_v2.shopify.create_customer import ShopifyCreateCustomerTool
+from backend.core.tools.integration_tools_v2.shopify.create_fulfillment import ShopifyCreateFulfillmentTool
+from backend.core.tools.integration_tools_v2.shopify.create_product import ShopifyCreateProductTool
+from backend.core.tools.integration_tools_v2.shopify.delete_customer import ShopifyDeleteCustomerTool
+from backend.core.tools.integration_tools_v2.shopify.delete_product import ShopifyDeleteProductTool
+from backend.core.tools.integration_tools_v2.shopify.get_collection import ShopifyGetCollectionTool
+from backend.core.tools.integration_tools_v2.shopify.get_customer import ShopifyGetCustomerTool
+from backend.core.tools.integration_tools_v2.shopify.get_inventory_level import ShopifyGetInventoryLevelTool
+from backend.core.tools.integration_tools_v2.shopify.get_order import ShopifyGetOrderTool
+from backend.core.tools.integration_tools_v2.shopify.get_product import ShopifyGetProductTool
+from backend.core.tools.integration_tools_v2.shopify.list_collections import ShopifyListCollectionsTool
+from backend.core.tools.integration_tools_v2.shopify.list_customers import ShopifyListCustomersTool
+from backend.core.tools.integration_tools_v2.shopify.list_inventory_items import ShopifyListInventoryItemsTool
+from backend.core.tools.integration_tools_v2.shopify.list_locations import ShopifyListLocationsTool
+from backend.core.tools.integration_tools_v2.shopify.list_orders import ShopifyListOrdersTool
+from backend.core.tools.integration_tools_v2.shopify.list_products import ShopifyListProductsTool
+from backend.core.tools.integration_tools_v2.shopify.update_customer import ShopifyUpdateCustomerTool
+from backend.core.tools.integration_tools_v2.shopify.update_order import ShopifyUpdateOrderTool
+from backend.core.tools.integration_tools_v2.shopify.update_product import ShopifyUpdateProductTool
+from backend.core.tools.integration_tools_v2.sixtyfour.enrich_company import SixtyfourEnrichCompanyTool
+from backend.core.tools.integration_tools_v2.sixtyfour.enrich_lead import SixtyfourEnrichLeadTool
+from backend.core.tools.integration_tools_v2.sixtyfour.find_email import SixtyfourFindEmailTool
+from backend.core.tools.integration_tools_v2.sixtyfour.find_phone import SixtyfourFindPhoneTool
+from backend.core.tools.integration_tools_v2.sms.send import SmsSendTool
+from backend.core.tools.integration_tools_v2.trello.add_comment import TrelloAddCommentTool
+from backend.core.tools.integration_tools_v2.trello.create_card import TrelloCreateCardTool
+from backend.core.tools.integration_tools_v2.trello.get_actions import TrelloGetActionsTool
+from backend.core.tools.integration_tools_v2.trello.list_cards import TrelloListCardsTool
+from backend.core.tools.integration_tools_v2.trello.list_lists import TrelloListListsTool
+from backend.core.tools.integration_tools_v2.trello.update_card import TrelloUpdateCardTool
+from backend.core.tools.integration_tools_v2.vercel.add_domain import VercelAddDomainTool
+from backend.core.tools.integration_tools_v2.vercel.add_project_domain import VercelAddProjectDomainTool
+from backend.core.tools.integration_tools_v2.vercel.cancel_deployment import VercelCancelDeploymentTool
+from backend.core.tools.integration_tools_v2.vercel.create_alias import VercelCreateAliasTool
+from backend.core.tools.integration_tools_v2.vercel.create_check import VercelCreateCheckTool
+from backend.core.tools.integration_tools_v2.vercel.create_deployment import VercelCreateDeploymentTool
+from backend.core.tools.integration_tools_v2.vercel.create_dns_record import VercelCreateDnsRecordTool
+from backend.core.tools.integration_tools_v2.vercel.create_edge_config import VercelCreateEdgeConfigTool
+from backend.core.tools.integration_tools_v2.vercel.create_env_var import VercelCreateEnvVarTool
+from backend.core.tools.integration_tools_v2.vercel.create_project import VercelCreateProjectTool
+from backend.core.tools.integration_tools_v2.vercel.create_webhook import VercelCreateWebhookTool
+from backend.core.tools.integration_tools_v2.vercel.delete_alias import VercelDeleteAliasTool
+from backend.core.tools.integration_tools_v2.vercel.delete_deployment import VercelDeleteDeploymentTool
+from backend.core.tools.integration_tools_v2.vercel.delete_dns_record import VercelDeleteDnsRecordTool
+from backend.core.tools.integration_tools_v2.vercel.delete_domain import VercelDeleteDomainTool
+from backend.core.tools.integration_tools_v2.vercel.delete_env_var import VercelDeleteEnvVarTool
+from backend.core.tools.integration_tools_v2.vercel.delete_project import VercelDeleteProjectTool
+from backend.core.tools.integration_tools_v2.vercel.delete_webhook import VercelDeleteWebhookTool
+from backend.core.tools.integration_tools_v2.vercel.get_alias import VercelGetAliasTool
+from backend.core.tools.integration_tools_v2.vercel.get_check import VercelGetCheckTool
+from backend.core.tools.integration_tools_v2.vercel.get_deployment import VercelGetDeploymentTool
+from backend.core.tools.integration_tools_v2.vercel.get_deployment_events import VercelGetDeploymentEventsTool
+from backend.core.tools.integration_tools_v2.vercel.get_domain import VercelGetDomainTool
+from backend.core.tools.integration_tools_v2.vercel.get_domain_config import VercelGetDomainConfigTool
+from backend.core.tools.integration_tools_v2.vercel.get_edge_config import VercelGetEdgeConfigTool
+from backend.core.tools.integration_tools_v2.vercel.get_edge_config_items import VercelGetEdgeConfigItemsTool
+from backend.core.tools.integration_tools_v2.vercel.get_env_vars import VercelGetEnvVarsTool
+from backend.core.tools.integration_tools_v2.vercel.get_project import VercelGetProjectTool
+from backend.core.tools.integration_tools_v2.vercel.get_team import VercelGetTeamTool
+from backend.core.tools.integration_tools_v2.vercel.get_user import VercelGetUserTool
+from backend.core.tools.integration_tools_v2.vercel.list_aliases import VercelListAliasesTool
+from backend.core.tools.integration_tools_v2.vercel.list_checks import VercelListChecksTool
+from backend.core.tools.integration_tools_v2.vercel.list_deployment_files import VercelListDeploymentFilesTool
+from backend.core.tools.integration_tools_v2.vercel.list_deployments import VercelListDeploymentsTool
+from backend.core.tools.integration_tools_v2.vercel.list_dns_records import VercelListDnsRecordsTool
+from backend.core.tools.integration_tools_v2.vercel.list_domains import VercelListDomainsTool
+from backend.core.tools.integration_tools_v2.vercel.list_edge_configs import VercelListEdgeConfigsTool
+from backend.core.tools.integration_tools_v2.vercel.list_project_domains import VercelListProjectDomainsTool
+from backend.core.tools.integration_tools_v2.vercel.list_projects import VercelListProjectsTool
+from backend.core.tools.integration_tools_v2.vercel.list_team_members import VercelListTeamMembersTool
+from backend.core.tools.integration_tools_v2.vercel.list_teams import VercelListTeamsTool
+from backend.core.tools.integration_tools_v2.vercel.list_webhooks import VercelListWebhooksTool
+from backend.core.tools.integration_tools_v2.vercel.pause_project import VercelPauseProjectTool
+from backend.core.tools.integration_tools_v2.vercel.remove_project_domain import VercelRemoveProjectDomainTool
+from backend.core.tools.integration_tools_v2.vercel.rerequest_check import VercelRerequestCheckTool
+from backend.core.tools.integration_tools_v2.vercel.unpause_project import VercelUnpauseProjectTool
+from backend.core.tools.integration_tools_v2.vercel.update_check import VercelUpdateCheckTool
+from backend.core.tools.integration_tools_v2.vercel.update_edge_config_items import VercelUpdateEdgeConfigItemsTool
+from backend.core.tools.integration_tools_v2.vercel.update_env_var import VercelUpdateEnvVarTool
+from backend.core.tools.integration_tools_v2.vercel.update_project import VercelUpdateProjectTool
+from backend.core.tools.integration_tools_v2.video.falai import FalaiVideoTool
+from backend.core.tools.integration_tools_v2.video.luma import LumaVideoTool
+from backend.core.tools.integration_tools_v2.video.minimax import MinimaxVideoTool
+from backend.core.tools.integration_tools_v2.video.runway import RunwayVideoTool
+from backend.core.tools.integration_tools_v2.video.veo import VeoVideoTool
+from backend.core.tools.integration_tools_v2.webflow.create_item import WebflowCreateItemTool
+from backend.core.tools.integration_tools_v2.webflow.delete_item import WebflowDeleteItemTool
+from backend.core.tools.integration_tools_v2.webflow.get_item import WebflowGetItemTool
+from backend.core.tools.integration_tools_v2.webflow.list_items import WebflowListItemsTool
+from backend.core.tools.integration_tools_v2.webflow.update_item import WebflowUpdateItemTool
+from backend.core.tools.integration_tools_v2.wikipedia.content import WikipediaContentTool
+from backend.core.tools.integration_tools_v2.wikipedia.random import WikipediaRandomPageTool
+from backend.core.tools.integration_tools_v2.wikipedia.search import WikipediaSearchTool
+from backend.core.tools.integration_tools_v2.wikipedia.summary import WikipediaSummaryTool
+from backend.core.tools.integration_tools_v2.wordpress.create_category import WordPressCreateCategoryTool
+from backend.core.tools.integration_tools_v2.wordpress.create_comment import WordPressCreateCommentTool
+from backend.core.tools.integration_tools_v2.wordpress.create_page import WordPressCreatePageTool
+from backend.core.tools.integration_tools_v2.wordpress.create_post import WordPressCreatePostTool
+from backend.core.tools.integration_tools_v2.wordpress.create_tag import WordPressCreateTagTool
+from backend.core.tools.integration_tools_v2.wordpress.delete_comment import WordPressDeleteCommentTool
+from backend.core.tools.integration_tools_v2.wordpress.delete_media import WordPressDeleteMediaTool
+from backend.core.tools.integration_tools_v2.wordpress.delete_page import WordPressDeletePageTool
+from backend.core.tools.integration_tools_v2.wordpress.delete_post import WordPressDeletePostTool
+from backend.core.tools.integration_tools_v2.wordpress.get_current_user import WordPressGetCurrentUserTool
+from backend.core.tools.integration_tools_v2.wordpress.get_media import WordPressGetMediaTool
+from backend.core.tools.integration_tools_v2.wordpress.get_page import WordPressGetPageTool
+from backend.core.tools.integration_tools_v2.wordpress.get_post import WordPressGetPostTool
+from backend.core.tools.integration_tools_v2.wordpress.get_user import WordPressGetUserTool
+from backend.core.tools.integration_tools_v2.wordpress.list_categories import WordPressListCategoriesTool
+from backend.core.tools.integration_tools_v2.wordpress.list_comments import WordPressListCommentsTool
+from backend.core.tools.integration_tools_v2.wordpress.list_media import WordPressListMediaTool
+from backend.core.tools.integration_tools_v2.wordpress.list_pages import WordPressListPagesTool
+from backend.core.tools.integration_tools_v2.wordpress.list_posts import WordPressListPostsTool
+from backend.core.tools.integration_tools_v2.wordpress.list_tags import WordPressListTagsTool
+from backend.core.tools.integration_tools_v2.wordpress.list_users import WordPressListUsersTool
+from backend.core.tools.integration_tools_v2.wordpress.search_content import WordPressSearchContentTool
+from backend.core.tools.integration_tools_v2.wordpress.update_comment import WordPressUpdateCommentTool
+from backend.core.tools.integration_tools_v2.wordpress.update_page import WordPressUpdatePageTool
+from backend.core.tools.integration_tools_v2.wordpress.update_post import WordPressUpdatePostTool
+from backend.core.tools.integration_tools_v2.wordpress.upload_media import WordPressUploadMediaTool
+from backend.core.tools.integration_tools_v2.workday.assign_onboarding import WorkdayAssignOnboardingTool
+from backend.core.tools.integration_tools_v2.workday.change_job import WorkdayChangeJobTool
+from backend.core.tools.integration_tools_v2.workday.create_prehire import WorkdayCreatePrehireTool
+from backend.core.tools.integration_tools_v2.workday.get_compensation import WorkdayGetCompensationTool
+from backend.core.tools.integration_tools_v2.workday.get_organizations import WorkdayGetOrganizationsTool
+from backend.core.tools.integration_tools_v2.workday.get_worker import WorkdayGetWorkerTool
+from backend.core.tools.integration_tools_v2.workday.hire_employee import WorkdayHireEmployeeTool
+from backend.core.tools.integration_tools_v2.workday.list_workers import WorkdayListWorkersTool
+from backend.core.tools.integration_tools_v2.workday.terminate_worker import WorkdayTerminateWorkerTool
+from backend.core.tools.integration_tools_v2.workday.update_worker import WorkdayUpdateWorkerTool
+from backend.core.tools.integration_tools_v2.x.create_bookmark import XCreateBookmarkTool
+from backend.core.tools.integration_tools_v2.x.create_tweet import XCreateTweetTool
+from backend.core.tools.integration_tools_v2.x.delete_bookmark import XDeleteBookmarkTool
+from backend.core.tools.integration_tools_v2.x.delete_tweet import XDeleteTweetTool
+from backend.core.tools.integration_tools_v2.x.get_blocking import XGetBlockingTool
+from backend.core.tools.integration_tools_v2.x.get_bookmarks import XGetBookmarksTool
+from backend.core.tools.integration_tools_v2.x.get_followers import XGetFollowersTool
+from backend.core.tools.integration_tools_v2.x.get_following import XGetFollowingTool
+from backend.core.tools.integration_tools_v2.x.get_liked_tweets import XGetLikedTweetsTool
+from backend.core.tools.integration_tools_v2.x.get_liking_users import XGetLikingUsersTool
+from backend.core.tools.integration_tools_v2.x.get_me import XGetMeTool
+from backend.core.tools.integration_tools_v2.x.get_personalized_trends import XGetPersonalizedTrendsTool
+from backend.core.tools.integration_tools_v2.x.get_quote_tweets import XGetQuoteTweetsTool
+from backend.core.tools.integration_tools_v2.x.get_retweeted_by import XGetRetweetedByTool
+from backend.core.tools.integration_tools_v2.x.get_trends_by_woeid import XGetTrendsByWoeidTool
+from backend.core.tools.integration_tools_v2.x.get_tweets_by_ids import XGetTweetsByIdsTool
+from backend.core.tools.integration_tools_v2.x.get_usage import XGetUsageTool
+from backend.core.tools.integration_tools_v2.x.get_user_mentions import XGetUserMentionsTool
+from backend.core.tools.integration_tools_v2.x.get_user_timeline import XGetUserTimelineTool
+from backend.core.tools.integration_tools_v2.x.get_user_tweets import XGetUserTweetsTool
+from backend.core.tools.integration_tools_v2.x.hide_reply import XHideReplyTool
+from backend.core.tools.integration_tools_v2.x.manage_block import XManageBlockTool
+from backend.core.tools.integration_tools_v2.x.manage_follow import XManageFollowTool
+from backend.core.tools.integration_tools_v2.x.manage_like import XManageLikeTool
+from backend.core.tools.integration_tools_v2.x.manage_mute import XManageMuteTool
+from backend.core.tools.integration_tools_v2.x.manage_retweet import XManageRetweetTool
+from backend.core.tools.integration_tools_v2.x.read import XReadTool
+from backend.core.tools.integration_tools_v2.x.search import XSearchTool
+from backend.core.tools.integration_tools_v2.x.search_tweets import XSearchTweetsTool
+from backend.core.tools.integration_tools_v2.x.search_users import XSearchUsersTool
+from backend.core.tools.integration_tools_v2.x.user import XUserTool
+from backend.core.tools.integration_tools_v2.x.write import XWriteTool
+from backend.core.tools.integration_tools_v2.youtube.channel_info import YouTubeChannelInfoTool
+from backend.core.tools.integration_tools_v2.youtube.channel_playlists import YouTubeChannelPlaylistsTool
+from backend.core.tools.integration_tools_v2.youtube.channel_videos import YouTubeChannelVideosTool
+from backend.core.tools.integration_tools_v2.youtube.comments import YouTubeCommentsTool
+from backend.core.tools.integration_tools_v2.youtube.playlist_items import YouTubePlaylistItemsTool
+from backend.core.tools.integration_tools_v2.youtube.search import YouTubeSearchTool
+from backend.core.tools.integration_tools_v2.youtube.trending import YouTubeTrendingTool
+from backend.core.tools.integration_tools_v2.youtube.video_categories import YouTubeVideoCategoriesTool
+from backend.core.tools.integration_tools_v2.youtube.video_details import YouTubeVideoDetailsTool
+from backend.core.tools.integration_tools_v2.zendesk.autocomplete_organizations import ZendeskAutocompleteOrganizationsTool
+from backend.core.tools.integration_tools_v2.zendesk.create_organization import ZendeskCreateOrganizationTool
+from backend.core.tools.integration_tools_v2.zendesk.create_organizations_bulk import ZendeskCreateOrganizationsBulkTool
+from backend.core.tools.integration_tools_v2.zendesk.create_ticket import ZendeskCreateTicketTool
+from backend.core.tools.integration_tools_v2.zendesk.create_tickets_bulk import ZendeskCreateTicketsBulkTool
+from backend.core.tools.integration_tools_v2.zendesk.create_user import ZendeskCreateUserTool
+from backend.core.tools.integration_tools_v2.zendesk.create_users_bulk import ZendeskCreateUsersBulkTool
+from backend.core.tools.integration_tools_v2.zendesk.delete_organization import ZendeskDeleteOrganizationTool
+from backend.core.tools.integration_tools_v2.zendesk.delete_user import ZendeskDeleteUserTool
+from backend.core.tools.integration_tools_v2.zendesk.get_current_user import ZendeskGetCurrentUserTool
+from backend.core.tools.integration_tools_v2.zendesk.get_organization import ZendeskGetOrganizationTool
+from backend.core.tools.integration_tools_v2.zendesk.get_ticket import ZendeskGetTicketTool
+from backend.core.tools.integration_tools_v2.zendesk.get_tickets import ZendeskGetTicketsTool
+from backend.core.tools.integration_tools_v2.zendesk.get_user import ZendeskGetUserTool
+from backend.core.tools.integration_tools_v2.zendesk.get_users import ZendeskGetUsersTool
+from backend.core.tools.integration_tools_v2.zendesk.merge_tickets import ZendeskMergeTicketsTool
+from backend.core.tools.integration_tools_v2.zendesk.search import ZendeskSearchTool
+from backend.core.tools.integration_tools_v2.zendesk.search_count import ZendeskSearchCountTool
+from backend.core.tools.integration_tools_v2.zendesk.search_users import ZendeskSearchUsersTool
+from backend.core.tools.integration_tools_v2.zendesk.update_organization import ZendeskUpdateOrganizationTool
+from backend.core.tools.integration_tools_v2.zendesk.update_ticket import ZendeskUpdateTicketTool
+from backend.core.tools.integration_tools_v2.zendesk.update_tickets_bulk import ZendeskUpdateTicketsBulkTool
+from backend.core.tools.integration_tools_v2.zendesk.update_user import ZendeskUpdateUserTool
+from backend.core.tools.integration_tools_v2.zep.add_messages import ZepAddMessagesTool
+from backend.core.tools.integration_tools_v2.zep.add_user import ZepAddUserTool
+from backend.core.tools.integration_tools_v2.zep.create_thread import ZepCreateThreadTool
+from backend.core.tools.integration_tools_v2.zep.delete_thread import ZepDeleteThreadTool
+from backend.core.tools.integration_tools_v2.zep.get_context import ZepGetContextTool
+from backend.core.tools.integration_tools_v2.zep.get_messages import ZepGetMessagesTool
+from backend.core.tools.integration_tools_v2.zep.get_threads import ZepGetThreadsTool
+from backend.core.tools.integration_tools_v2.zep.get_user import ZepGetUserTool
+from backend.core.tools.integration_tools_v2.zep.get_user_threads import ZepGetUserThreadsTool
+from backend.core.tools.integration_tools_v2.zoom.create_meeting import ZoomCreateMeetingTool
+from backend.core.tools.integration_tools_v2.zoom.delete_meeting import ZoomDeleteMeetingTool
+from backend.core.tools.integration_tools_v2.zoom.delete_recording import ZoomDeleteRecordingTool
+from backend.core.tools.integration_tools_v2.zoom.get_meeting import ZoomGetMeetingTool
+from backend.core.tools.integration_tools_v2.zoom.get_meeting_invitation import ZoomGetMeetingInvitationTool
+from backend.core.tools.integration_tools_v2.zoom.get_meeting_recordings import ZoomGetMeetingRecordingsTool
+from backend.core.tools.integration_tools_v2.zoom.list_meetings import ZoomListMeetingsTool
+from backend.core.tools.integration_tools_v2.zoom.list_past_participants import ZoomListPastParticipantsTool
+from backend.core.tools.integration_tools_v2.zoom.list_recordings import ZoomListRecordingsTool
+from backend.core.tools.integration_tools_v2.zoom.update_meeting import ZoomUpdateMeetingTool
 ToolFactory = Callable[[], BaseTool]
 
 PROVIDER_TOOL_BUNDLES = {
@@ -476,7 +1433,7 @@ PROVIDER_TOOL_BUNDLES = {
             "gmail_move",
             "gmail_archive",
             "gmail_search",
-            "Gmail Delete Draft",
+            "gmail_delete_draft",
             "gmail_list_threads",
             "gmail_trash_thread",
             "gmail_create_label",
@@ -487,7 +1444,7 @@ PROVIDER_TOOL_BUNDLES = {
             "gmail_add_label",
             "gmail_draft",
             "gmail_delete_label",
-            "Gmail Read",
+            "gmail_read",
         },
     },
     "NotionTool": {
@@ -495,7 +1452,7 @@ PROVIDER_TOOL_BUNDLES = {
         "members": {
             "notion_create_database",
             "notion_read_database",
-            "Add Notion Database Row",
+            "add_notion_database_row",
             "notion_write",
             "notion_query_database",
             "notion_create_page",
@@ -520,7 +1477,7 @@ PROVIDER_TOOL_BUNDLES = {
             "salesforce_query",
             "salesforce_delete_opportunity",
             "salesforce_update_lead",
-            "Get Cases from Salesforce",
+            "get_cases_from_salesforce",
             "salesforce_update_case",
             "salesforce_get_opportunities",
             "salesforce_get_dashboard",
@@ -552,7 +1509,7 @@ PROVIDER_TOOL_BUNDLES = {
             "linear_update_comment",
             "linear_remove_label_from_project",
             "linear_create_workflow_state",
-            "Linear Add Label to Issue",
+            "linear_add_label_to_issue",
             "linear_archive_label",
             "linear_get_cycle",
             "linear_delete_comment",
@@ -594,7 +1551,7 @@ PROVIDER_TOOL_BUNDLES = {
             "linear_update_notification",
             "linear_create_customer_tier",
             "linear_list_comments",
-            "Linear Issue Writer",
+            "linear_issue_writer",
             "linear_update_project_status",
             "linear_list_project_updates",
             "linear_list_workflow_states",
@@ -621,7 +1578,7 @@ PROVIDER_TOOL_BUNDLES = {
             "linear_unarchive_issue",
             "linear_get_active_cycle",
             "linear_update_customer_tier",
-            "Linear Create Favorite",
+            "linear_create_favorite",
             "linear_read_issues",
             "linear_get_issue",
             "linear_list_users",
@@ -632,16 +1589,16 @@ PROVIDER_TOOL_BUNDLES = {
         "label": "Slack",
         "members": {
             "slack_get_channel_info",
-            "Slack Create Channel Canvas",
+            "slack_create_channel_canvas",
             "slack_list_members",
-            "Slack Get User Presence",
+            "slack_get_user_presence",
             "slack_update_message",
             "slack_update_view",
             "slack_download",
             "slack_message",
             "slack_delete_message",
             "slack_list_channels",
-            "Slack Message Reader",
+            "slack_message_reader",
             "slack_remove_reaction",
             "slack_get_user",
             "slack_open_view",
@@ -650,7 +1607,7 @@ PROVIDER_TOOL_BUNDLES = {
             "slack_get_message",
             "slack_add_reaction",
             "slack_push_view",
-            "Slack Invite to Conversation",
+            "slack_invite_to_conversation",
             "slack_get_thread",
             "slack_create_conversation",
             "slack_canvas",
@@ -711,10 +1668,10 @@ PROVIDER_TOOL_BUNDLES = {
             "stripe_create_payment_intent",
             "stripe_list_products",
             "stripe_search_subscriptions",
-            "Stripe Finalize Invoice",
+            "stripe_finalize_invoice",
             "stripe_retrieve_invoice",
             "stripe_search_products",
-            "Stripe List Charges",
+            "stripe_list_charges",
             "stripe_pay_invoice",
             "stripe_capture_charge",
             "stripe_retrieve_charge",
@@ -732,28 +1689,28 @@ PROVIDER_TOOL_BUNDLES = {
             "stripe_list_payment_intents",
             "stripe_capture_payment_intent",
             "stripe_delete_product",
-            "Stripe Create Subscription",
+            "stripe_create_subscription",
             "stripe_create_product",
             "stripe_void_invoice",
             "stripe_cancel_subscription",
-            "Stripe Retrieve Payment Intent",
-            "Stripe Search Charges",
+            "stripe_retrieve_payment_intent",
+            "stripe_search_charges",
             "stripe_update_invoice",
             "stripe_update_subscription",
             "stripe_send_invoice",
-            "Stripe List Subscriptions",
+            "stripe_list_subscriptions",
             "stripe_update_price",
             "stripe_update_charge",
-            "Stripe List Customers",
+            "stripe_list_customers",
             "stripe_cancel_payment_intent",
-            "Stripe Retrieve Customer",
+            "stripe_retrieve_customer",
             "stripe_retrieve_event",
             "stripe_create_invoice",
             "stripe_delete_invoice",
             "stripe_search_invoices",
             "stripe_retrieve_subscription",
             "stripe_search_payment_intents",
-            "Stripe Update Customer",
+            "stripe_update_customer",
             "stripe_list_events",
         },
     },
@@ -772,7 +1729,7 @@ PROVIDER_TOOL_BUNDLES = {
             "github_list_issue_comments",
             "github_fork_gist",
             "github_list_commits",
-            "GitHub Add Assignees",
+            "github_add_assignees",
             "github_fork_repo",
             "github_comment",
             "github_list_gists",
@@ -782,7 +1739,7 @@ PROVIDER_TOOL_BUNDLES = {
             "github_create_comment_reaction",
             "github_get_gist",
             "github_create_release",
-            "GitHub Comment Deleter",
+            "github_comment_deleter",
             "github_get_milestone",
             "github_delete_release",
             "github_delete_gist",
@@ -813,7 +1770,7 @@ PROVIDER_TOOL_BUNDLES = {
             "github_list_projects",
             "github_search_commits",
             "github_rerun_workflow",
-            "GitHub PR Reader",
+            "github_pr_reader",
             "github_get_commit",
             "github_get_tree",
             "github_star_gist",
@@ -857,7 +1814,7 @@ PROVIDER_TOOL_BUNDLES = {
             "jira_remove_watcher",
             "jira_delete_worklog",
             "jira_delete_comment",
-            "Jira Write",
+            "jira_write",
             "jira_delete_attachment",
             "jira_assign_issue",
             "jira_get_comments",
@@ -909,6 +1866,1368 @@ PROVIDER_TOOL_BUNDLES = {
             "google_drive_share",
             "google_drive_move",
             "google_drive_search",
+        },
+    },
+    "AgentmailTool": {
+        "label": "Agentmail",
+        "members": {
+            "agentmail_create_draft",
+            "create_inbox",
+            "agentmail_delete_draft",
+            "agentmail_delete_inbox",
+            "agentmail_delete_thread",
+            "agentmail_forward_message",
+            "agentmail_get_draft",
+            "agentmail_get_inbox",
+            "agentmail_get_message",
+            "agentmail_get_thread",
+            "agentmail_list_drafts",
+            "agentmail_list_inboxes",
+            "agentmail_list_messages",
+            "agentmail_list_threads",
+            "agentmail_reply_message",
+            "agentmail_send_draft",
+            "agentmail_send_message",
+            "agentmail_update_draft",
+            "update_inbox",
+            "agentmail_update_message",
+            "agentmail_update_thread",
+        },
+    },
+    "AhrefsTool": {
+        "label": "Ahrefs",
+        "members": {
+            "ahrefs_backlinks",
+            "ahrefs_backlinks_stats",
+            "ahrefs_broken_backlinks",
+            "ahrefs_domain_rating",
+            "ahrefs_keyword_overview",
+            "ahrefs_organic_keywords",
+            "ahrefs_referring_domains",
+            "ahrefs_top_pages",
+        },
+    },
+    "AirtableTool": {
+        "label": "Airtable",
+        "members": {
+            "airtable_create_records",
+            "airtable_get_base_schema",
+            "airtable_get_record",
+            "airtable_list_bases",
+            "airtable_list_records",
+            "airtable_list_tables",
+            "airtable_update_multiple_records",
+            "airtable_update_record",
+        },
+    },
+    "AirweaveTool": {
+        "label": "Airweave",
+        "members": {
+            "airweave_search",
+        },
+    },
+    "ApolloTool": {
+        "label": "Apollo",
+        "members": {
+            "apollo_account_bulk_create",
+            "apollo_account_bulk_update",
+            "apollo_account_create",
+            "apollo_account_search",
+            "apollo_account_update",
+            "apollo_contact_bulk_create",
+            "apollo_contact_bulk_update",
+            "apollo_contact_create",
+            "apollo_contact_search",
+            "apollo_contact_update",
+            "apollo_email_accounts",
+            "apollo_opportunity_get",
+            "apollo_search_opportunities",
+            "apollo_opportunity_update",
+            "apollo_organization_bulk_enrich",
+            "apollo_organization_enrich",
+            "apollo_organization_search",
+            "apollo_people_bulk_enrich",
+            "apollo_people_enrich",
+            "apollo_people_search",
+            "apollo_sequence_add_contacts",
+            "apollo_sequence_search",
+            "apollo_create_task",
+            "apollo_search_tasks",
+        },
+    },
+    "AsanaTool": {
+        "label": "Asana",
+        "members": {
+            "asana_add_comment",
+            "asana_create_task",
+            "asana_get_projects",
+            "asana_get_task",
+            "asana_search_tasks",
+            "asana_update_task",
+        },
+    },
+    "AshbyTool": {
+        "label": "Ashby",
+        "members": {
+            "ashby_add_candidate_tag",
+            "ashby_change_application_stage",
+            "ashby_create_application",
+            "ashby_create_candidate",
+            "ashby_create_note",
+            "ashby_get_application",
+            "ashby_get_candidate",
+            "ashby_get_job",
+            "ashby_get_job_posting",
+            "ashby_get_offer",
+            "ashby_list_applications",
+            "ashby_list_archive_reasons",
+            "ashby_list_candidate_tags",
+            "ashby_list_candidates",
+            "ashby_list_custom_fields",
+            "ashby_list_departments",
+            "ashby_list_interviews",
+            "ashby_list_job_postings",
+            "ashby_list_jobs",
+            "ashby_list_locations",
+            "ashby_list_notes",
+            "ashby_list_offers",
+            "ashby_list_openings",
+            "ashby_list_sources",
+            "ashby_list_users",
+            "ashby_remove_candidate_tag",
+            "ashby_search_candidates",
+            "ashby_update_candidate",
+        },
+    },
+    "AttioTool": {
+        "label": "Attio",
+        "members": {
+            "attio_assert_record",
+            "attio_create_comment",
+            "attio_create_list",
+            "attio_create_list_entry",
+            "attio_create_note",
+            "attio_create_object",
+            "attio_create_record",
+            "attio_create_task",
+            "attio_create_webhook",
+            "attio_delete_comment",
+            "attio_delete_list_entry",
+            "attio_delete_note",
+            "attio_delete_record",
+            "attio_delete_task",
+            "attio_delete_webhook",
+            "attio_get_comment",
+            "attio_get_list",
+            "attio_get_list_entry",
+            "attio_get_member",
+            "attio_get_note",
+            "attio_get_object",
+            "attio_get_record",
+            "attio_get_task",
+            "attio_get_thread",
+            "attio_get_webhook",
+            "attio_list_lists",
+            "attio_list_members",
+            "attio_list_notes",
+            "attio_list_objects",
+            "attio_list_records",
+            "attio_list_tasks",
+            "attio_list_threads",
+            "attio_list_webhooks",
+            "attio_query_list_entries",
+            "attio_search_records",
+            "attio_update_list",
+            "attio_update_list_entry",
+            "attio_update_object",
+            "attio_update_record",
+            "attio_update_task",
+            "attio_update_webhook",
+        },
+    },
+    "BoxTool": {
+        "label": "Box",
+        "members": {
+            "box_copy_file",
+            "box_create_folder",
+            "box_delete_file",
+            "box_delete_folder",
+            "box_download_file",
+            "box_get_file_info",
+            "box_list_folder_items",
+            "box_search",
+            "box_update_file",
+            "box_upload_file",
+        },
+    },
+    "BoxSignTool": {
+        "label": "Box Sign",
+        "members": {
+            "box_sign_cancel_request",
+            "box_sign_create_request",
+            "box_sign_get_request",
+            "box_sign_list_requests",
+            "box_sign_resend_request",
+        },
+    },
+    "CalcomTool": {
+        "label": "Calcom",
+        "members": {
+            "calcom_cancel_booking",
+            "cal_com_confirm_booking",
+            "calcom_create_booking",
+            "cal_com_create_event_type",
+            "calcom_create_schedule",
+            "calcom_decline_booking",
+            "calcom_delete_event_type",
+            "calcom_delete_schedule",
+            "calcom_get_booking",
+            "calcom_get_default_schedule",
+            "calcom_get_event_type",
+            "calcom_get_schedule",
+            "calcom_get_slots",
+            "calcom_list_bookings",
+            "calcom_list_event_types",
+            "calcom_list_schedules",
+            "calcom_reschedule_booking",
+            "calcom_update_event_type",
+            "calcom_update_schedule",
+        },
+    },
+    "CloudwatchTool": {
+        "label": "Cloudwatch",
+        "members": {
+            "cloudwatch_describe_alarms",
+            "cloudwatch_describe_log_groups",
+            "cloudwatch_describe_log_streams",
+            "cloudwatch_get_log_events",
+            "cloudwatch_get_metric_statistics",
+            "cloudwatch_list_metrics",
+            "cloudwatch_query_logs",
+        },
+    },
+    "ConfluenceTool": {
+        "label": "Confluence",
+        "members": {
+            "confluence_add_label",
+            "confluence_create_blogpost",
+            "confluence_create_comment",
+            "confluence_create_page",
+            "confluence_create_page_property",
+            "confluence_create_space",
+            "confluence_create_space_property",
+            "confluence_delete_attachment",
+            "confluence_delete_blogpost",
+            "confluence_delete_comment",
+            "confluence_delete_label",
+            "confluence_delete_page",
+            "confluence_delete_page_property",
+            "confluence_delete_space",
+            "confluence_delete_space_property",
+            "confluence_get_blogpost",
+            "confluence_get_page_ancestors",
+            "confluence_get_page_children",
+            "confluence_get_page_descendants",
+            "confluence_get_page_version",
+            "confluence_get_pages_by_label",
+            "confluence_get_space",
+            "confluence_get_task",
+            "confluence_get_user",
+            "confluence_list_attachments",
+            "confluence_list_blogposts",
+            "confluence_list_blogposts_in_space",
+            "confluence_list_comments",
+            "confluence_list_labels",
+            "confluence_list_page_properties",
+            "confluence_list_page_versions",
+            "confluence_list_pages_in_space",
+            "confluence_list_space_labels",
+            "confluence_list_space_permissions",
+            "confluence_list_space_properties",
+            "confluence_list_spaces",
+            "confluence_list_tasks",
+            "confluence_retrieve",
+            "confluence_search",
+            "confluence_search_in_space",
+            "confluence_update",
+            "confluence_update_blogpost",
+            "confluence_update_comment",
+            "confluence_update_task",
+            "confluence_upload_attachment",
+        },
+    },
+    "CursorTool": {
+        "label": "Cursor",
+        "members": {
+            "cursor_add_followup",
+            "cursor_delete_agent",
+            "cursor_download_artifact",
+            "cursor_get_agent",
+            "cursor_get_conversation",
+            "cursor_launch_agent",
+            "cursor_list_agents",
+            "cursor_list_artifacts",
+            "cursor_stop_agent",
+        },
+    },
+    "DatabricksTool": {
+        "label": "Databricks",
+        "members": {
+            "databricks_cancel_run",
+            "databricks_execute_sql",
+            "databricks_get_run",
+            "databricks_get_run_output",
+            "databricks_list_clusters",
+            "databricks_list_jobs",
+            "databricks_list_runs",
+            "databricks_run_job",
+        },
+    },
+    "DatadogTool": {
+        "label": "Datadog",
+        "members": {
+            "datadog_cancel_downtime",
+            "datadog_create_downtime",
+            "datadog_create_event",
+            "datadog_create_monitor",
+            "datadog_get_monitor",
+            "datadog_list_downtimes",
+            "datadog_list_monitors",
+            "datadog_mute_monitor",
+            "datadog_query_logs",
+            "datadog_query_timeseries",
+            "datadog_send_logs",
+            "datadog_submit_metrics",
+        },
+    },
+    "DevinTool": {
+        "label": "Devin",
+        "members": {
+            "create_session",
+            "get_session",
+            "list_sessions",
+            "send_message",
+        },
+    },
+    "DiscordTool": {
+        "label": "Discord",
+        "members": {
+            "discord_add_reaction",
+            "discord_archive_thread",
+            "discord_assign_role",
+            "discord_ban_member",
+            "discord_create_channel",
+            "discord_create_invite",
+            "discord_create_role",
+            "discord_create_thread",
+            "discord_create_webhook",
+            "discord_delete_channel",
+            "discord_delete_invite",
+            "discord_delete_message",
+            "discord_delete_role",
+            "discord_delete_webhook",
+            "discord_edit_message",
+            "discord_execute_webhook",
+            "discord_get_channel",
+            "discord_get_invite",
+            "discord_get_member",
+            "discord_get_messages",
+            "discord_get_server",
+            "discord_get_user",
+            "discord_get_webhook",
+            "discord_join_thread",
+            "discord_kick_member",
+            "discord_leave_thread",
+            "discord_pin_message",
+            "discord_remove_reaction",
+            "discord_remove_role",
+            "discord_send_message",
+            "discord_unban_member",
+            "discord_unpin_message",
+            "discord_update_channel",
+            "discord_update_member",
+            "discord_update_role",
+        },
+    },
+    "DocusignTool": {
+        "label": "Docusign",
+        "members": {
+            "docusign_create_from_template",
+            "docusign_download_document",
+            "docusign_get_envelope",
+            "docusign_list_envelopes",
+            "docusign_list_recipient",
+            "docusign_list_templates",
+            "docusign_send_envelope",
+            "docusign_void_envelope",
+        },
+    },
+    "DropboxTool": {
+        "label": "Dropbox",
+        "members": {
+            "dropbox_copy",
+            "dropbox_create_folder",
+            "dropbox_create_shared_link",
+            "dropbox_delete",
+            "dropbox_download",
+            "dropbox_get_metadata",
+            "dropbox_list_folder",
+            "dropbox_move",
+            "dropbox_search",
+            "dropbox_upload",
+        },
+    },
+    "DspyTool": {
+        "label": "Dspy",
+        "members": {
+            "dspy_chain_of_thought",
+            "dspy_predict",
+            "dspy_react",
+        },
+    },
+    "DuckduckgoTool": {
+        "label": "Duckduckgo",
+        "members": {
+            "duckduckgo_search",
+        },
+    },
+    "EvernoteTool": {
+        "label": "Evernote",
+        "members": {
+            "evernote_copy_note",
+            "evernote_create_note",
+            "evernote_create_notebook",
+            "evernote_create_tag",
+            "evernote_delete_note",
+            "evernote_get_note",
+            "evernote_get_notebook",
+            "evernote_list_notebooks",
+            "evernote_list_tags",
+            "evernote_search_notes",
+            "evernote_update_note",
+        },
+    },
+    "ExaTool": {
+        "label": "Exa",
+        "members": {
+            "exa_answer",
+            "exa_find_similar_links",
+            "exa_get_contents",
+            "exa_research",
+            "exa_search",
+        },
+    },
+    "ExtendTool": {
+        "label": "Extend",
+        "members": {
+            "extend_parser",
+        },
+    },
+    "FileTool": {
+        "label": "File",
+        "members": {
+            "file_append",
+            "file_parser",
+            "file_write",
+        },
+    },
+    "FirecrawlTool": {
+        "label": "Firecrawl",
+        "members": {
+            "firecrawl_agent",
+            "firecrawl_crawl",
+            "firecrawl_extract",
+            "firecrawl_map",
+            "firecrawl_scrape",
+            "firecrawl_search",
+        },
+    },
+    "GammaTool": {
+        "label": "Gamma",
+        "members": {
+            "gamma_check_status",
+            "gamma_generate",
+            "gamma_generate_from_template",
+            "gamma_list_folders",
+            "gamma_list_themes",
+        },
+    },
+    "GitlabTool": {
+        "label": "Gitlab",
+        "members": {
+            "gitlab_cancel_pipeline",
+            "gitlab_create_issue",
+            "gitlab_create_issue_comment",
+            "gitlab_create_merge_request",
+            "gitlab_create_merge_request_comment",
+            "gitlab_create_pipeline",
+            "gitlab_delete_issue",
+            "gitlab_get_issue",
+            "gitlab_get_merge_request",
+            "gitlab_get_pipeline",
+            "gitlab_get_project",
+            "gitlab_list_issues",
+            "gitlab_list_merge_requests",
+            "gitlab_list_pipelines",
+            "gitlab_list_projects",
+            "gitlab_merge_merge_request",
+            "gitlab_retry_pipeline",
+            "gitlab_update_issue",
+            "gitlab_update_merge_request",
+        },
+    },
+    "GongTool": {
+        "label": "Gong",
+        "members": {
+            "gong_aggregate_activity",
+            "gong_answered_scorecards",
+            "gong_get_call",
+            "gong_get_call_transcript",
+            "gong_get_coaching",
+            "gong_get_extensive_calls",
+            "gong_get_folder_content",
+            "gong_get_user",
+            "gong_interaction_stats",
+            "gong_list_calls",
+            "gong_list_flows",
+            "gong_list_library_folders",
+            "gong_list_scorecards",
+            "gong_list_trackers",
+            "gong_list_users",
+            "gong_list_workspaces",
+            "gong_lookup_email",
+            "gong_lookup_phone",
+        },
+    },
+    "GoogleAdsTool": {
+        "label": "Google Ads",
+        "members": {
+            "google_ads_ad_performance",
+            "google_ads_list_ad_groups",
+            "google_ads_list_customers",
+        },
+    },
+    "GoogleBigqueryTool": {
+        "label": "Google Bigquery",
+        "members": {
+            "google_bigquery_get_table",
+            "bigquery_insert_rows",
+            "bigquery_list_datasets",
+            "bigquery_list_tables",
+            "google_bigquery_query",
+        },
+    },
+    "GoogleDocsTool": {
+        "label": "Google Docs",
+        "members": {
+            "google_docs_create",
+            "google_docs_read",
+            "google_docs_write",
+        },
+    },
+    "GoogleFormsTool": {
+        "label": "Google Forms",
+        "members": {
+            "google_forms_batch_update",
+            "google_forms_create_form",
+            "google_forms_create_watch",
+            "google_forms_delete_watch",
+            "google_forms_get_form",
+            "google_forms_get_responses",
+            "google_forms_list_watches",
+            "google_forms_renew_watch",
+            "google_forms_set_publish_settings",
+        },
+    },
+    "GoogleMapsTool": {
+        "label": "Google Maps",
+        "members": {
+            "google_maps_air_quality",
+            "google_maps_directions",
+            "google_maps_distance_matrix",
+            "google_maps_elevation",
+            "google_maps_geocode",
+            "google_maps_geolocate",
+            "google_maps_place_details",
+            "google_maps_places_search",
+            "google_maps_reverse_geocode",
+            "google_maps_snap_to_roads",
+            "google_maps_speed_limits",
+            "google_maps_timezone",
+            "google_maps_validate_address",
+        },
+    },
+    "GoogleMeetTool": {
+        "label": "Google Meet",
+        "members": {
+            "google_meet_create_space",
+            "google_meet_end_conference",
+            "google_meet_get_conference_record",
+            "google_meet_get_space",
+            "google_meet_list_conference_records",
+            "google_meet_list_participants",
+        },
+    },
+    "GoogleSheetsTool": {
+        "label": "Google Sheets",
+        "members": {
+            "google_sheets_append",
+            "google_sheets_batch_clear_v2",
+            "google_sheets_batch_get",
+            "google_sheets_batch_update_v2",
+            "google_sheets_clear",
+            "google_sheets_copy_sheet_v2",
+            "google_sheets_create_spreadsheet",
+            "delete_rows_from_google_sheets_v2",
+            "google_sheets_delete_sheet",
+            "google_sheets_delete_spreadsheet",
+            "google_sheets_get_spreadsheet",
+            "google_sheets_read",
+            "google_sheets_update",
+            "google_sheets_write",
+        },
+    },
+    "GoogleSlidesTool": {
+        "label": "Google Slides",
+        "members": {
+            "google_slides_add_image",
+            "google_slides_add_slide",
+            "google_slides_create",
+            "create_shape_in_google_slides",
+            "google_slides_create_table",
+            "google_slides_delete_object",
+            "google_slides_duplicate_object",
+            "google_slides_get_page",
+            "google_slides_get_thumbnail",
+            "google_slides_insert_text",
+            "google_slides_read",
+            "google_slides_replace_all_text",
+            "google_slides_update_slides_position",
+            "google_slides_write",
+        },
+    },
+    "GoogleTasksTool": {
+        "label": "Google Tasks",
+        "members": {
+            "google_tasks_create",
+            "google_tasks_delete",
+            "google_tasks_get",
+            "google_tasks_list",
+            "google_tasks_list_task_lists",
+            "google_tasks_update",
+        },
+    },
+    "GranolaTool": {
+        "label": "Granola",
+        "members": {
+            "granola_get_note",
+            "granola_list_notes",
+        },
+    },
+    "GreenhouseTool": {
+        "label": "Greenhouse",
+        "members": {
+            "greenhouse_get_application",
+            "greenhouse_get_candidate",
+            "greenhouse_get_job",
+            "greenhouse_get_user",
+            "greenhouse_list_applications",
+            "greenhouse_list_candidates",
+            "greenhouse_list_departments",
+            "greenhouse_list_job_stages",
+            "greenhouse_list_jobs",
+            "greenhouse_list_offices",
+            "greenhouse_list_users",
+        },
+    },
+    "GuardrailsTool": {
+        "label": "Guardrails",
+        "members": {
+            "guardrails_validate",
+        },
+    },
+    "HexTool": {
+        "label": "Hex",
+        "members": {
+            "hex_cancel_run",
+            "hex_create_collection",
+            "hex_get_collection",
+            "hex_get_data_connection",
+            "hex_get_group",
+            "hex_get_project",
+            "hex_get_project_runs",
+            "hex_get_queried_tables",
+            "hex_get_run_status",
+            "hex_list_collections",
+            "hex_list_data_connections",
+            "hex_list_groups",
+            "hex_list_projects",
+            "hex_list_users",
+            "hex_run_project",
+            "hex_update_project",
+        },
+    },
+    "HunterTool": {
+        "label": "Hunter",
+        "members": {
+            "hunter_companies_find",
+            "hunter_discover",
+            "hunter_domain_search",
+            "hunter_email_count",
+            "hunter_email_finder",
+            "hunter_email_verifier",
+        },
+    },
+    "IncidentioTool": {
+        "label": "Incidentio",
+        "members": {
+            "incidentio_actions_list",
+            "incidentio_actions_show",
+            "incident_io_custom_fields_create",
+            "incident_io_custom_fields_delete",
+            "incidentio_custom_fields_list",
+            "incidentio_custom_fields_show",
+            "incident_io_custom_fields_update",
+            "incidentio_escalation_paths_create",
+            "incidentio_escalation_paths_delete",
+            "incidentio_escalation_paths_show",
+            "incidentio_escalation_paths_update",
+            "incidentio_escalations_create",
+            "incidentio_escalations_list",
+            "show_escalation",
+            "incidentio_follow_ups_list",
+            "incidentio_follow_ups_show",
+            "incidentio_incident_roles_create",
+            "incidentio_incident_roles_delete",
+            "incidentio_incident_roles_list",
+            "show_incident_role",
+            "update_incident_role",
+            "incidentio_incident_statuses_list",
+            "incidentio_incident_timestamps_list",
+            "incidentio_incident_timestamps_show",
+            "incidentio_incident_types_list",
+            "incidentio_incident_updates_list",
+            "incident_io_incidents_create",
+            "incident_io_incidents_list",
+            "incidentio_incidents_show",
+            "incidentio_incidents_update",
+            "incidentio_schedule_entries_list",
+            "incidentio_schedule_overrides_create",
+            "incidentio_schedules_create",
+            "incidentio_schedules_delete",
+            "incidentio_schedules_list",
+            "show_schedule",
+            "incidentio_schedules_update",
+            "incidentio_severities_list",
+            "incidentio_users_list",
+            "incidentio_users_show",
+            "incidentio_workflows_create",
+            "incident_io_workflows_delete",
+            "incidentio_workflows_list",
+            "incidentio_workflows_show",
+            "incidentio_workflows_update",
+        },
+    },
+    "IntercomTool": {
+        "label": "Intercom",
+        "members": {
+            "assign_conversation_in_intercom",
+            "intercom_attach_contact_to_company",
+            "intercom_close_conversation",
+            "intercom_create_company",
+            "create_contact_in_intercom",
+            "intercom_create_event",
+            "intercom_create_message",
+            "intercom_create_tag",
+            "intercom_create_ticket",
+            "intercom_delete_contact",
+            "detach_contact_from_company_in_intercom",
+            "intercom_get_company",
+            "intercom_get_contact",
+            "intercom_get_ticket",
+            "intercom_list_admins",
+            "intercom_list_companies",
+            "intercom_list_contacts",
+            "intercom_list_conversations",
+            "intercom_list_tags",
+            "open_conversation_in_intercom",
+            "intercom_reply_conversation",
+            "intercom_search_contacts",
+            "search_conversations_in_intercom",
+            "snooze_conversation_in_intercom",
+            "tag_contact_in_intercom",
+            "intercom_tag_conversation",
+            "untag_contact_in_intercom",
+            "intercom_update_contact",
+            "update_ticket_in_intercom",
+        },
+    },
+    "KalshiTool": {
+        "label": "Kalshi",
+        "members": {
+            "kalshi_amend_order",
+            "kalshi_cancel_order",
+            "kalshi_create_order",
+            "kalshi_get_balance",
+            "kalshi_get_candlesticks",
+            "kalshi_get_event",
+            "kalshi_get_events",
+            "kalshi_get_exchange_status",
+            "kalshi_get_fills",
+            "kalshi_get_market",
+            "kalshi_get_markets_v2",
+            "kalshi_get_order",
+            "kalshi_get_orderbook",
+            "kalshi_get_orders",
+            "kalshi_get_positions",
+            "kalshi_get_series_by_ticker",
+            "kalshi_get_trades",
+        },
+    },
+    "LangsmithTool": {
+        "label": "Langsmith",
+        "members": {
+            "langsmith_create_run",
+            "langsmith_create_runs_batch",
+        },
+    },
+    "LlmTool": {
+        "label": "Llm",
+        "members": {
+            "llm_chat",
+        },
+    },
+    "LoopsTool": {
+        "label": "Loops",
+        "members": {
+            "loops_create_contact",
+            "loops_create_contact_property",
+            "loops_delete_contact",
+            "loops_find_contact",
+            "loops_list_contact_properties",
+            "loops_list_mailing_lists",
+            "loops_list_transactional_emails",
+            "loops_send_event",
+            "loops_send_transactional_email",
+            "loops_update_contact",
+        },
+    },
+    "LumaTool": {
+        "label": "Luma",
+        "members": {
+            "luma_add_guests",
+            "luma_create_event",
+            "luma_get_event",
+            "luma_get_guests",
+            "luma_list_events",
+            "luma_update_event",
+        },
+    },
+    "MemoryTool": {
+        "label": "Memory",
+        "members": {
+            "memory_add",
+            "memory_delete",
+            "get_memory",
+            "memory_get_all",
+        },
+    },
+    "MicrosoftDataverseTool": {
+        "label": "Microsoft Dataverse",
+        "members": {
+            "microsoft_dataverse_associate",
+            "microsoft_dataverse_create_multiple",
+            "microsoft_dataverse_create_record",
+            "microsoft_dataverse_delete_record",
+            "microsoft_dataverse_disassociate",
+            "microsoft_dataverse_download_file",
+            "microsoft_dataverse_execute_action",
+            "execute_microsoft_dataverse_function",
+            "microsoft_dataverse_fetchxml_query",
+            "microsoft_dataverse_get_record",
+            "microsoft_dataverse_list_records",
+            "microsoft_dataverse_search",
+            "microsoft_dataverse_update_multiple",
+            "microsoft_dataverse_update_record",
+            "microsoft_dataverse_upload_file",
+            "microsoft_dataverse_upsert_record",
+            "microsoft_dataverse_whoami",
+        },
+    },
+    "MicrosoftExcelTool": {
+        "label": "Microsoft Excel",
+        "members": {
+            "microsoft_excel_read",
+            "microsoft_excel_table_add",
+            "microsoft_excel_worksheet_add",
+            "microsoft_excel_write",
+        },
+    },
+    "MicrosoftPlannerTool": {
+        "label": "Microsoft Planner",
+        "members": {
+            "microsoft_planner_create_bucket",
+            "microsoft_planner_create_task",
+            "microsoft_planner_delete_bucket",
+            "microsoft_planner_delete_task",
+            "microsoft_planner_get_task_details",
+            "microsoft_planner_list_buckets",
+            "microsoft_planner_list_plans",
+            "microsoft_planner_read_bucket",
+            "microsoft_planner_read_plan",
+            "microsoft_planner_read_task",
+            "microsoft_planner_update_bucket",
+            "microsoft_planner_update_task",
+            "microsoft_planner_update_task_details",
+        },
+    },
+    "MicrosoftTeamsTool": {
+        "label": "Microsoft Teams",
+        "members": {
+            "microsoft_teams_delete_channel_message",
+            "microsoft_teams_delete_chat_message",
+            "microsoft_teams_get_message",
+            "microsoft_teams_list_channel_members",
+            "microsoft_teams_list_team_members",
+            "microsoft_teams_read_channel",
+            "microsoft_teams_read_chat",
+            "microsoft_teams_reply_to_message",
+            "microsoft_teams_upload_files",
+            "microsoft_teams_set_reaction",
+            "microsoft_teams_unset_reaction",
+            "update_microsoft_teams_channel_message",
+            "update_microsoft_teams_chat_message",
+            "microsoft_teams_write_channel",
+            "microsoft_teams_write_chat",
+        },
+    },
+    "Neo4jTool": {
+        "label": "Neo4J",
+        "members": {
+            "neo4j_create",
+            "neo4j_delete",
+            "neo4j_execute",
+            "neo4j_introspect",
+            "neo4j_merge",
+            "neo4j_query",
+            "neo4j_update",
+        },
+    },
+    "OutlookTool": {
+        "label": "Outlook",
+        "members": {
+            "outlook_copy",
+            "outlook_delete",
+            "outlook_draft",
+            "outlook_forward",
+            "outlook_mark_read",
+            "outlook_mark_unread",
+            "outlook_move",
+            "outlook_read",
+            "outlook_send",
+        },
+    },
+    "PagerdutyTool": {
+        "label": "Pagerduty",
+        "members": {
+            "pagerduty_add_note",
+            "pagerduty_create_incident",
+            "pagerduty_list_incidents",
+            "pagerduty_list_oncalls",
+            "pagerduty_list_services",
+            "pagerduty_update_incident",
+        },
+    },
+    "ParallelTool": {
+        "label": "Parallel",
+        "members": {
+            "parallel_deep_research",
+            "parallel_extract",
+            "parallel_search",
+        },
+    },
+    "PipedriveTool": {
+        "label": "Pipedrive",
+        "members": {
+            "pipedrive_create_activity",
+            "pipedrive_create_deal",
+            "pipedrive_create_lead",
+            "pipedrive_create_project",
+            "pipedrive_delete_lead",
+            "pipedrive_get_activities",
+            "pipedrive_get_all_deals",
+            "pipedrive_get_deal",
+            "pipedrive_get_files",
+            "pipedrive_get_leads",
+            "pipedrive_get_mail_messages",
+            "pipedrive_get_mail_thread",
+            "pipedrive_get_pipeline_deals",
+            "pipedrive_get_pipelines",
+            "pipedrive_get_projects",
+            "pipedrive_update_activity",
+            "pipedrive_update_deal",
+            "pipedrive_update_lead",
+        },
+    },
+    "PostgresqlTool": {
+        "label": "Postgresql",
+        "members": {
+            "postgresql_delete",
+            "postgresql_execute",
+            "postgresql_insert",
+            "postgresql_introspect",
+            "postgresql_query",
+            "postgresql_update",
+        },
+    },
+    "RedditTool": {
+        "label": "Reddit",
+        "members": {
+            "reddit_delete",
+            "reddit_edit",
+            "reddit_get_comments",
+            "reddit_get_controversial",
+            "reddit_get_me",
+            "reddit_get_messages",
+            "reddit_get_posts",
+            "reddit_get_subreddit_info",
+            "reddit_get_user",
+            "reddit_hot_posts",
+            "reddit_reply",
+            "reddit_save",
+            "reddit_search",
+            "reddit_send_message",
+            "reddit_submit_post",
+            "reddit_subscribe",
+            "reddit_vote",
+        },
+    },
+    "RedisTool": {
+        "label": "Redis",
+        "members": {
+            "redis_expire",
+            "redis_get",
+            "redis_hget",
+            "redis_hgetall",
+            "redis_hset",
+            "redis_incr",
+            "redis_incrby",
+            "redis_keys",
+            "redis_llen",
+            "redis_lpop",
+            "redis_lpush",
+            "redis_lrange",
+            "redis_rpop",
+            "redis_rpush",
+            "redis_set",
+            "redis_setnx",
+            "redis_ttl",
+        },
+    },
+    "ReductoTool": {
+        "label": "Reducto",
+        "members": {
+            "reducto_parser",
+        },
+    },
+    "S3Tool": {
+        "label": "S3",
+        "members": {
+            "s3_copy_object",
+            "s3_delete_object",
+            "s3_get_object",
+            "s3_list_objects",
+            "s3_put_object",
+        },
+    },
+    "ShopifyTool": {
+        "label": "Shopify",
+        "members": {
+            "shopify_adjust_inventory",
+            "shopify_cancel_order",
+            "shopify_create_customer",
+            "shopify_create_fulfillment",
+            "shopify_create_product",
+            "shopify_delete_customer",
+            "shopify_delete_product",
+            "shopify_get_collection",
+            "shopify_get_customer",
+            "shopify_get_inventory_level",
+            "shopify_get_order",
+            "shopify_get_product",
+            "shopify_list_collections",
+            "shopify_list_customers",
+            "shopify_list_inventory_items",
+            "shopify_list_locations",
+            "shopify_list_orders",
+            "shopify_list_products",
+            "shopify_update_customer",
+            "shopify_update_order",
+            "shopify_update_product",
+        },
+    },
+    "SixtyfourTool": {
+        "label": "Sixtyfour",
+        "members": {
+            "sixtyfour_enrich_company",
+            "sixtyfour_enrich_lead",
+            "sixtyfour_find_email",
+            "sixtyfour_find_phone",
+        },
+    },
+    "SmsTool": {
+        "label": "Sms",
+        "members": {
+            "sms_send",
+        },
+    },
+    "TrelloTool": {
+        "label": "Trello",
+        "members": {
+            "trello_add_comment",
+            "trello_create_card",
+            "trello_get_actions",
+            "trello_list_cards",
+            "trello_list_lists",
+            "trello_update_card",
+        },
+    },
+    "VercelTool": {
+        "label": "Vercel",
+        "members": {
+            "vercel_add_domain",
+            "vercel_add_project_domain",
+            "vercel_cancel_deployment",
+            "vercel_create_alias",
+            "vercel_create_check",
+            "vercel_create_deployment",
+            "vercel_create_dns_record",
+            "vercel_create_edge_config",
+            "vercel_create_env_var",
+            "vercel_create_project",
+            "vercel_create_webhook",
+            "vercel_delete_alias",
+            "vercel_delete_deployment",
+            "vercel_delete_dns_record",
+            "vercel_delete_domain",
+            "vercel_delete_env_var",
+            "vercel_delete_project",
+            "vercel_delete_webhook",
+            "vercel_get_alias",
+            "vercel_get_check",
+            "vercel_get_deployment",
+            "vercel_get_deployment_events",
+            "vercel_get_domain",
+            "vercel_get_domain_config",
+            "vercel_get_edge_config",
+            "vercel_get_edge_config_items",
+            "vercel_get_env_vars",
+            "vercel_get_project",
+            "vercel_get_team",
+            "vercel_get_user",
+            "vercel_list_aliases",
+            "vercel_list_checks",
+            "vercel_list_deployment_files",
+            "vercel_list_deployments",
+            "vercel_list_dns_records",
+            "vercel_list_domains",
+            "vercel_list_edge_configs",
+            "vercel_list_project_domains",
+            "vercel_list_projects",
+            "vercel_list_team_members",
+            "vercel_list_teams",
+            "vercel_list_webhooks",
+            "vercel_pause_project",
+            "vercel_remove_project_domain",
+            "vercel_rerequest_check",
+            "vercel_unpause_project",
+            "vercel_update_check",
+            "vercel_update_edge_config_items",
+            "vercel_update_env_var",
+            "vercel_update_project",
+        },
+    },
+    "VideoTool": {
+        "label": "Video",
+        "members": {
+            "fal_ai_video_generation",
+            "luma_dream_machine_video",
+            "minimax_hailuo_video",
+            "video_runway",
+            "video_veo",
+        },
+    },
+    "WebflowTool": {
+        "label": "Webflow",
+        "members": {
+            "webflow_create_item",
+            "webflow_delete_item",
+            "webflow_get_item",
+            "webflow_list_items",
+            "webflow_update_item",
+        },
+    },
+    "WikipediaTool": {
+        "label": "Wikipedia",
+        "members": {
+            "wikipedia_content",
+            "wikipedia_random",
+            "wikipedia_search",
+            "wikipedia_summary",
+        },
+    },
+    "WordpressTool": {
+        "label": "Wordpress",
+        "members": {
+            "wordpress_create_category",
+            "wordpress_create_comment",
+            "wordpress_create_page",
+            "wordpress_create_post",
+            "wordpress_create_tag",
+            "wordpress_delete_comment",
+            "wordpress_delete_media",
+            "wordpress_delete_page",
+            "wordpress_delete_post",
+            "wordpress_get_current_user",
+            "wordpress_get_media",
+            "wordpress_get_page",
+            "wordpress_get_post",
+            "wordpress_get_user",
+            "wordpress_list_categories",
+            "wordpress_list_comments",
+            "wordpress_list_media",
+            "wordpress_list_pages",
+            "wordpress_list_posts",
+            "wordpress_list_tags",
+            "wordpress_list_users",
+            "wordpress_search_content",
+            "wordpress_update_comment",
+            "wordpress_update_page",
+            "wordpress_update_post",
+            "wordpress_upload_media",
+        },
+    },
+    "WorkdayTool": {
+        "label": "Workday",
+        "members": {
+            "workday_assign_onboarding",
+            "workday_change_job",
+            "workday_create_prehire",
+            "get_workday_compensation",
+            "workday_get_organizations",
+            "workday_get_worker",
+            "workday_hire_employee",
+            "workday_list_workers",
+            "workday_terminate_worker",
+            "workday_update_worker",
+        },
+    },
+    "XTool": {
+        "label": "X",
+        "members": {
+            "x_create_bookmark",
+            "x_create_tweet",
+            "x_delete_bookmark",
+            "x_delete_tweet",
+            "x_get_blocking",
+            "x_get_bookmarks",
+            "x_get_followers",
+            "x_get_following",
+            "x_get_liked_tweets",
+            "x_get_liking_users",
+            "x_get_me",
+            "x_get_personalized_trends",
+            "x_get_quote_tweets",
+            "x_get_retweeted_by",
+            "x_get_trends_by_woeid",
+            "x_get_tweets_by_ids",
+            "x_get_usage",
+            "x_get_user_mentions",
+            "x_get_user_timeline",
+            "x_get_user_tweets",
+            "x_hide_reply",
+            "x_manage_block",
+            "x_manage_follow",
+            "x_manage_like",
+            "x_manage_mute",
+            "x_manage_retweet",
+            "x_read",
+            "x_search",
+            "x_search_tweets",
+            "x_search_users",
+            "x_user",
+            "x_write",
+        },
+    },
+    "YoutubeTool": {
+        "label": "Youtube",
+        "members": {
+            "youtube_channel_info",
+            "youtube_channel_playlists",
+            "youtube_channel_videos",
+            "youtube_comments",
+            "youtube_playlist_items",
+            "youtube_search",
+            "youtube_trending",
+            "youtube_video_categories",
+            "youtube_video_details",
+        },
+    },
+    "ZendeskTool": {
+        "label": "Zendesk",
+        "members": {
+            "zendesk_autocomplete_organizations",
+            "zendesk_create_organization",
+            "zendesk_create_organizations_bulk",
+            "zendesk_create_ticket",
+            "zendesk_create_tickets_bulk",
+            "zendesk_create_user",
+            "zendesk_create_users_bulk",
+            "zendesk_delete_organization",
+            "zendesk_delete_user",
+            "zendesk_get_current_user",
+            "zendesk_get_organization",
+            "zendesk_get_ticket",
+            "zendesk_get_tickets",
+            "zendesk_get_user",
+            "zendesk_get_users",
+            "zendesk_merge_tickets",
+            "zendesk_search",
+            "zendesk_search_count",
+            "zendesk_search_users",
+            "zendesk_update_organization",
+            "zendesk_update_ticket",
+            "zendesk_update_tickets_bulk",
+            "zendesk_update_user",
+        },
+    },
+    "ZepTool": {
+        "label": "Zep",
+        "members": {
+            "zep_add_messages",
+            "zep_add_user",
+            "create_thread",
+            "zep_delete_thread",
+            "get_user_context",
+            "zep_get_messages",
+            "get_threads",
+            "zep_get_user",
+            "get_user_threads",
+        },
+    },
+    "ZoomTool": {
+        "label": "Zoom",
+        "members": {
+            "zoom_create_meeting",
+            "zoom_delete_meeting",
+            "zoom_delete_recording",
+            "zoom_get_meeting",
+            "zoom_get_meeting_invitation",
+            "zoom_get_meeting_recordings",
+            "zoom_list_meetings",
+            "zoom_list_past_participants",
+            "zoom_list_recordings",
+            "zoom_update_meeting",
         },
     },
 }
@@ -1328,6 +3647,1044 @@ OPTIONAL_EMPLOYEE_TOOL_NAMES = {
     "StripeUpdateProductTool",
     "StripeUpdateSubscriptionTool",
     "StripeVoidInvoiceTool",
+    "AgentmailTool",
+    "AgentmailCreateDraftTool",
+    "AgentmailCreateInboxTool",
+    "AgentmailDeleteDraftTool",
+    "AgentmailDeleteInboxTool",
+    "AgentmailDeleteThreadTool",
+    "AgentMailForwardMessageTool",
+    "AgentMailGetDraftTool",
+    "AgentmailGetInboxTool",
+    "AgentmailGetMessageTool",
+    "AgentmailGetThreadTool",
+    "AgentMailListDraftsTool",
+    "AgentmailListInboxesTool",
+    "AgentmailListMessagesTool",
+    "AgentmailListThreadsTool",
+    "AgentmailReplyMessageTool",
+    "AgentmailSendDraftTool",
+    "AgentmailSendMessageTool",
+    "AgentmailUpdateDraftTool",
+    "AgentmailUpdateInboxTool",
+    "AgentmailUpdateMessageTool",
+    "AgentmailUpdateThreadTool",
+    "AhrefsTool",
+    "AhrefsBacklinksTool",
+    "AhrefsBacklinksStatsTool",
+    "AhrefsBrokenBacklinksTool",
+    "AhrefsDomainRatingTool",
+    "AhrefsKeywordOverviewTool",
+    "AhrefsOrganicKeywordsTool",
+    "AhrefsReferringDomainsTool",
+    "AhrefsTopPagesTool",
+    "AirtableTool",
+    "AirtableCreateRecordsTool",
+    "AirtableGetBaseSchemaTool",
+    "AirtableGetRecordTool",
+    "AirtableListBasesTool",
+    "AirtableListRecordsTool",
+    "AirtableListTablesTool",
+    "AirtableUpdateMultipleRecordsTool",
+    "AirtableUpdateRecordTool",
+    "AirweaveTool",
+    "AirweaveSearchTool",
+    "ApolloTool",
+    "ApolloAccountBulkCreateTool",
+    "ApolloAccountBulkUpdateTool",
+    "ApolloAccountCreateTool",
+    "ApolloAccountSearchTool",
+    "ApolloAccountUpdateTool",
+    "ApolloContactBulkCreateTool",
+    "ApolloContactBulkUpdateTool",
+    "ApolloContactCreateTool",
+    "ApolloContactSearchTool",
+    "ApolloContactUpdateTool",
+    "ApolloEmailAccountsTool",
+    "ApolloOpportunityGetTool",
+    "ApolloOpportunitySearchTool",
+    "ApolloOpportunityUpdateTool",
+    "ApolloOrganizationBulkEnrichTool",
+    "ApolloOrganizationEnrichTool",
+    "ApolloOrganizationSearchTool",
+    "ApolloPeopleBulkEnrichTool",
+    "ApolloPeopleEnrichTool",
+    "ApolloPeopleSearchTool",
+    "ApolloSequenceAddContactsTool",
+    "ApolloSequenceSearchTool",
+    "ApolloTaskCreateTool",
+    "ApolloTaskSearchTool",
+    "AsanaTool",
+    "AsanaAddCommentTool",
+    "AsanaCreateTaskTool",
+    "AsanaGetProjectsTool",
+    "AsanaGetTaskTool",
+    "AsanaSearchTasksTool",
+    "AsanaUpdateTaskTool",
+    "AshbyTool",
+    "AshbyAddCandidateTagTool",
+    "AshbyChangeApplicationStageTool",
+    "AshbyCreateApplicationTool",
+    "AshbyCreateCandidateTool",
+    "AshbyCreateNoteTool",
+    "AshbyGetApplicationTool",
+    "AshbyGetCandidateTool",
+    "AshbyGetJobTool",
+    "AshbyGetJobPostingTool",
+    "AshbyGetOfferTool",
+    "AshbyListApplicationsTool",
+    "AshbyListArchiveReasonsTool",
+    "AshbyListCandidateTagsTool",
+    "AshbyListCandidatesTool",
+    "AshbyListCustomFieldsTool",
+    "AshbyListDepartmentsTool",
+    "AshbyListInterviewsTool",
+    "AshbyListJobPostingsTool",
+    "AshbyListJobsTool",
+    "AshbyListLocationsTool",
+    "AshbyListNotesTool",
+    "AshbyListOffersTool",
+    "AshbyListOpeningsTool",
+    "AshbyListSourcesTool",
+    "AshbyListUsersTool",
+    "AshbyRemoveCandidateTagTool",
+    "AshbySearchCandidatesTool",
+    "AshbyUpdateCandidateTool",
+    "AttioTool",
+    "AttioAssertRecordTool",
+    "AttioCreateCommentTool",
+    "AttioCreateListTool",
+    "AttioCreateListEntryTool",
+    "AttioCreateNoteTool",
+    "AttioCreateObjectTool",
+    "AttioCreateRecordTool",
+    "AttioCreateTaskTool",
+    "AttioCreateWebhookTool",
+    "AttioDeleteCommentTool",
+    "AttioDeleteListEntryTool",
+    "AttioDeleteNoteTool",
+    "AttioDeleteRecordTool",
+    "AttioDeleteTaskTool",
+    "AttioDeleteWebhookTool",
+    "AttioGetCommentTool",
+    "AttioGetListTool",
+    "AttioGetListEntryTool",
+    "AttioGetMemberTool",
+    "AttioGetNoteTool",
+    "AttioGetObjectTool",
+    "AttioGetRecordTool",
+    "AttioGetTaskTool",
+    "AttioGetThreadTool",
+    "AttioGetWebhookTool",
+    "AttioListListsTool",
+    "AttioListMembersTool",
+    "AttioListNotesTool",
+    "AttioListObjectsTool",
+    "AttioListRecordsTool",
+    "AttioListTasksTool",
+    "AttioListThreadsTool",
+    "AttioListWebhooksTool",
+    "AttioQueryListEntriesTool",
+    "AttioSearchRecordsTool",
+    "AttioUpdateListTool",
+    "AttioUpdateListEntryTool",
+    "AttioUpdateObjectTool",
+    "AttioUpdateRecordTool",
+    "AttioUpdateTaskTool",
+    "AttioUpdateWebhookTool",
+    "BoxTool",
+    "BoxCopyFileTool",
+    "BoxCreateFolderTool",
+    "BoxDeleteFileTool",
+    "BoxDeleteFolderTool",
+    "BoxDownloadFileTool",
+    "BoxGetFileInfoTool",
+    "BoxListFolderItemsTool",
+    "BoxSearchTool",
+    "BoxUpdateFileTool",
+    "BoxUploadFileTool",
+    "BoxSignTool",
+    "BoxSignCancelRequestTool",
+    "BoxSignCreateRequestTool",
+    "BoxSignGetRequestTool",
+    "BoxSignListRequestsTool",
+    "BoxSignResendRequestTool",
+    "CalcomTool",
+    "CalcomCancelBookingTool",
+    "CalcomConfirmBookingTool",
+    "CalcomCreateBookingTool",
+    "CalcomCreateEventTypeTool",
+    "CalcomCreateScheduleTool",
+    "CalcomDeclineBookingTool",
+    "CalcomDeleteEventTypeTool",
+    "CalcomDeleteScheduleTool",
+    "CalcomGetBookingTool",
+    "CalcomGetDefaultScheduleTool",
+    "CalcomGetEventTypeTool",
+    "CalcomGetScheduleTool",
+    "CalcomGetSlotsTool",
+    "CalcomListBookingsTool",
+    "CalcomListEventTypesTool",
+    "CalcomListSchedulesTool",
+    "CalcomRescheduleBookingTool",
+    "CalcomUpdateEventTypeTool",
+    "CalcomUpdateScheduleTool",
+    "CloudwatchTool",
+    "CloudWatchDescribeAlarmsTool",
+    "CloudWatchDescribeLogGroupsTool",
+    "CloudWatchDescribeLogStreamsTool",
+    "CloudWatchGetLogEventsTool",
+    "CloudWatchGetMetricStatisticsTool",
+    "CloudWatchListMetricsTool",
+    "CloudWatchQueryLogsTool",
+    "ConfluenceTool",
+    "ConfluenceAddLabelTool",
+    "ConfluenceCreateBlogPostTool",
+    "ConfluenceCreateCommentTool",
+    "ConfluenceCreatePageTool",
+    "ConfluenceCreatePagePropertyTool",
+    "ConfluenceCreateSpaceTool",
+    "ConfluenceCreateSpacePropertyTool",
+    "ConfluenceDeleteAttachmentTool",
+    "ConfluenceDeleteBlogPostTool",
+    "ConfluenceDeleteCommentTool",
+    "ConfluenceDeleteLabelTool",
+    "ConfluenceDeletePageTool",
+    "ConfluenceDeletePagePropertyTool",
+    "ConfluenceDeleteSpaceTool",
+    "ConfluenceDeleteSpacePropertyTool",
+    "ConfluenceGetBlogPostTool",
+    "ConfluenceGetPageAncestorsTool",
+    "ConfluenceGetPageChildrenTool",
+    "ConfluenceGetPageDescendantsTool",
+    "ConfluenceGetPageVersionTool",
+    "ConfluenceGetPagesByLabelTool",
+    "ConfluenceGetSpaceTool",
+    "ConfluenceGetTaskTool",
+    "ConfluenceGetUserTool",
+    "ConfluenceListAttachmentsTool",
+    "ConfluenceListBlogPostsTool",
+    "ConfluenceListBlogPostsInSpaceTool",
+    "ConfluenceListCommentsTool",
+    "ConfluenceListLabelsTool",
+    "ConfluenceListPagePropertiesTool",
+    "ConfluenceListPageVersionsTool",
+    "ConfluenceListPagesInSpaceTool",
+    "ConfluenceListSpaceLabelsTool",
+    "ConfluenceListSpacePermissionsTool",
+    "ConfluenceListSpacePropertiesTool",
+    "ConfluenceListSpacesTool",
+    "ConfluenceListTasksTool",
+    "ConfluenceRetrieveTool",
+    "ConfluenceSearchTool",
+    "ConfluenceSearchInSpaceTool",
+    "ConfluenceUpdateTool",
+    "ConfluenceUpdateBlogPostTool",
+    "ConfluenceUpdateCommentTool",
+    "ConfluenceUpdateTaskTool",
+    "ConfluenceUploadAttachmentTool",
+    "CursorTool",
+    "CursorAddFollowupTool",
+    "CursorDeleteAgentTool",
+    "CursorDownloadArtifactTool",
+    "CursorGetAgentTool",
+    "CursorGetConversationTool",
+    "CursorLaunchAgentTool",
+    "CursorListAgentsTool",
+    "CursorListArtifactsTool",
+    "CursorStopAgentTool",
+    "DatabricksTool",
+    "DatabricksCancelRunTool",
+    "DatabricksExecuteSqlTool",
+    "DatabricksGetRunTool",
+    "DatabricksGetRunOutputTool",
+    "DatabricksListClustersTool",
+    "DatabricksListJobsTool",
+    "DatabricksListRunsTool",
+    "DatabricksRunJobTool",
+    "DatadogTool",
+    "DatadogCancelDowntimeTool",
+    "DatadogCreateDowntimeTool",
+    "DatadogCreateEventTool",
+    "DatadogCreateMonitorTool",
+    "DatadogGetMonitorTool",
+    "DatadogListDowntimesTool",
+    "DatadogListMonitorsTool",
+    "DatadogMuteMonitorTool",
+    "DatadogQueryLogsTool",
+    "DatadogQueryTimeseriesTool",
+    "DatadogSendLogsTool",
+    "DatadogSubmitMetricsTool",
+    "DevinTool",
+    "DevinCreateSessionTool",
+    "DevinGetSessionTool",
+    "DevinListSessionsTool",
+    "DevinSendMessageTool",
+    "DiscordTool",
+    "DiscordAddReactionTool",
+    "DiscordArchiveThreadTool",
+    "DiscordAssignRoleTool",
+    "DiscordBanMemberTool",
+    "DiscordCreateChannelTool",
+    "DiscordCreateInviteTool",
+    "DiscordCreateRoleTool",
+    "DiscordCreateThreadTool",
+    "DiscordCreateWebhookTool",
+    "DiscordDeleteChannelTool",
+    "DiscordDeleteInviteTool",
+    "DiscordDeleteMessageTool",
+    "DiscordDeleteRoleTool",
+    "DiscordDeleteWebhookTool",
+    "DiscordEditMessageTool",
+    "DiscordExecuteWebhookTool",
+    "DiscordGetChannelTool",
+    "DiscordGetInviteTool",
+    "DiscordGetMemberTool",
+    "DiscordGetMessagesTool",
+    "DiscordGetServerTool",
+    "DiscordGetUserTool",
+    "DiscordGetWebhookTool",
+    "DiscordJoinThreadTool",
+    "DiscordKickMemberTool",
+    "DiscordLeaveThreadTool",
+    "DiscordPinMessageTool",
+    "DiscordRemoveReactionTool",
+    "DiscordRemoveRoleTool",
+    "DiscordSendMessageTool",
+    "DiscordUnbanMemberTool",
+    "DiscordUnpinMessageTool",
+    "DiscordUpdateChannelTool",
+    "DiscordUpdateMemberTool",
+    "DiscordUpdateRoleTool",
+    "DocusignTool",
+    "DocusignCreateFromTemplateTool",
+    "DocuSignDownloadDocumentTool",
+    "DocuSignGetEnvelopeTool",
+    "DocuSignListEnvelopesTool",
+    "DocuSignListRecipientsTool",
+    "DocusignListTemplatesTool",
+    "DocuSignSendEnvelopeTool",
+    "DocuSignVoidEnvelopeTool",
+    "DropboxTool",
+    "DropboxCopyTool",
+    "DropboxCreateFolderTool",
+    "DropboxCreateSharedLinkTool",
+    "DropboxDeleteTool",
+    "DropboxDownloadTool",
+    "DropboxGetMetadataTool",
+    "DropboxListFolderTool",
+    "DropboxMoveTool",
+    "DropboxSearchTool",
+    "DropboxUploadTool",
+    "DspyTool",
+    "DSPyChainOfThoughtTool",
+    "DSPyPredictTool",
+    "DSPyReActTool",
+    "DuckduckgoTool",
+    "DuckDuckGoSearchTool",
+    "EvernoteTool",
+    "EvernoteCopyNoteTool",
+    "EvernoteCreateNoteTool",
+    "EvernoteCreateNotebookTool",
+    "EvernoteCreateTagTool",
+    "EvernoteDeleteNoteTool",
+    "EvernoteGetNoteTool",
+    "EvernoteGetNotebookTool",
+    "EvernoteListNotebooksTool",
+    "EvernoteListTagsTool",
+    "EvernoteSearchNotesTool",
+    "EvernoteUpdateNoteTool",
+    "ExaTool",
+    "ExaAnswerTool",
+    "ExaFindSimilarLinksTool",
+    "ExaGetContentsTool",
+    "ExaResearchTool",
+    "ExaSearchTool",
+    "ExtendTool",
+    "ExtendParserTool",
+    "FileTool",
+    "FileAppendTool",
+    "FileParserTool",
+    "FileWriteTool",
+    "FirecrawlTool",
+    "FirecrawlAgentTool",
+    "FirecrawlCrawlTool",
+    "FirecrawlExtractTool",
+    "FirecrawlMapTool",
+    "FirecrawlScrapeTool",
+    "FirecrawlSearchTool",
+    "GammaTool",
+    "GammaCheckStatusTool",
+    "GammaGenerateTool",
+    "GammaGenerateFromTemplateTool",
+    "GammaListFoldersTool",
+    "GammaListThemesTool",
+    "GitlabTool",
+    "GitLabCancelPipelineTool",
+    "GitLabCreateIssueTool",
+    "GitLabCreateIssueNoteTool",
+    "GitLabCreateMergeRequestTool",
+    "GitLabCreateMergeRequestNoteTool",
+    "GitLabCreatePipelineTool",
+    "GitLabDeleteIssueTool",
+    "GitLabGetIssueTool",
+    "GitLabGetMergeRequestTool",
+    "GitLabGetPipelineTool",
+    "GitLabGetProjectTool",
+    "GitLabListIssuesTool",
+    "GitlabListMergeRequestsTool",
+    "GitLabListPipelinesTool",
+    "GitLabListProjectsTool",
+    "GitLabMergeMergeRequestTool",
+    "GitLabRetryPipelineTool",
+    "GitlabUpdateIssueTool",
+    "GitLabUpdateMergeRequestTool",
+    "GongTool",
+    "GongAggregateActivityTool",
+    "GongAnsweredScorecardsTool",
+    "GongGetCallTool",
+    "GongGetCallTranscriptTool",
+    "GongGetCoachingTool",
+    "GongGetExtensiveCallsTool",
+    "GongGetFolderContentTool",
+    "GongGetUserTool",
+    "GongInteractionStatsTool",
+    "GongListCallsTool",
+    "GongListFlowsTool",
+    "GongListLibraryFoldersTool",
+    "GongListScorecardsTool",
+    "GongListTrackersTool",
+    "GongListUsersTool",
+    "GongListWorkspacesTool",
+    "GongLookupEmailTool",
+    "GongLookupPhoneTool",
+    "GoogleAdsTool",
+    "GoogleAdsAdPerformanceTool",
+    "GoogleAdsListAdGroupsTool",
+    "GoogleAdsListCustomersTool",
+    "GoogleBigqueryTool",
+    "GoogleBigQueryGetTableTool",
+    "GoogleBigQueryInsertRowsTool",
+    "GoogleBigQueryListDatasetsTool",
+    "GoogleBigQueryListTablesTool",
+    "GoogleBigQueryQueryTool",
+    "GoogleDocsTool",
+    "GoogleDocsCreateTool",
+    "GoogleDocsReadTool",
+    "GoogleDocsWriteTool",
+    "GoogleFormsTool",
+    "GoogleFormsBatchUpdateTool",
+    "GoogleFormsCreateFormTool",
+    "GoogleFormsCreateWatchTool",
+    "GoogleFormsDeleteWatchTool",
+    "GoogleFormsGetFormTool",
+    "GoogleFormsGetResponsesTool",
+    "GoogleFormsListWatchesTool",
+    "GoogleFormsRenewWatchTool",
+    "GoogleFormsSetPublishSettingsTool",
+    "GoogleMapsTool",
+    "GoogleMapsAirQualityTool",
+    "GoogleMapsDirectionsTool",
+    "GoogleMapsDistanceMatrixTool",
+    "GoogleMapsElevationTool",
+    "GoogleMapsGeocodeTool",
+    "GoogleMapsGeolocateTool",
+    "GoogleMapsPlaceDetailsTool",
+    "GoogleMapsPlacesSearchTool",
+    "GoogleMapsReverseGeocodeTool",
+    "GoogleMapsSnapToRoadsTool",
+    "GoogleMapsSpeedLimitsTool",
+    "GoogleMapsTimezoneTool",
+    "GoogleMapsValidateAddressTool",
+    "GoogleMeetTool",
+    "GoogleMeetCreateSpaceTool",
+    "GoogleMeetEndConferenceTool",
+    "GoogleMeetGetConferenceRecordTool",
+    "GoogleMeetGetSpaceTool",
+    "GoogleMeetListConferenceRecordsTool",
+    "GoogleMeetListParticipantsTool",
+    "GoogleSheetsTool",
+    "GoogleSheetsAppendTool",
+    "GoogleSheetsBatchClearTool",
+    "GoogleSheetsBatchGetTool",
+    "GoogleSheetsBatchUpdateTool",
+    "GoogleSheetsClearTool",
+    "GoogleSheetsCopySheetTool",
+    "GoogleSheetsCreateSpreadsheetTool",
+    "GoogleSheetsDeleteRowsTool",
+    "GoogleSheetsDeleteSheetTool",
+    "GoogleSheetsDeleteSpreadsheetTool",
+    "GoogleSheetsGetSpreadsheetTool",
+    "GoogleSheetsReadTool",
+    "GoogleSheetsUpdateTool",
+    "GoogleSheetsWriteTool",
+    "GoogleSlidesTool",
+    "GoogleSlidesAddImageTool",
+    "GoogleSlidesAddSlideTool",
+    "GoogleSlidesCreateTool",
+    "GoogleSlidesCreateShapeTool",
+    "GoogleSlidesCreateTableTool",
+    "GoogleSlidesDeleteObjectTool",
+    "GoogleSlidesDuplicateObjectTool",
+    "GoogleSlidesGetPageTool",
+    "GoogleSlidesGetThumbnailTool",
+    "GoogleSlidesInsertTextTool",
+    "GoogleSlidesReadTool",
+    "GoogleSlidesReplaceAllTextTool",
+    "GoogleSlidesUpdateSlidesPositionTool",
+    "GoogleSlidesWriteTool",
+    "GoogleTasksTool",
+    "GoogleTasksCreateTool",
+    "GoogleTasksDeleteTool",
+    "GoogleTasksGetTool",
+    "GoogleTasksListTool",
+    "GoogleTasksListTaskListsTool",
+    "GoogleTasksUpdateTool",
+    "GranolaTool",
+    "GranolaGetNoteTool",
+    "GranolaListNotesTool",
+    "GreenhouseTool",
+    "GreenhouseGetApplicationTool",
+    "GreenhouseGetCandidateTool",
+    "GreenhouseGetJobTool",
+    "GreenhouseGetUserTool",
+    "GreenhouseListApplicationsTool",
+    "GreenhouseListCandidatesTool",
+    "GreenhouseListDepartmentsTool",
+    "GreenhouseListJobStagesTool",
+    "GreenhouseListJobsTool",
+    "GreenhouseListOfficesTool",
+    "GreenhouseListUsersTool",
+    "GuardrailsTool",
+    "GuardrailsValidateTool",
+    "HexTool",
+    "HexCancelRunTool",
+    "HexCreateCollectionTool",
+    "HexGetCollectionTool",
+    "HexGetDataConnectionTool",
+    "HexGetGroupTool",
+    "HexGetProjectTool",
+    "HexGetProjectRunsTool",
+    "HexGetQueriedTablesTool",
+    "HexGetRunStatusTool",
+    "HexListCollectionsTool",
+    "HexListDataConnectionsTool",
+    "HexListGroupsTool",
+    "HexListProjectsTool",
+    "HexListUsersTool",
+    "HexRunProjectTool",
+    "HexUpdateProjectTool",
+    "HunterTool",
+    "HunterCompaniesFindTool",
+    "HunterDiscoverTool",
+    "HunterDomainSearchTool",
+    "HunterEmailCountTool",
+    "HunterEmailFinderTool",
+    "HunterEmailVerifierTool",
+    "IncidentioTool",
+    "IncidentioActionsListTool",
+    "IncidentioActionsShowTool",
+    "IncidentioCustomFieldsCreateTool",
+    "IncidentioCustomFieldsDeleteTool",
+    "IncidentioCustomFieldsListTool",
+    "IncidentioCustomFieldsShowTool",
+    "IncidentioCustomFieldsUpdateTool",
+    "IncidentioEscalationPathsCreateTool",
+    "IncidentioEscalationPathsDeleteTool",
+    "IncidentioEscalationPathsShowTool",
+    "IncidentioEscalationPathsUpdateTool",
+    "IncidentioEscalationsCreateTool",
+    "IncidentioEscalationsListTool",
+    "IncidentioEscalationsShowTool",
+    "IncidentioFollowUpsListTool",
+    "IncidentioFollowUpsShowTool",
+    "IncidentioIncidentRolesCreateTool",
+    "IncidentioIncidentRolesDeleteTool",
+    "IncidentioIncidentRolesListTool",
+    "IncidentioRolesShowTool",
+    "IncidentioRolesUpdateTool",
+    "IncidentioIncidentStatusesListTool",
+    "IncidentioIncidentTimestampsListTool",
+    "IncidentioIncidentTimestampsShowTool",
+    "IncidentioIncidentTypesListTool",
+    "IncidentioIncidentUpdatesListTool",
+    "IncidentioIncidentsCreateTool",
+    "IncidentioIncidentsListTool",
+    "IncidentioIncidentsShowTool",
+    "IncidentioIncidentsUpdateTool",
+    "IncidentioScheduleEntriesListTool",
+    "IncidentioScheduleOverridesCreateTool",
+    "IncidentioSchedulesCreateTool",
+    "IncidentioSchedulesDeleteTool",
+    "IncidentioSchedulesListTool",
+    "IncidentioSchedulesShowTool",
+    "IncidentioSchedulesUpdateTool",
+    "IncidentioSeveritiesListTool",
+    "IncidentioUsersListTool",
+    "IncidentioUsersShowTool",
+    "IncidentioWorkflowsCreateTool",
+    "IncidentioWorkflowsDeleteTool",
+    "IncidentioWorkflowsListTool",
+    "IncidentioWorkflowsShowTool",
+    "IncidentioWorkflowsUpdateTool",
+    "IntercomTool",
+    "IntercomAssignConversationTool",
+    "IntercomAttachContactToCompanyTool",
+    "IntercomCloseConversationTool",
+    "IntercomCreateCompanyTool",
+    "IntercomCreateContactTool",
+    "IntercomCreateEventTool",
+    "IntercomCreateMessageTool",
+    "IntercomCreateTagTool",
+    "IntercomCreateTicketTool",
+    "IntercomDeleteContactTool",
+    "IntercomDetachContactFromCompanyTool",
+    "IntercomGetCompanyTool",
+    "IntercomGetContactTool",
+    "IntercomGetTicketTool",
+    "IntercomListAdminsTool",
+    "IntercomListCompaniesTool",
+    "IntercomListContactsTool",
+    "IntercomListConversationsTool",
+    "IntercomListTagsTool",
+    "IntercomOpenConversationTool",
+    "IntercomReplyConversationTool",
+    "IntercomSearchContactsTool",
+    "IntercomSearchConversationsTool",
+    "IntercomSnoozeConversationTool",
+    "IntercomTagContactTool",
+    "IntercomTagConversationTool",
+    "IntercomUntagContactTool",
+    "IntercomUpdateContactTool",
+    "IntercomUpdateTicketTool",
+    "KalshiTool",
+    "KalshiAmendOrderTool",
+    "KalshiCancelOrderTool",
+    "KalshiCreateOrderTool",
+    "KalshiGetBalanceTool",
+    "KalshiGetCandlesticksTool",
+    "KalshiGetEventTool",
+    "KalshiGetEventsTool",
+    "KalshiGetExchangeStatusTool",
+    "KalshiGetFillsTool",
+    "KalshiGetMarketTool",
+    "KalshiGetMarketsTool",
+    "KalshiGetOrderTool",
+    "KalshiGetOrderbookTool",
+    "KalshiGetOrdersTool",
+    "KalshiGetPositionsTool",
+    "KalshiGetSeriesByTickerTool",
+    "KalshiGetTradesTool",
+    "LangsmithTool",
+    "LangsmithCreateRunTool",
+    "LangsmithCreateRunsBatchTool",
+    "LlmTool",
+    "LLMChatTool",
+    "LoopsTool",
+    "LoopsCreateContactTool",
+    "LoopsCreateContactPropertyTool",
+    "LoopsDeleteContactTool",
+    "LoopsFindContactTool",
+    "LoopsListContactPropertiesTool",
+    "LoopsListMailingListsTool",
+    "LoopsListTransactionalEmailsTool",
+    "LoopsSendEventTool",
+    "LoopsSendTransactionalEmailTool",
+    "LoopsUpdateContactTool",
+    "LumaTool",
+    "LumaAddGuestsTool",
+    "LumaCreateEventTool",
+    "LumaGetEventTool",
+    "LumaGetGuestsTool",
+    "LumaListEventsTool",
+    "LumaUpdateEventTool",
+    "MemoryTool",
+    "MemoryAddTool",
+    "MemoryDeleteTool",
+    "MemoryGetTool",
+    "MemoryGetAllTool",
+    "MicrosoftDataverseTool",
+    "MicrosoftDataverseAssociateTool",
+    "MicrosoftDataverseCreateMultipleTool",
+    "MicrosoftDataverseCreateRecordTool",
+    "MicrosoftDataverseDeleteRecordTool",
+    "MicrosoftDataverseDisassociateTool",
+    "MicrosoftDataverseDownloadFileTool",
+    "MicrosoftDataverseExecuteActionTool",
+    "MicrosoftDataverseExecuteFunctionTool",
+    "MicrosoftDataverseFetchXmlQueryTool",
+    "MicrosoftDataverseGetRecordTool",
+    "MicrosoftDataverseListRecordsTool",
+    "MicrosoftDataverseSearchTool",
+    "MicrosoftDataverseUpdateMultipleTool",
+    "MicrosoftDataverseUpdateRecordTool",
+    "MicrosoftDataverseUploadFileTool",
+    "MicrosoftDataverseUpsertRecordTool",
+    "MicrosoftDataverseWhoAmITool",
+    "MicrosoftExcelTool",
+    "MicrosoftExcelReadTool",
+    "MicrosoftExcelTableAddTool",
+    "MicrosoftExcelWorksheetAddTool",
+    "MicrosoftExcelWriteTool",
+    "MicrosoftPlannerTool",
+    "MicrosoftPlannerCreateBucketTool",
+    "MicrosoftPlannerCreateTaskTool",
+    "MicrosoftPlannerDeleteBucketTool",
+    "MicrosoftPlannerDeleteTaskTool",
+    "MicrosoftPlannerGetTaskDetailsTool",
+    "MicrosoftPlannerListBucketsTool",
+    "MicrosoftPlannerListPlansTool",
+    "MicrosoftPlannerReadBucketTool",
+    "MicrosoftPlannerReadPlanTool",
+    "MicrosoftPlannerReadTool",
+    "MicrosoftPlannerUpdateBucketTool",
+    "MicrosoftPlannerUpdateTaskTool",
+    "MicrosoftPlannerUpdateTaskDetailsTool",
+    "MicrosoftTeamsTool",
+    "MicrosoftTeamsDeleteChannelMessageTool",
+    "MicrosoftTeamsDeleteChatMessageTool",
+    "MicrosoftTeamsGetMessageTool",
+    "MicrosoftTeamsListChannelMembersTool",
+    "MicrosoftTeamsListMembersTool",
+    "MicrosoftTeamsReadChannelTool",
+    "MicrosoftTeamsReadChatTool",
+    "MicrosoftTeamsReplyToMessageTool",
+    "MicrosoftTeamsFileUploadTool",
+    "MicrosoftTeamsSetReactionTool",
+    "MicrosoftTeamsUnsetReactionTool",
+    "MicrosoftTeamsUpdateChannelMessageTool",
+    "MicrosoftTeamsUpdateChatMessageTool",
+    "MicrosoftTeamsWriteChannelTool",
+    "MicrosoftTeamsWriteChatTool",
+    "Neo4jTool",
+    "Neo4jCreateTool",
+    "Neo4jDeleteTool",
+    "Neo4jExecuteTool",
+    "Neo4jIntrospectTool",
+    "Neo4jMergeTool",
+    "Neo4jQueryTool",
+    "Neo4jUpdateTool",
+    "OutlookTool",
+    "OutlookCopyTool",
+    "OutlookDeleteTool",
+    "OutlookDraftTool",
+    "OutlookForwardTool",
+    "OutlookMarkReadTool",
+    "OutlookMarkUnreadTool",
+    "OutlookMoveTool",
+    "OutlookReadTool",
+    "OutlookSendTool",
+    "PagerdutyTool",
+    "PagerDutyAddNoteTool",
+    "PagerDutyCreateIncidentTool",
+    "PagerDutyListIncidentsTool",
+    "PagerDutyListOncallsTool",
+    "PagerDutyListServicesTool",
+    "PagerDutyUpdateIncidentTool",
+    "ParallelTool",
+    "ParallelDeepResearchTool",
+    "ParallelExtractTool",
+    "ParallelSearchTool",
+    "PipedriveTool",
+    "PipedriveCreateActivityTool",
+    "PipedriveCreateDealTool",
+    "PipedriveCreateLeadTool",
+    "PipedriveCreateProjectTool",
+    "PipedriveDeleteLeadTool",
+    "PipedriveGetActivitiesTool",
+    "PipedriveGetAllDealsTool",
+    "PipedriveGetDealTool",
+    "PipedriveGetFilesTool",
+    "PipedriveGetLeadsTool",
+    "PipedriveGetMailMessagesTool",
+    "PipedriveGetMailThreadTool",
+    "PipedriveGetPipelineDealsTool",
+    "PipedriveGetPipelinesTool",
+    "PipedriveGetProjectsTool",
+    "PipedriveUpdateActivityTool",
+    "PipedriveUpdateDealTool",
+    "PipedriveUpdateLeadTool",
+    "PostgresqlTool",
+    "PostgreSQLDeleteTool",
+    "PostgresExecuteTool",
+    "PostgreSQLInsertTool",
+    "PostgreSQLIntrospectTool",
+    "PostgreSQLQueryTool",
+    "PostgreSQLUpdateTool",
+    "RedditTool",
+    "RedditDeleteTool",
+    "RedditEditTool",
+    "RedditGetCommentsTool",
+    "RedditGetControversialTool",
+    "RedditGetMeTool",
+    "RedditGetMessagesTool",
+    "RedditGetPostsTool",
+    "RedditGetSubredditInfoTool",
+    "RedditGetUserTool",
+    "RedditHotPostsTool",
+    "RedditReplyTool",
+    "RedditSaveTool",
+    "RedditSearchTool",
+    "RedditSendMessageTool",
+    "RedditSubmitPostTool",
+    "RedditSubscribeTool",
+    "RedditVoteTool",
+    "RedisTool",
+    "RedisExpireTool",
+    "RedisGetTool",
+    "RedisHgetTool",
+    "RedisHGetAllTool",
+    "RedisHSetTool",
+    "RedisIncrTool",
+    "RedisIncrbyTool",
+    "RedisKeysTool",
+    "RedisLLenTool",
+    "RedisLPopTool",
+    "RedisLPushTool",
+    "RedisLRangeTool",
+    "RedisRPopTool",
+    "RedisRPushTool",
+    "RedisSetTool",
+    "RedisSetnxTool",
+    "RedisTtlTool",
+    "ReductoTool",
+    "ReductoParserTool",
+    "S3Tool",
+    "S3CopyObjectTool",
+    "S3DeleteObjectTool",
+    "S3GetObjectTool",
+    "S3ListObjectsTool",
+    "S3PutObjectTool",
+    "ShopifyTool",
+    "ShopifyAdjustInventoryTool",
+    "ShopifyCancelOrderTool",
+    "ShopifyCreateCustomerTool",
+    "ShopifyCreateFulfillmentTool",
+    "ShopifyCreateProductTool",
+    "ShopifyDeleteCustomerTool",
+    "ShopifyDeleteProductTool",
+    "ShopifyGetCollectionTool",
+    "ShopifyGetCustomerTool",
+    "ShopifyGetInventoryLevelTool",
+    "ShopifyGetOrderTool",
+    "ShopifyGetProductTool",
+    "ShopifyListCollectionsTool",
+    "ShopifyListCustomersTool",
+    "ShopifyListInventoryItemsTool",
+    "ShopifyListLocationsTool",
+    "ShopifyListOrdersTool",
+    "ShopifyListProductsTool",
+    "ShopifyUpdateCustomerTool",
+    "ShopifyUpdateOrderTool",
+    "ShopifyUpdateProductTool",
+    "SixtyfourTool",
+    "SixtyfourEnrichCompanyTool",
+    "SixtyfourEnrichLeadTool",
+    "SixtyfourFindEmailTool",
+    "SixtyfourFindPhoneTool",
+    "SmsTool",
+    "SmsSendTool",
+    "TrelloTool",
+    "TrelloAddCommentTool",
+    "TrelloCreateCardTool",
+    "TrelloGetActionsTool",
+    "TrelloListCardsTool",
+    "TrelloListListsTool",
+    "TrelloUpdateCardTool",
+    "VercelTool",
+    "VercelAddDomainTool",
+    "VercelAddProjectDomainTool",
+    "VercelCancelDeploymentTool",
+    "VercelCreateAliasTool",
+    "VercelCreateCheckTool",
+    "VercelCreateDeploymentTool",
+    "VercelCreateDnsRecordTool",
+    "VercelCreateEdgeConfigTool",
+    "VercelCreateEnvVarTool",
+    "VercelCreateProjectTool",
+    "VercelCreateWebhookTool",
+    "VercelDeleteAliasTool",
+    "VercelDeleteDeploymentTool",
+    "VercelDeleteDnsRecordTool",
+    "VercelDeleteDomainTool",
+    "VercelDeleteEnvVarTool",
+    "VercelDeleteProjectTool",
+    "VercelDeleteWebhookTool",
+    "VercelGetAliasTool",
+    "VercelGetCheckTool",
+    "VercelGetDeploymentTool",
+    "VercelGetDeploymentEventsTool",
+    "VercelGetDomainTool",
+    "VercelGetDomainConfigTool",
+    "VercelGetEdgeConfigTool",
+    "VercelGetEdgeConfigItemsTool",
+    "VercelGetEnvVarsTool",
+    "VercelGetProjectTool",
+    "VercelGetTeamTool",
+    "VercelGetUserTool",
+    "VercelListAliasesTool",
+    "VercelListChecksTool",
+    "VercelListDeploymentFilesTool",
+    "VercelListDeploymentsTool",
+    "VercelListDnsRecordsTool",
+    "VercelListDomainsTool",
+    "VercelListEdgeConfigsTool",
+    "VercelListProjectDomainsTool",
+    "VercelListProjectsTool",
+    "VercelListTeamMembersTool",
+    "VercelListTeamsTool",
+    "VercelListWebhooksTool",
+    "VercelPauseProjectTool",
+    "VercelRemoveProjectDomainTool",
+    "VercelRerequestCheckTool",
+    "VercelUnpauseProjectTool",
+    "VercelUpdateCheckTool",
+    "VercelUpdateEdgeConfigItemsTool",
+    "VercelUpdateEnvVarTool",
+    "VercelUpdateProjectTool",
+    "VideoTool",
+    "FalaiVideoTool",
+    "LumaVideoTool",
+    "MinimaxVideoTool",
+    "RunwayVideoTool",
+    "VeoVideoTool",
+    "WebflowTool",
+    "WebflowCreateItemTool",
+    "WebflowDeleteItemTool",
+    "WebflowGetItemTool",
+    "WebflowListItemsTool",
+    "WebflowUpdateItemTool",
+    "WikipediaTool",
+    "WikipediaContentTool",
+    "WikipediaRandomPageTool",
+    "WikipediaSearchTool",
+    "WikipediaSummaryTool",
+    "WordpressTool",
+    "WordPressCreateCategoryTool",
+    "WordPressCreateCommentTool",
+    "WordPressCreatePageTool",
+    "WordPressCreatePostTool",
+    "WordPressCreateTagTool",
+    "WordPressDeleteCommentTool",
+    "WordPressDeleteMediaTool",
+    "WordPressDeletePageTool",
+    "WordPressDeletePostTool",
+    "WordPressGetCurrentUserTool",
+    "WordPressGetMediaTool",
+    "WordPressGetPageTool",
+    "WordPressGetPostTool",
+    "WordPressGetUserTool",
+    "WordPressListCategoriesTool",
+    "WordPressListCommentsTool",
+    "WordPressListMediaTool",
+    "WordPressListPagesTool",
+    "WordPressListPostsTool",
+    "WordPressListTagsTool",
+    "WordPressListUsersTool",
+    "WordPressSearchContentTool",
+    "WordPressUpdateCommentTool",
+    "WordPressUpdatePageTool",
+    "WordPressUpdatePostTool",
+    "WordPressUploadMediaTool",
+    "WorkdayTool",
+    "WorkdayAssignOnboardingTool",
+    "WorkdayChangeJobTool",
+    "WorkdayCreatePrehireTool",
+    "WorkdayGetCompensationTool",
+    "WorkdayGetOrganizationsTool",
+    "WorkdayGetWorkerTool",
+    "WorkdayHireEmployeeTool",
+    "WorkdayListWorkersTool",
+    "WorkdayTerminateWorkerTool",
+    "WorkdayUpdateWorkerTool",
+    "XTool",
+    "XCreateBookmarkTool",
+    "XCreateTweetTool",
+    "XDeleteBookmarkTool",
+    "XDeleteTweetTool",
+    "XGetBlockingTool",
+    "XGetBookmarksTool",
+    "XGetFollowersTool",
+    "XGetFollowingTool",
+    "XGetLikedTweetsTool",
+    "XGetLikingUsersTool",
+    "XGetMeTool",
+    "XGetPersonalizedTrendsTool",
+    "XGetQuoteTweetsTool",
+    "XGetRetweetedByTool",
+    "XGetTrendsByWoeidTool",
+    "XGetTweetsByIdsTool",
+    "XGetUsageTool",
+    "XGetUserMentionsTool",
+    "XGetUserTimelineTool",
+    "XGetUserTweetsTool",
+    "XHideReplyTool",
+    "XManageBlockTool",
+    "XManageFollowTool",
+    "XManageLikeTool",
+    "XManageMuteTool",
+    "XManageRetweetTool",
+    "XReadTool",
+    "XSearchTool",
+    "XSearchTweetsTool",
+    "XSearchUsersTool",
+    "XUserTool",
+    "XWriteTool",
+    "YoutubeTool",
+    "YouTubeChannelInfoTool",
+    "YouTubeChannelPlaylistsTool",
+    "YouTubeChannelVideosTool",
+    "YouTubeCommentsTool",
+    "YouTubePlaylistItemsTool",
+    "YouTubeSearchTool",
+    "YouTubeTrendingTool",
+    "YouTubeVideoCategoriesTool",
+    "YouTubeVideoDetailsTool",
+    "ZendeskTool",
+    "ZendeskAutocompleteOrganizationsTool",
+    "ZendeskCreateOrganizationTool",
+    "ZendeskCreateOrganizationsBulkTool",
+    "ZendeskCreateTicketTool",
+    "ZendeskCreateTicketsBulkTool",
+    "ZendeskCreateUserTool",
+    "ZendeskCreateUsersBulkTool",
+    "ZendeskDeleteOrganizationTool",
+    "ZendeskDeleteUserTool",
+    "ZendeskGetCurrentUserTool",
+    "ZendeskGetOrganizationTool",
+    "ZendeskGetTicketTool",
+    "ZendeskGetTicketsTool",
+    "ZendeskGetUserTool",
+    "ZendeskGetUsersTool",
+    "ZendeskMergeTicketsTool",
+    "ZendeskSearchTool",
+    "ZendeskSearchCountTool",
+    "ZendeskSearchUsersTool",
+    "ZendeskUpdateOrganizationTool",
+    "ZendeskUpdateTicketTool",
+    "ZendeskUpdateTicketsBulkTool",
+    "ZendeskUpdateUserTool",
+    "ZepTool",
+    "ZepAddMessagesTool",
+    "ZepAddUserTool",
+    "ZepCreateThreadTool",
+    "ZepDeleteThreadTool",
+    "ZepGetContextTool",
+    "ZepGetMessagesTool",
+    "ZepGetThreadsTool",
+    "ZepGetUserTool",
+    "ZepGetUserThreadsTool",
+    "ZoomTool",
+    "ZoomCreateMeetingTool",
+    "ZoomDeleteMeetingTool",
+    "ZoomDeleteRecordingTool",
+    "ZoomGetMeetingTool",
+    "ZoomGetMeetingInvitationTool",
+    "ZoomGetMeetingRecordingsTool",
+    "ZoomListMeetingsTool",
+    "ZoomListPastParticipantsTool",
+    "ZoomListRecordingsTool",
+    "ZoomUpdateMeetingTool",
 }
 
 
@@ -1350,7 +4707,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(GmailMoveTool, "GmailMoveTool", "gmail_move")
     add(GmailArchiveTool, "GmailArchiveTool", "gmail_archive")
     add(GmailSearchTool, "GmailSearchTool", "gmail_search")
-    add(GmailDeleteDraftTool, "GmailDeleteDraftTool", "Gmail Delete Draft")
+    add(GmailDeleteDraftTool, "GmailDeleteDraftTool", "gmail_delete_draft")
     add(GmailListThreadsTool, "GmailListThreadsTool", "gmail_list_threads")
     add(GmailTrashThreadTool, "GmailTrashThreadTool", "gmail_trash_thread")
     add(GmailCreateLabelTool, "GmailCreateLabelTool", "gmail_create_label")
@@ -1361,10 +4718,10 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(GmailAddLabelTool, "GmailAddLabelTool", "gmail_add_label")
     add(GmailDraftTool, "GmailDraftTool", "gmail_draft")
     add(GmailDeleteLabelTool, "GmailDeleteLabelTool", "gmail_delete_label")
-    add(GmailReadTool, "GmailReadTool", "Gmail Read")
+    add(GmailReadTool, "GmailReadTool", "gmail_read")
     add(NotionCreateDatabaseTool, "NotionCreateDatabaseTool", "notion_create_database")
     add(NotionReadDatabaseTool, "NotionReadDatabaseTool", "notion_read_database")
-    add(NotionAddDatabaseRowTool, "NotionAddDatabaseRowTool", "Add Notion Database Row")
+    add(NotionAddDatabaseRowTool, "NotionAddDatabaseRowTool", "add_notion_database_row")
     add(NotionWriteTool, "NotionWriteTool", "notion_write")
     add(NotionQueryDatabaseTool, "NotionQueryDatabaseTool", "notion_query_database")
     add(NotionCreatePageTool, "NotionCreatePageTool", "notion_create_page")
@@ -1383,7 +4740,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(SalesforceQueryTool, "SalesforceQueryTool", "salesforce_query")
     add(SalesforceDeleteOpportunityTool, "SalesforceDeleteOpportunityTool", "salesforce_delete_opportunity")
     add(SalesforceUpdateLeadTool, "SalesforceUpdateLeadTool", "salesforce_update_lead")
-    add(SalesforceGetCasesTool, "SalesforceGetCasesTool", "Get Cases from Salesforce")
+    add(SalesforceGetCasesTool, "SalesforceGetCasesTool", "get_cases_from_salesforce")
     add(SalesforceUpdateCaseTool, "SalesforceUpdateCaseTool", "salesforce_update_case")
     add(SalesforceGetOpportunitiesTool, "SalesforceGetOpportunitiesTool", "salesforce_get_opportunities")
     add(SalesforceGetDashboardTool, "SalesforceGetDashboardTool", "salesforce_get_dashboard")
@@ -1410,7 +4767,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(LinearUpdateCommentTool, "LinearUpdateCommentTool", "linear_update_comment")
     add(LinearRemoveLabelFromProjectTool, "LinearRemoveLabelFromProjectTool", "linear_remove_label_from_project")
     add(LinearCreateWorkflowStateTool, "LinearCreateWorkflowStateTool", "linear_create_workflow_state")
-    add(LinearAddLabelToIssueTool, "LinearAddLabelToIssueTool", "Linear Add Label to Issue")
+    add(LinearAddLabelToIssueTool, "LinearAddLabelToIssueTool", "linear_add_label_to_issue")
     add(LinearArchiveLabelTool, "LinearArchiveLabelTool", "linear_archive_label")
     add(LinearGetCycleTool, "LinearGetCycleTool", "linear_get_cycle")
     add(LinearDeleteCommentTool, "LinearDeleteCommentTool", "linear_delete_comment")
@@ -1452,7 +4809,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(LinearUpdateNotificationTool, "LinearUpdateNotificationTool", "linear_update_notification")
     add(LinearCreateCustomerTierTool, "LinearCreateCustomerTierTool", "linear_create_customer_tier")
     add(LinearListCommentsTool, "LinearListCommentsTool", "linear_list_comments")
-    add(LinearCreateIssueTool, "LinearCreateIssueTool", "Linear Issue Writer")
+    add(LinearCreateIssueTool, "LinearCreateIssueTool", "linear_issue_writer")
     add(LinearUpdateProjectStatusTool, "LinearUpdateProjectStatusTool", "linear_update_project_status")
     add(LinearListProjectUpdatesTool, "LinearListProjectUpdatesTool", "linear_list_project_updates")
     add(LinearListWorkflowStatesTool, "LinearListWorkflowStatesTool", "linear_list_workflow_states")
@@ -1479,22 +4836,22 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(LinearUnarchiveIssueTool, "LinearUnarchiveIssueTool", "linear_unarchive_issue")
     add(LinearGetActiveCycleTool, "LinearGetActiveCycleTool", "linear_get_active_cycle")
     add(LinearUpdateCustomerTierTool, "LinearUpdateCustomerTierTool", "linear_update_customer_tier")
-    add(LinearCreateFavoriteTool, "LinearCreateFavoriteTool", "Linear Create Favorite")
+    add(LinearCreateFavoriteTool, "LinearCreateFavoriteTool", "linear_create_favorite")
     add(LinearReadIssuesTool, "LinearReadIssuesTool", "linear_read_issues")
     add(LinearGetIssueTool, "LinearGetIssueTool", "linear_get_issue")
     add(LinearListUsersTool, "LinearListUsersTool", "linear_list_users")
     add(LinearUpdateCustomerTool, "LinearUpdateCustomerTool", "linear_update_customer")
     add(SlackGetChannelInfoTool, "SlackGetChannelInfoTool", "slack_get_channel_info")
-    add(SlackCreateChannelCanvasTool, "SlackCreateChannelCanvasTool", "Slack Create Channel Canvas")
+    add(SlackCreateChannelCanvasTool, "SlackCreateChannelCanvasTool", "slack_create_channel_canvas")
     add(SlackListMembersTool, "SlackListMembersTool", "slack_list_members")
-    add(SlackGetUserPresenceTool, "SlackGetUserPresenceTool", "Slack Get User Presence")
+    add(SlackGetUserPresenceTool, "SlackGetUserPresenceTool", "slack_get_user_presence")
     add(SlackUpdateMessageTool, "SlackUpdateMessageTool", "slack_update_message")
     add(SlackUpdateViewTool, "SlackUpdateViewTool", "slack_update_view")
     add(SlackDownloadTool, "SlackDownloadTool", "slack_download")
     add(SlackMessageTool, "SlackMessageTool", "slack_message")
     add(SlackDeleteMessageTool, "SlackDeleteMessageTool", "slack_delete_message")
     add(SlackListChannelsTool, "SlackListChannelsTool", "slack_list_channels")
-    add(SlackMessageReaderTool, "SlackMessageReaderTool", "Slack Message Reader")
+    add(SlackMessageReaderTool, "SlackMessageReaderTool", "slack_message_reader")
     add(SlackRemoveReactionTool, "SlackRemoveReactionTool", "slack_remove_reaction")
     add(SlackGetUserTool, "SlackGetUserTool", "slack_get_user")
     add(SlackOpenViewTool, "SlackOpenViewTool", "slack_open_view")
@@ -1503,7 +4860,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(SlackGetMessageTool, "SlackGetMessageTool", "slack_get_message")
     add(SlackAddReactionTool, "SlackAddReactionTool", "slack_add_reaction")
     add(SlackPushViewTool, "SlackPushViewTool", "slack_push_view")
-    add(SlackInviteToConversationTool, "SlackInviteToConversationTool", "Slack Invite to Conversation")
+    add(SlackInviteToConversationTool, "SlackInviteToConversationTool", "slack_invite_to_conversation")
     add(SlackGetThreadTool, "SlackGetThreadTool", "slack_get_thread")
     add(SlackCreateConversationTool, "SlackCreateConversationTool", "slack_create_conversation")
     add(SlackCanvasTool, "SlackCanvasTool", "slack_canvas")
@@ -1554,10 +4911,10 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(StripeCreatePaymentIntentTool, "StripeCreatePaymentIntentTool", "stripe_create_payment_intent")
     add(StripeListProductsTool, "StripeListProductsTool", "stripe_list_products")
     add(StripeSearchSubscriptionsTool, "StripeSearchSubscriptionsTool", "stripe_search_subscriptions")
-    add(StripeFinalizeInvoiceTool, "StripeFinalizeInvoiceTool", "Stripe Finalize Invoice")
+    add(StripeFinalizeInvoiceTool, "StripeFinalizeInvoiceTool", "stripe_finalize_invoice")
     add(StripeRetrieveInvoiceTool, "StripeRetrieveInvoiceTool", "stripe_retrieve_invoice")
     add(StripeSearchProductsTool, "StripeSearchProductsTool", "stripe_search_products")
-    add(StripeListChargesTool, "StripeListChargesTool", "Stripe List Charges")
+    add(StripeListChargesTool, "StripeListChargesTool", "stripe_list_charges")
     add(StripePayInvoiceTool, "StripePayInvoiceTool", "stripe_pay_invoice")
     add(StripeCaptureChargeTool, "StripeCaptureChargeTool", "stripe_capture_charge")
     add(StripeRetrieveChargeTool, "StripeRetrieveChargeTool", "stripe_retrieve_charge")
@@ -1575,28 +4932,28 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(StripeListPaymentIntentsTool, "StripeListPaymentIntentsTool", "stripe_list_payment_intents")
     add(StripeCapturePaymentIntentTool, "StripeCapturePaymentIntentTool", "stripe_capture_payment_intent")
     add(StripeDeleteProductTool, "StripeDeleteProductTool", "stripe_delete_product")
-    add(StripeCreateSubscriptionTool, "StripeCreateSubscriptionTool", "Stripe Create Subscription")
+    add(StripeCreateSubscriptionTool, "StripeCreateSubscriptionTool", "stripe_create_subscription")
     add(StripeCreateProductTool, "StripeCreateProductTool", "stripe_create_product")
     add(StripeVoidInvoiceTool, "StripeVoidInvoiceTool", "stripe_void_invoice")
     add(StripeCancelSubscriptionTool, "StripeCancelSubscriptionTool", "stripe_cancel_subscription")
-    add(StripeRetrievePaymentIntentTool, "StripeRetrievePaymentIntentTool", "Stripe Retrieve Payment Intent")
-    add(StripeSearchChargesTool, "StripeSearchChargesTool", "Stripe Search Charges")
+    add(StripeRetrievePaymentIntentTool, "StripeRetrievePaymentIntentTool", "stripe_retrieve_payment_intent")
+    add(StripeSearchChargesTool, "StripeSearchChargesTool", "stripe_search_charges")
     add(StripeUpdateInvoiceTool, "StripeUpdateInvoiceTool", "stripe_update_invoice")
     add(StripeUpdateSubscriptionTool, "StripeUpdateSubscriptionTool", "stripe_update_subscription")
     add(StripeSendInvoiceTool, "StripeSendInvoiceTool", "stripe_send_invoice")
-    add(StripeListSubscriptionsTool, "StripeListSubscriptionsTool", "Stripe List Subscriptions")
+    add(StripeListSubscriptionsTool, "StripeListSubscriptionsTool", "stripe_list_subscriptions")
     add(StripeUpdatePriceTool, "StripeUpdatePriceTool", "stripe_update_price")
     add(StripeUpdateChargeTool, "StripeUpdateChargeTool", "stripe_update_charge")
-    add(StripeListCustomersTool, "StripeListCustomersTool", "Stripe List Customers")
+    add(StripeListCustomersTool, "StripeListCustomersTool", "stripe_list_customers")
     add(StripeCancelPaymentIntentTool, "StripeCancelPaymentIntentTool", "stripe_cancel_payment_intent")
-    add(StripeRetrieveCustomerTool, "StripeRetrieveCustomerTool", "Stripe Retrieve Customer")
+    add(StripeRetrieveCustomerTool, "StripeRetrieveCustomerTool", "stripe_retrieve_customer")
     add(StripeRetrieveEventTool, "StripeRetrieveEventTool", "stripe_retrieve_event")
     add(StripeCreateInvoiceTool, "StripeCreateInvoiceTool", "stripe_create_invoice")
     add(StripeDeleteInvoiceTool, "StripeDeleteInvoiceTool", "stripe_delete_invoice")
     add(StripeSearchInvoicesTool, "StripeSearchInvoicesTool", "stripe_search_invoices")
     add(StripeRetrieveSubscriptionTool, "StripeRetrieveSubscriptionTool", "stripe_retrieve_subscription")
     add(StripeSearchPaymentIntentsTool, "StripeSearchPaymentIntentsTool", "stripe_search_payment_intents")
-    add(StripeUpdateCustomerTool, "StripeUpdateCustomerTool", "Stripe Update Customer")
+    add(StripeUpdateCustomerTool, "StripeUpdateCustomerTool", "stripe_update_customer")
     add(StripeListEventsTool, "StripeListEventsTool", "stripe_list_events")
     add(GithubUnstarGistTool, "GithubUnstarGistTool", "github_unstar_gist")
     add(GitHubDeleteCommentReactionTool, "GitHubDeleteCommentReactionTool", "github_delete_comment_reaction")
@@ -1610,7 +4967,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(GitHubListIssueCommentsTool, "GitHubListIssueCommentsTool", "github_list_issue_comments")
     add(GitHubForkGistTool, "GitHubForkGistTool", "github_fork_gist")
     add(GitHubListCommitsTool, "GitHubListCommitsTool", "github_list_commits")
-    add(GitHubAddAssigneesTool, "GitHubAddAssigneesTool", "GitHub Add Assignees")
+    add(GitHubAddAssigneesTool, "GitHubAddAssigneesTool", "github_add_assignees")
     add(GitHubForkRepoTool, "GitHubForkRepoTool", "github_fork_repo")
     add(GitHubCommentTool, "GitHubCommentTool", "github_comment")
     add(GitHubListGistsTool, "GitHubListGistsTool", "github_list_gists")
@@ -1620,7 +4977,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(GitHubCreateCommentReactionTool, "GitHubCreateCommentReactionTool", "github_create_comment_reaction")
     add(GithubGetGistTool, "GithubGetGistTool", "github_get_gist")
     add(GitHubCreateReleaseTool, "GitHubCreateReleaseTool", "github_create_release")
-    add(GitHubDeleteCommentTool, "GitHubDeleteCommentTool", "GitHub Comment Deleter")
+    add(GitHubDeleteCommentTool, "GitHubDeleteCommentTool", "github_comment_deleter")
     add(GitHubGetMilestoneTool, "GitHubGetMilestoneTool", "github_get_milestone")
     add(GitHubDeleteReleaseTool, "GitHubDeleteReleaseTool", "github_delete_release")
     add(GitHubDeleteGistTool, "GitHubDeleteGistTool", "github_delete_gist")
@@ -1651,7 +5008,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(GitHubListProjectsTool, "GitHubListProjectsTool", "github_list_projects")
     add(GitHubSearchCommitsTool, "GitHubSearchCommitsTool", "github_search_commits")
     add(GitHubRerunWorkflowTool, "GitHubRerunWorkflowTool", "github_rerun_workflow")
-    add(GitHubPrTool, "GitHubPrTool", "GitHub PR Reader")
+    add(GitHubPrTool, "GitHubPrTool", "github_pr_reader")
     add(GitHubGetCommitTool, "GitHubGetCommitTool", "github_get_commit")
     add(GitHubGetTreeTool, "GitHubGetTreeTool", "github_get_tree")
     add(GithubStarGistTool, "GithubStarGistTool", "github_star_gist")
@@ -1690,7 +5047,7 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(JiraRemoveWatcherTool, "JiraRemoveWatcherTool", "jira_remove_watcher")
     add(JiraDeleteWorklogTool, "JiraDeleteWorklogTool", "jira_delete_worklog")
     add(JiraDeleteCommentTool, "JiraDeleteCommentTool", "jira_delete_comment")
-    add(JiraWriteTool, "JiraWriteTool", "Jira Write")
+    add(JiraWriteTool, "JiraWriteTool", "jira_write")
     add(JiraDeleteAttachmentTool, "JiraDeleteAttachmentTool", "jira_delete_attachment")
     add(JiraAssignIssueTool, "JiraAssignIssueTool", "jira_assign_issue")
     add(JiraGetCommentsTool, "JiraGetCommentsTool", "jira_get_comments")
@@ -1732,6 +5089,964 @@ def _build_catalog() -> dict[str, ToolFactory]:
     add(GoogleDriveShareTool, "GoogleDriveShareTool", "google_drive_share")
     add(GoogleDriveMoveTool, "GoogleDriveMoveTool", "google_drive_move")
     add(GoogleDriveSearchTool, "GoogleDriveSearchTool", "google_drive_search")
+
+    add(AgentmailCreateDraftTool, "AgentmailCreateDraftTool", "agentmail_create_draft")
+    add(AgentmailCreateInboxTool, "AgentmailCreateInboxTool", "create_inbox")
+    add(AgentmailDeleteDraftTool, "AgentmailDeleteDraftTool", "agentmail_delete_draft")
+    add(AgentmailDeleteInboxTool, "AgentmailDeleteInboxTool", "agentmail_delete_inbox")
+    add(AgentmailDeleteThreadTool, "AgentmailDeleteThreadTool", "agentmail_delete_thread")
+    add(AgentMailForwardMessageTool, "AgentMailForwardMessageTool", "agentmail_forward_message")
+    add(AgentMailGetDraftTool, "AgentMailGetDraftTool", "agentmail_get_draft")
+    add(AgentmailGetInboxTool, "AgentmailGetInboxTool", "agentmail_get_inbox")
+    add(AgentmailGetMessageTool, "AgentmailGetMessageTool", "agentmail_get_message")
+    add(AgentmailGetThreadTool, "AgentmailGetThreadTool", "agentmail_get_thread")
+    add(AgentMailListDraftsTool, "AgentMailListDraftsTool", "agentmail_list_drafts")
+    add(AgentmailListInboxesTool, "AgentmailListInboxesTool", "agentmail_list_inboxes")
+    add(AgentmailListMessagesTool, "AgentmailListMessagesTool", "agentmail_list_messages")
+    add(AgentmailListThreadsTool, "AgentmailListThreadsTool", "agentmail_list_threads")
+    add(AgentmailReplyMessageTool, "AgentmailReplyMessageTool", "agentmail_reply_message")
+    add(AgentmailSendDraftTool, "AgentmailSendDraftTool", "agentmail_send_draft")
+    add(AgentmailSendMessageTool, "AgentmailSendMessageTool", "agentmail_send_message")
+    add(AgentmailUpdateDraftTool, "AgentmailUpdateDraftTool", "agentmail_update_draft")
+    add(AgentmailUpdateInboxTool, "AgentmailUpdateInboxTool", "update_inbox")
+    add(AgentmailUpdateMessageTool, "AgentmailUpdateMessageTool", "agentmail_update_message")
+    add(AgentmailUpdateThreadTool, "AgentmailUpdateThreadTool", "agentmail_update_thread")
+    add(AhrefsBacklinksTool, "AhrefsBacklinksTool", "ahrefs_backlinks")
+    add(AhrefsBacklinksStatsTool, "AhrefsBacklinksStatsTool", "ahrefs_backlinks_stats")
+    add(AhrefsBrokenBacklinksTool, "AhrefsBrokenBacklinksTool", "ahrefs_broken_backlinks")
+    add(AhrefsDomainRatingTool, "AhrefsDomainRatingTool", "ahrefs_domain_rating")
+    add(AhrefsKeywordOverviewTool, "AhrefsKeywordOverviewTool", "ahrefs_keyword_overview")
+    add(AhrefsOrganicKeywordsTool, "AhrefsOrganicKeywordsTool", "ahrefs_organic_keywords")
+    add(AhrefsReferringDomainsTool, "AhrefsReferringDomainsTool", "ahrefs_referring_domains")
+    add(AhrefsTopPagesTool, "AhrefsTopPagesTool", "ahrefs_top_pages")
+    add(AirtableCreateRecordsTool, "AirtableCreateRecordsTool", "airtable_create_records")
+    add(AirtableGetBaseSchemaTool, "AirtableGetBaseSchemaTool", "airtable_get_base_schema")
+    add(AirtableGetRecordTool, "AirtableGetRecordTool", "airtable_get_record")
+    add(AirtableListBasesTool, "AirtableListBasesTool", "airtable_list_bases")
+    add(AirtableListRecordsTool, "AirtableListRecordsTool", "airtable_list_records")
+    add(AirtableListTablesTool, "AirtableListTablesTool", "airtable_list_tables")
+    add(AirtableUpdateMultipleRecordsTool, "AirtableUpdateMultipleRecordsTool", "airtable_update_multiple_records")
+    add(AirtableUpdateRecordTool, "AirtableUpdateRecordTool", "airtable_update_record")
+    add(AirweaveSearchTool, "AirweaveSearchTool", "airweave_search")
+    add(ApolloAccountBulkCreateTool, "ApolloAccountBulkCreateTool", "apollo_account_bulk_create")
+    add(ApolloAccountBulkUpdateTool, "ApolloAccountBulkUpdateTool", "apollo_account_bulk_update")
+    add(ApolloAccountCreateTool, "ApolloAccountCreateTool", "apollo_account_create")
+    add(ApolloAccountSearchTool, "ApolloAccountSearchTool", "apollo_account_search")
+    add(ApolloAccountUpdateTool, "ApolloAccountUpdateTool", "apollo_account_update")
+    add(ApolloContactBulkCreateTool, "ApolloContactBulkCreateTool", "apollo_contact_bulk_create")
+    add(ApolloContactBulkUpdateTool, "ApolloContactBulkUpdateTool", "apollo_contact_bulk_update")
+    add(ApolloContactCreateTool, "ApolloContactCreateTool", "apollo_contact_create")
+    add(ApolloContactSearchTool, "ApolloContactSearchTool", "apollo_contact_search")
+    add(ApolloContactUpdateTool, "ApolloContactUpdateTool", "apollo_contact_update")
+    add(ApolloEmailAccountsTool, "ApolloEmailAccountsTool", "apollo_email_accounts")
+    add(ApolloOpportunityGetTool, "ApolloOpportunityGetTool", "apollo_opportunity_get")
+    add(ApolloOpportunitySearchTool, "ApolloOpportunitySearchTool", "apollo_search_opportunities")
+    add(ApolloOpportunityUpdateTool, "ApolloOpportunityUpdateTool", "apollo_opportunity_update")
+    add(ApolloOrganizationBulkEnrichTool, "ApolloOrganizationBulkEnrichTool", "apollo_organization_bulk_enrich")
+    add(ApolloOrganizationEnrichTool, "ApolloOrganizationEnrichTool", "apollo_organization_enrich")
+    add(ApolloOrganizationSearchTool, "ApolloOrganizationSearchTool", "apollo_organization_search")
+    add(ApolloPeopleBulkEnrichTool, "ApolloPeopleBulkEnrichTool", "apollo_people_bulk_enrich")
+    add(ApolloPeopleEnrichTool, "ApolloPeopleEnrichTool", "apollo_people_enrich")
+    add(ApolloPeopleSearchTool, "ApolloPeopleSearchTool", "apollo_people_search")
+    add(ApolloSequenceAddContactsTool, "ApolloSequenceAddContactsTool", "apollo_sequence_add_contacts")
+    add(ApolloSequenceSearchTool, "ApolloSequenceSearchTool", "apollo_sequence_search")
+    add(ApolloTaskCreateTool, "ApolloTaskCreateTool", "apollo_create_task")
+    add(ApolloTaskSearchTool, "ApolloTaskSearchTool", "apollo_search_tasks")
+    add(AsanaAddCommentTool, "AsanaAddCommentTool", "asana_add_comment")
+    add(AsanaCreateTaskTool, "AsanaCreateTaskTool", "asana_create_task")
+    add(AsanaGetProjectsTool, "AsanaGetProjectsTool", "asana_get_projects")
+    add(AsanaGetTaskTool, "AsanaGetTaskTool", "asana_get_task")
+    add(AsanaSearchTasksTool, "AsanaSearchTasksTool", "asana_search_tasks")
+    add(AsanaUpdateTaskTool, "AsanaUpdateTaskTool", "asana_update_task")
+    add(AshbyAddCandidateTagTool, "AshbyAddCandidateTagTool", "ashby_add_candidate_tag")
+    add(AshbyChangeApplicationStageTool, "AshbyChangeApplicationStageTool", "ashby_change_application_stage")
+    add(AshbyCreateApplicationTool, "AshbyCreateApplicationTool", "ashby_create_application")
+    add(AshbyCreateCandidateTool, "AshbyCreateCandidateTool", "ashby_create_candidate")
+    add(AshbyCreateNoteTool, "AshbyCreateNoteTool", "ashby_create_note")
+    add(AshbyGetApplicationTool, "AshbyGetApplicationTool", "ashby_get_application")
+    add(AshbyGetCandidateTool, "AshbyGetCandidateTool", "ashby_get_candidate")
+    add(AshbyGetJobTool, "AshbyGetJobTool", "ashby_get_job")
+    add(AshbyGetJobPostingTool, "AshbyGetJobPostingTool", "ashby_get_job_posting")
+    add(AshbyGetOfferTool, "AshbyGetOfferTool", "ashby_get_offer")
+    add(AshbyListApplicationsTool, "AshbyListApplicationsTool", "ashby_list_applications")
+    add(AshbyListArchiveReasonsTool, "AshbyListArchiveReasonsTool", "ashby_list_archive_reasons")
+    add(AshbyListCandidateTagsTool, "AshbyListCandidateTagsTool", "ashby_list_candidate_tags")
+    add(AshbyListCandidatesTool, "AshbyListCandidatesTool", "ashby_list_candidates")
+    add(AshbyListCustomFieldsTool, "AshbyListCustomFieldsTool", "ashby_list_custom_fields")
+    add(AshbyListDepartmentsTool, "AshbyListDepartmentsTool", "ashby_list_departments")
+    add(AshbyListInterviewsTool, "AshbyListInterviewsTool", "ashby_list_interviews")
+    add(AshbyListJobPostingsTool, "AshbyListJobPostingsTool", "ashby_list_job_postings")
+    add(AshbyListJobsTool, "AshbyListJobsTool", "ashby_list_jobs")
+    add(AshbyListLocationsTool, "AshbyListLocationsTool", "ashby_list_locations")
+    add(AshbyListNotesTool, "AshbyListNotesTool", "ashby_list_notes")
+    add(AshbyListOffersTool, "AshbyListOffersTool", "ashby_list_offers")
+    add(AshbyListOpeningsTool, "AshbyListOpeningsTool", "ashby_list_openings")
+    add(AshbyListSourcesTool, "AshbyListSourcesTool", "ashby_list_sources")
+    add(AshbyListUsersTool, "AshbyListUsersTool", "ashby_list_users")
+    add(AshbyRemoveCandidateTagTool, "AshbyRemoveCandidateTagTool", "ashby_remove_candidate_tag")
+    add(AshbySearchCandidatesTool, "AshbySearchCandidatesTool", "ashby_search_candidates")
+    add(AshbyUpdateCandidateTool, "AshbyUpdateCandidateTool", "ashby_update_candidate")
+    add(AttioAssertRecordTool, "AttioAssertRecordTool", "attio_assert_record")
+    add(AttioCreateCommentTool, "AttioCreateCommentTool", "attio_create_comment")
+    add(AttioCreateListTool, "AttioCreateListTool", "attio_create_list")
+    add(AttioCreateListEntryTool, "AttioCreateListEntryTool", "attio_create_list_entry")
+    add(AttioCreateNoteTool, "AttioCreateNoteTool", "attio_create_note")
+    add(AttioCreateObjectTool, "AttioCreateObjectTool", "attio_create_object")
+    add(AttioCreateRecordTool, "AttioCreateRecordTool", "attio_create_record")
+    add(AttioCreateTaskTool, "AttioCreateTaskTool", "attio_create_task")
+    add(AttioCreateWebhookTool, "AttioCreateWebhookTool", "attio_create_webhook")
+    add(AttioDeleteCommentTool, "AttioDeleteCommentTool", "attio_delete_comment")
+    add(AttioDeleteListEntryTool, "AttioDeleteListEntryTool", "attio_delete_list_entry")
+    add(AttioDeleteNoteTool, "AttioDeleteNoteTool", "attio_delete_note")
+    add(AttioDeleteRecordTool, "AttioDeleteRecordTool", "attio_delete_record")
+    add(AttioDeleteTaskTool, "AttioDeleteTaskTool", "attio_delete_task")
+    add(AttioDeleteWebhookTool, "AttioDeleteWebhookTool", "attio_delete_webhook")
+    add(AttioGetCommentTool, "AttioGetCommentTool", "attio_get_comment")
+    add(AttioGetListTool, "AttioGetListTool", "attio_get_list")
+    add(AttioGetListEntryTool, "AttioGetListEntryTool", "attio_get_list_entry")
+    add(AttioGetMemberTool, "AttioGetMemberTool", "attio_get_member")
+    add(AttioGetNoteTool, "AttioGetNoteTool", "attio_get_note")
+    add(AttioGetObjectTool, "AttioGetObjectTool", "attio_get_object")
+    add(AttioGetRecordTool, "AttioGetRecordTool", "attio_get_record")
+    add(AttioGetTaskTool, "AttioGetTaskTool", "attio_get_task")
+    add(AttioGetThreadTool, "AttioGetThreadTool", "attio_get_thread")
+    add(AttioGetWebhookTool, "AttioGetWebhookTool", "attio_get_webhook")
+    add(AttioListListsTool, "AttioListListsTool", "attio_list_lists")
+    add(AttioListMembersTool, "AttioListMembersTool", "attio_list_members")
+    add(AttioListNotesTool, "AttioListNotesTool", "attio_list_notes")
+    add(AttioListObjectsTool, "AttioListObjectsTool", "attio_list_objects")
+    add(AttioListRecordsTool, "AttioListRecordsTool", "attio_list_records")
+    add(AttioListTasksTool, "AttioListTasksTool", "attio_list_tasks")
+    add(AttioListThreadsTool, "AttioListThreadsTool", "attio_list_threads")
+    add(AttioListWebhooksTool, "AttioListWebhooksTool", "attio_list_webhooks")
+    add(AttioQueryListEntriesTool, "AttioQueryListEntriesTool", "attio_query_list_entries")
+    add(AttioSearchRecordsTool, "AttioSearchRecordsTool", "attio_search_records")
+    add(AttioUpdateListTool, "AttioUpdateListTool", "attio_update_list")
+    add(AttioUpdateListEntryTool, "AttioUpdateListEntryTool", "attio_update_list_entry")
+    add(AttioUpdateObjectTool, "AttioUpdateObjectTool", "attio_update_object")
+    add(AttioUpdateRecordTool, "AttioUpdateRecordTool", "attio_update_record")
+    add(AttioUpdateTaskTool, "AttioUpdateTaskTool", "attio_update_task")
+    add(AttioUpdateWebhookTool, "AttioUpdateWebhookTool", "attio_update_webhook")
+    add(BoxCopyFileTool, "BoxCopyFileTool", "box_copy_file")
+    add(BoxCreateFolderTool, "BoxCreateFolderTool", "box_create_folder")
+    add(BoxDeleteFileTool, "BoxDeleteFileTool", "box_delete_file")
+    add(BoxDeleteFolderTool, "BoxDeleteFolderTool", "box_delete_folder")
+    add(BoxDownloadFileTool, "BoxDownloadFileTool", "box_download_file")
+    add(BoxGetFileInfoTool, "BoxGetFileInfoTool", "box_get_file_info")
+    add(BoxListFolderItemsTool, "BoxListFolderItemsTool", "box_list_folder_items")
+    add(BoxSearchTool, "BoxSearchTool", "box_search")
+    add(BoxUpdateFileTool, "BoxUpdateFileTool", "box_update_file")
+    add(BoxUploadFileTool, "BoxUploadFileTool", "box_upload_file")
+    add(BoxSignCancelRequestTool, "BoxSignCancelRequestTool", "box_sign_cancel_request")
+    add(BoxSignCreateRequestTool, "BoxSignCreateRequestTool", "box_sign_create_request")
+    add(BoxSignGetRequestTool, "BoxSignGetRequestTool", "box_sign_get_request")
+    add(BoxSignListRequestsTool, "BoxSignListRequestsTool", "box_sign_list_requests")
+    add(BoxSignResendRequestTool, "BoxSignResendRequestTool", "box_sign_resend_request")
+    add(CalcomCancelBookingTool, "CalcomCancelBookingTool", "calcom_cancel_booking")
+    add(CalcomConfirmBookingTool, "CalcomConfirmBookingTool", "cal_com_confirm_booking")
+    add(CalcomCreateBookingTool, "CalcomCreateBookingTool", "calcom_create_booking")
+    add(CalcomCreateEventTypeTool, "CalcomCreateEventTypeTool", "cal_com_create_event_type")
+    add(CalcomCreateScheduleTool, "CalcomCreateScheduleTool", "calcom_create_schedule")
+    add(CalcomDeclineBookingTool, "CalcomDeclineBookingTool", "calcom_decline_booking")
+    add(CalcomDeleteEventTypeTool, "CalcomDeleteEventTypeTool", "calcom_delete_event_type")
+    add(CalcomDeleteScheduleTool, "CalcomDeleteScheduleTool", "calcom_delete_schedule")
+    add(CalcomGetBookingTool, "CalcomGetBookingTool", "calcom_get_booking")
+    add(CalcomGetDefaultScheduleTool, "CalcomGetDefaultScheduleTool", "calcom_get_default_schedule")
+    add(CalcomGetEventTypeTool, "CalcomGetEventTypeTool", "calcom_get_event_type")
+    add(CalcomGetScheduleTool, "CalcomGetScheduleTool", "calcom_get_schedule")
+    add(CalcomGetSlotsTool, "CalcomGetSlotsTool", "calcom_get_slots")
+    add(CalcomListBookingsTool, "CalcomListBookingsTool", "calcom_list_bookings")
+    add(CalcomListEventTypesTool, "CalcomListEventTypesTool", "calcom_list_event_types")
+    add(CalcomListSchedulesTool, "CalcomListSchedulesTool", "calcom_list_schedules")
+    add(CalcomRescheduleBookingTool, "CalcomRescheduleBookingTool", "calcom_reschedule_booking")
+    add(CalcomUpdateEventTypeTool, "CalcomUpdateEventTypeTool", "calcom_update_event_type")
+    add(CalcomUpdateScheduleTool, "CalcomUpdateScheduleTool", "calcom_update_schedule")
+    add(CloudWatchDescribeAlarmsTool, "CloudWatchDescribeAlarmsTool", "cloudwatch_describe_alarms")
+    add(CloudWatchDescribeLogGroupsTool, "CloudWatchDescribeLogGroupsTool", "cloudwatch_describe_log_groups")
+    add(CloudWatchDescribeLogStreamsTool, "CloudWatchDescribeLogStreamsTool", "cloudwatch_describe_log_streams")
+    add(CloudWatchGetLogEventsTool, "CloudWatchGetLogEventsTool", "cloudwatch_get_log_events")
+    add(CloudWatchGetMetricStatisticsTool, "CloudWatchGetMetricStatisticsTool", "cloudwatch_get_metric_statistics")
+    add(CloudWatchListMetricsTool, "CloudWatchListMetricsTool", "cloudwatch_list_metrics")
+    add(CloudWatchQueryLogsTool, "CloudWatchQueryLogsTool", "cloudwatch_query_logs")
+    add(ConfluenceAddLabelTool, "ConfluenceAddLabelTool", "confluence_add_label")
+    add(ConfluenceCreateBlogPostTool, "ConfluenceCreateBlogPostTool", "confluence_create_blogpost")
+    add(ConfluenceCreateCommentTool, "ConfluenceCreateCommentTool", "confluence_create_comment")
+    add(ConfluenceCreatePageTool, "ConfluenceCreatePageTool", "confluence_create_page")
+    add(ConfluenceCreatePagePropertyTool, "ConfluenceCreatePagePropertyTool", "confluence_create_page_property")
+    add(ConfluenceCreateSpaceTool, "ConfluenceCreateSpaceTool", "confluence_create_space")
+    add(ConfluenceCreateSpacePropertyTool, "ConfluenceCreateSpacePropertyTool", "confluence_create_space_property")
+    add(ConfluenceDeleteAttachmentTool, "ConfluenceDeleteAttachmentTool", "confluence_delete_attachment")
+    add(ConfluenceDeleteBlogPostTool, "ConfluenceDeleteBlogPostTool", "confluence_delete_blogpost")
+    add(ConfluenceDeleteCommentTool, "ConfluenceDeleteCommentTool", "confluence_delete_comment")
+    add(ConfluenceDeleteLabelTool, "ConfluenceDeleteLabelTool", "confluence_delete_label")
+    add(ConfluenceDeletePageTool, "ConfluenceDeletePageTool", "confluence_delete_page")
+    add(ConfluenceDeletePagePropertyTool, "ConfluenceDeletePagePropertyTool", "confluence_delete_page_property")
+    add(ConfluenceDeleteSpaceTool, "ConfluenceDeleteSpaceTool", "confluence_delete_space")
+    add(ConfluenceDeleteSpacePropertyTool, "ConfluenceDeleteSpacePropertyTool", "confluence_delete_space_property")
+    add(ConfluenceGetBlogPostTool, "ConfluenceGetBlogPostTool", "confluence_get_blogpost")
+    add(ConfluenceGetPageAncestorsTool, "ConfluenceGetPageAncestorsTool", "confluence_get_page_ancestors")
+    add(ConfluenceGetPageChildrenTool, "ConfluenceGetPageChildrenTool", "confluence_get_page_children")
+    add(ConfluenceGetPageDescendantsTool, "ConfluenceGetPageDescendantsTool", "confluence_get_page_descendants")
+    add(ConfluenceGetPageVersionTool, "ConfluenceGetPageVersionTool", "confluence_get_page_version")
+    add(ConfluenceGetPagesByLabelTool, "ConfluenceGetPagesByLabelTool", "confluence_get_pages_by_label")
+    add(ConfluenceGetSpaceTool, "ConfluenceGetSpaceTool", "confluence_get_space")
+    add(ConfluenceGetTaskTool, "ConfluenceGetTaskTool", "confluence_get_task")
+    add(ConfluenceGetUserTool, "ConfluenceGetUserTool", "confluence_get_user")
+    add(ConfluenceListAttachmentsTool, "ConfluenceListAttachmentsTool", "confluence_list_attachments")
+    add(ConfluenceListBlogPostsTool, "ConfluenceListBlogPostsTool", "confluence_list_blogposts")
+    add(ConfluenceListBlogPostsInSpaceTool, "ConfluenceListBlogPostsInSpaceTool", "confluence_list_blogposts_in_space")
+    add(ConfluenceListCommentsTool, "ConfluenceListCommentsTool", "confluence_list_comments")
+    add(ConfluenceListLabelsTool, "ConfluenceListLabelsTool", "confluence_list_labels")
+    add(ConfluenceListPagePropertiesTool, "ConfluenceListPagePropertiesTool", "confluence_list_page_properties")
+    add(ConfluenceListPageVersionsTool, "ConfluenceListPageVersionsTool", "confluence_list_page_versions")
+    add(ConfluenceListPagesInSpaceTool, "ConfluenceListPagesInSpaceTool", "confluence_list_pages_in_space")
+    add(ConfluenceListSpaceLabelsTool, "ConfluenceListSpaceLabelsTool", "confluence_list_space_labels")
+    add(ConfluenceListSpacePermissionsTool, "ConfluenceListSpacePermissionsTool", "confluence_list_space_permissions")
+    add(ConfluenceListSpacePropertiesTool, "ConfluenceListSpacePropertiesTool", "confluence_list_space_properties")
+    add(ConfluenceListSpacesTool, "ConfluenceListSpacesTool", "confluence_list_spaces")
+    add(ConfluenceListTasksTool, "ConfluenceListTasksTool", "confluence_list_tasks")
+    add(ConfluenceRetrieveTool, "ConfluenceRetrieveTool", "confluence_retrieve")
+    add(ConfluenceSearchTool, "ConfluenceSearchTool", "confluence_search")
+    add(ConfluenceSearchInSpaceTool, "ConfluenceSearchInSpaceTool", "confluence_search_in_space")
+    add(ConfluenceUpdateTool, "ConfluenceUpdateTool", "confluence_update")
+    add(ConfluenceUpdateBlogPostTool, "ConfluenceUpdateBlogPostTool", "confluence_update_blogpost")
+    add(ConfluenceUpdateCommentTool, "ConfluenceUpdateCommentTool", "confluence_update_comment")
+    add(ConfluenceUpdateTaskTool, "ConfluenceUpdateTaskTool", "confluence_update_task")
+    add(ConfluenceUploadAttachmentTool, "ConfluenceUploadAttachmentTool", "confluence_upload_attachment")
+    add(CursorAddFollowupTool, "CursorAddFollowupTool", "cursor_add_followup")
+    add(CursorDeleteAgentTool, "CursorDeleteAgentTool", "cursor_delete_agent")
+    add(CursorDownloadArtifactTool, "CursorDownloadArtifactTool", "cursor_download_artifact")
+    add(CursorGetAgentTool, "CursorGetAgentTool", "cursor_get_agent")
+    add(CursorGetConversationTool, "CursorGetConversationTool", "cursor_get_conversation")
+    add(CursorLaunchAgentTool, "CursorLaunchAgentTool", "cursor_launch_agent")
+    add(CursorListAgentsTool, "CursorListAgentsTool", "cursor_list_agents")
+    add(CursorListArtifactsTool, "CursorListArtifactsTool", "cursor_list_artifacts")
+    add(CursorStopAgentTool, "CursorStopAgentTool", "cursor_stop_agent")
+    add(DatabricksCancelRunTool, "DatabricksCancelRunTool", "databricks_cancel_run")
+    add(DatabricksExecuteSqlTool, "DatabricksExecuteSqlTool", "databricks_execute_sql")
+    add(DatabricksGetRunTool, "DatabricksGetRunTool", "databricks_get_run")
+    add(DatabricksGetRunOutputTool, "DatabricksGetRunOutputTool", "databricks_get_run_output")
+    add(DatabricksListClustersTool, "DatabricksListClustersTool", "databricks_list_clusters")
+    add(DatabricksListJobsTool, "DatabricksListJobsTool", "databricks_list_jobs")
+    add(DatabricksListRunsTool, "DatabricksListRunsTool", "databricks_list_runs")
+    add(DatabricksRunJobTool, "DatabricksRunJobTool", "databricks_run_job")
+    add(DatadogCancelDowntimeTool, "DatadogCancelDowntimeTool", "datadog_cancel_downtime")
+    add(DatadogCreateDowntimeTool, "DatadogCreateDowntimeTool", "datadog_create_downtime")
+    add(DatadogCreateEventTool, "DatadogCreateEventTool", "datadog_create_event")
+    add(DatadogCreateMonitorTool, "DatadogCreateMonitorTool", "datadog_create_monitor")
+    add(DatadogGetMonitorTool, "DatadogGetMonitorTool", "datadog_get_monitor")
+    add(DatadogListDowntimesTool, "DatadogListDowntimesTool", "datadog_list_downtimes")
+    add(DatadogListMonitorsTool, "DatadogListMonitorsTool", "datadog_list_monitors")
+    add(DatadogMuteMonitorTool, "DatadogMuteMonitorTool", "datadog_mute_monitor")
+    add(DatadogQueryLogsTool, "DatadogQueryLogsTool", "datadog_query_logs")
+    add(DatadogQueryTimeseriesTool, "DatadogQueryTimeseriesTool", "datadog_query_timeseries")
+    add(DatadogSendLogsTool, "DatadogSendLogsTool", "datadog_send_logs")
+    add(DatadogSubmitMetricsTool, "DatadogSubmitMetricsTool", "datadog_submit_metrics")
+    add(DevinCreateSessionTool, "DevinCreateSessionTool", "create_session")
+    add(DevinGetSessionTool, "DevinGetSessionTool", "get_session")
+    add(DevinListSessionsTool, "DevinListSessionsTool", "list_sessions")
+    add(DevinSendMessageTool, "DevinSendMessageTool", "send_message")
+    add(DiscordAddReactionTool, "DiscordAddReactionTool", "discord_add_reaction")
+    add(DiscordArchiveThreadTool, "DiscordArchiveThreadTool", "discord_archive_thread")
+    add(DiscordAssignRoleTool, "DiscordAssignRoleTool", "discord_assign_role")
+    add(DiscordBanMemberTool, "DiscordBanMemberTool", "discord_ban_member")
+    add(DiscordCreateChannelTool, "DiscordCreateChannelTool", "discord_create_channel")
+    add(DiscordCreateInviteTool, "DiscordCreateInviteTool", "discord_create_invite")
+    add(DiscordCreateRoleTool, "DiscordCreateRoleTool", "discord_create_role")
+    add(DiscordCreateThreadTool, "DiscordCreateThreadTool", "discord_create_thread")
+    add(DiscordCreateWebhookTool, "DiscordCreateWebhookTool", "discord_create_webhook")
+    add(DiscordDeleteChannelTool, "DiscordDeleteChannelTool", "discord_delete_channel")
+    add(DiscordDeleteInviteTool, "DiscordDeleteInviteTool", "discord_delete_invite")
+    add(DiscordDeleteMessageTool, "DiscordDeleteMessageTool", "discord_delete_message")
+    add(DiscordDeleteRoleTool, "DiscordDeleteRoleTool", "discord_delete_role")
+    add(DiscordDeleteWebhookTool, "DiscordDeleteWebhookTool", "discord_delete_webhook")
+    add(DiscordEditMessageTool, "DiscordEditMessageTool", "discord_edit_message")
+    add(DiscordExecuteWebhookTool, "DiscordExecuteWebhookTool", "discord_execute_webhook")
+    add(DiscordGetChannelTool, "DiscordGetChannelTool", "discord_get_channel")
+    add(DiscordGetInviteTool, "DiscordGetInviteTool", "discord_get_invite")
+    add(DiscordGetMemberTool, "DiscordGetMemberTool", "discord_get_member")
+    add(DiscordGetMessagesTool, "DiscordGetMessagesTool", "discord_get_messages")
+    add(DiscordGetServerTool, "DiscordGetServerTool", "discord_get_server")
+    add(DiscordGetUserTool, "DiscordGetUserTool", "discord_get_user")
+    add(DiscordGetWebhookTool, "DiscordGetWebhookTool", "discord_get_webhook")
+    add(DiscordJoinThreadTool, "DiscordJoinThreadTool", "discord_join_thread")
+    add(DiscordKickMemberTool, "DiscordKickMemberTool", "discord_kick_member")
+    add(DiscordLeaveThreadTool, "DiscordLeaveThreadTool", "discord_leave_thread")
+    add(DiscordPinMessageTool, "DiscordPinMessageTool", "discord_pin_message")
+    add(DiscordRemoveReactionTool, "DiscordRemoveReactionTool", "discord_remove_reaction")
+    add(DiscordRemoveRoleTool, "DiscordRemoveRoleTool", "discord_remove_role")
+    add(DiscordSendMessageTool, "DiscordSendMessageTool", "discord_send_message")
+    add(DiscordUnbanMemberTool, "DiscordUnbanMemberTool", "discord_unban_member")
+    add(DiscordUnpinMessageTool, "DiscordUnpinMessageTool", "discord_unpin_message")
+    add(DiscordUpdateChannelTool, "DiscordUpdateChannelTool", "discord_update_channel")
+    add(DiscordUpdateMemberTool, "DiscordUpdateMemberTool", "discord_update_member")
+    add(DiscordUpdateRoleTool, "DiscordUpdateRoleTool", "discord_update_role")
+    add(DocusignCreateFromTemplateTool, "DocusignCreateFromTemplateTool", "docusign_create_from_template")
+    add(DocuSignDownloadDocumentTool, "DocuSignDownloadDocumentTool", "docusign_download_document")
+    add(DocuSignGetEnvelopeTool, "DocuSignGetEnvelopeTool", "docusign_get_envelope")
+    add(DocuSignListEnvelopesTool, "DocuSignListEnvelopesTool", "docusign_list_envelopes")
+    add(DocuSignListRecipientsTool, "DocuSignListRecipientsTool", "docusign_list_recipient")
+    add(DocusignListTemplatesTool, "DocusignListTemplatesTool", "docusign_list_templates")
+    add(DocuSignSendEnvelopeTool, "DocuSignSendEnvelopeTool", "docusign_send_envelope")
+    add(DocuSignVoidEnvelopeTool, "DocuSignVoidEnvelopeTool", "docusign_void_envelope")
+    add(DropboxCopyTool, "DropboxCopyTool", "dropbox_copy")
+    add(DropboxCreateFolderTool, "DropboxCreateFolderTool", "dropbox_create_folder")
+    add(DropboxCreateSharedLinkTool, "DropboxCreateSharedLinkTool", "dropbox_create_shared_link")
+    add(DropboxDeleteTool, "DropboxDeleteTool", "dropbox_delete")
+    add(DropboxDownloadTool, "DropboxDownloadTool", "dropbox_download")
+    add(DropboxGetMetadataTool, "DropboxGetMetadataTool", "dropbox_get_metadata")
+    add(DropboxListFolderTool, "DropboxListFolderTool", "dropbox_list_folder")
+    add(DropboxMoveTool, "DropboxMoveTool", "dropbox_move")
+    add(DropboxSearchTool, "DropboxSearchTool", "dropbox_search")
+    add(DropboxUploadTool, "DropboxUploadTool", "dropbox_upload")
+    add(DSPyChainOfThoughtTool, "DSPyChainOfThoughtTool", "dspy_chain_of_thought")
+    add(DSPyPredictTool, "DSPyPredictTool", "dspy_predict")
+    add(DSPyReActTool, "DSPyReActTool", "dspy_react")
+    add(DuckDuckGoSearchTool, "DuckDuckGoSearchTool", "duckduckgo_search")
+    add(EvernoteCopyNoteTool, "EvernoteCopyNoteTool", "evernote_copy_note")
+    add(EvernoteCreateNoteTool, "EvernoteCreateNoteTool", "evernote_create_note")
+    add(EvernoteCreateNotebookTool, "EvernoteCreateNotebookTool", "evernote_create_notebook")
+    add(EvernoteCreateTagTool, "EvernoteCreateTagTool", "evernote_create_tag")
+    add(EvernoteDeleteNoteTool, "EvernoteDeleteNoteTool", "evernote_delete_note")
+    add(EvernoteGetNoteTool, "EvernoteGetNoteTool", "evernote_get_note")
+    add(EvernoteGetNotebookTool, "EvernoteGetNotebookTool", "evernote_get_notebook")
+    add(EvernoteListNotebooksTool, "EvernoteListNotebooksTool", "evernote_list_notebooks")
+    add(EvernoteListTagsTool, "EvernoteListTagsTool", "evernote_list_tags")
+    add(EvernoteSearchNotesTool, "EvernoteSearchNotesTool", "evernote_search_notes")
+    add(EvernoteUpdateNoteTool, "EvernoteUpdateNoteTool", "evernote_update_note")
+    add(ExaAnswerTool, "ExaAnswerTool", "exa_answer")
+    add(ExaFindSimilarLinksTool, "ExaFindSimilarLinksTool", "exa_find_similar_links")
+    add(ExaGetContentsTool, "ExaGetContentsTool", "exa_get_contents")
+    add(ExaResearchTool, "ExaResearchTool", "exa_research")
+    add(ExaSearchTool, "ExaSearchTool", "exa_search")
+    add(ExtendParserTool, "ExtendParserTool", "extend_parser")
+    add(FileAppendTool, "FileAppendTool", "file_append")
+    add(FileParserTool, "FileParserTool", "file_parser")
+    add(FileWriteTool, "FileWriteTool", "file_write")
+    add(FirecrawlAgentTool, "FirecrawlAgentTool", "firecrawl_agent")
+    add(FirecrawlCrawlTool, "FirecrawlCrawlTool", "firecrawl_crawl")
+    add(FirecrawlExtractTool, "FirecrawlExtractTool", "firecrawl_extract")
+    add(FirecrawlMapTool, "FirecrawlMapTool", "firecrawl_map")
+    add(FirecrawlScrapeTool, "FirecrawlScrapeTool", "firecrawl_scrape")
+    add(FirecrawlSearchTool, "FirecrawlSearchTool", "firecrawl_search")
+    add(GammaCheckStatusTool, "GammaCheckStatusTool", "gamma_check_status")
+    add(GammaGenerateTool, "GammaGenerateTool", "gamma_generate")
+    add(GammaGenerateFromTemplateTool, "GammaGenerateFromTemplateTool", "gamma_generate_from_template")
+    add(GammaListFoldersTool, "GammaListFoldersTool", "gamma_list_folders")
+    add(GammaListThemesTool, "GammaListThemesTool", "gamma_list_themes")
+    add(GitLabCancelPipelineTool, "GitLabCancelPipelineTool", "gitlab_cancel_pipeline")
+    add(GitLabCreateIssueTool, "GitLabCreateIssueTool", "gitlab_create_issue")
+    add(GitLabCreateIssueNoteTool, "GitLabCreateIssueNoteTool", "gitlab_create_issue_comment")
+    add(GitLabCreateMergeRequestTool, "GitLabCreateMergeRequestTool", "gitlab_create_merge_request")
+    add(GitLabCreateMergeRequestNoteTool, "GitLabCreateMergeRequestNoteTool", "gitlab_create_merge_request_comment")
+    add(GitLabCreatePipelineTool, "GitLabCreatePipelineTool", "gitlab_create_pipeline")
+    add(GitLabDeleteIssueTool, "GitLabDeleteIssueTool", "gitlab_delete_issue")
+    add(GitLabGetIssueTool, "GitLabGetIssueTool", "gitlab_get_issue")
+    add(GitLabGetMergeRequestTool, "GitLabGetMergeRequestTool", "gitlab_get_merge_request")
+    add(GitLabGetPipelineTool, "GitLabGetPipelineTool", "gitlab_get_pipeline")
+    add(GitLabGetProjectTool, "GitLabGetProjectTool", "gitlab_get_project")
+    add(GitLabListIssuesTool, "GitLabListIssuesTool", "gitlab_list_issues")
+    add(GitlabListMergeRequestsTool, "GitlabListMergeRequestsTool", "gitlab_list_merge_requests")
+    add(GitLabListPipelinesTool, "GitLabListPipelinesTool", "gitlab_list_pipelines")
+    add(GitLabListProjectsTool, "GitLabListProjectsTool", "gitlab_list_projects")
+    add(GitLabMergeMergeRequestTool, "GitLabMergeMergeRequestTool", "gitlab_merge_merge_request")
+    add(GitLabRetryPipelineTool, "GitLabRetryPipelineTool", "gitlab_retry_pipeline")
+    add(GitlabUpdateIssueTool, "GitlabUpdateIssueTool", "gitlab_update_issue")
+    add(GitLabUpdateMergeRequestTool, "GitLabUpdateMergeRequestTool", "gitlab_update_merge_request")
+    add(GongAggregateActivityTool, "GongAggregateActivityTool", "gong_aggregate_activity")
+    add(GongAnsweredScorecardsTool, "GongAnsweredScorecardsTool", "gong_answered_scorecards")
+    add(GongGetCallTool, "GongGetCallTool", "gong_get_call")
+    add(GongGetCallTranscriptTool, "GongGetCallTranscriptTool", "gong_get_call_transcript")
+    add(GongGetCoachingTool, "GongGetCoachingTool", "gong_get_coaching")
+    add(GongGetExtensiveCallsTool, "GongGetExtensiveCallsTool", "gong_get_extensive_calls")
+    add(GongGetFolderContentTool, "GongGetFolderContentTool", "gong_get_folder_content")
+    add(GongGetUserTool, "GongGetUserTool", "gong_get_user")
+    add(GongInteractionStatsTool, "GongInteractionStatsTool", "gong_interaction_stats")
+    add(GongListCallsTool, "GongListCallsTool", "gong_list_calls")
+    add(GongListFlowsTool, "GongListFlowsTool", "gong_list_flows")
+    add(GongListLibraryFoldersTool, "GongListLibraryFoldersTool", "gong_list_library_folders")
+    add(GongListScorecardsTool, "GongListScorecardsTool", "gong_list_scorecards")
+    add(GongListTrackersTool, "GongListTrackersTool", "gong_list_trackers")
+    add(GongListUsersTool, "GongListUsersTool", "gong_list_users")
+    add(GongListWorkspacesTool, "GongListWorkspacesTool", "gong_list_workspaces")
+    add(GongLookupEmailTool, "GongLookupEmailTool", "gong_lookup_email")
+    add(GongLookupPhoneTool, "GongLookupPhoneTool", "gong_lookup_phone")
+    add(GoogleAdsAdPerformanceTool, "GoogleAdsAdPerformanceTool", "google_ads_ad_performance")
+    add(GoogleAdsListAdGroupsTool, "GoogleAdsListAdGroupsTool", "google_ads_list_ad_groups")
+    add(GoogleAdsListCustomersTool, "GoogleAdsListCustomersTool", "google_ads_list_customers")
+    add(GoogleBigQueryGetTableTool, "GoogleBigQueryGetTableTool", "google_bigquery_get_table")
+    add(GoogleBigQueryInsertRowsTool, "GoogleBigQueryInsertRowsTool", "bigquery_insert_rows")
+    add(GoogleBigQueryListDatasetsTool, "GoogleBigQueryListDatasetsTool", "bigquery_list_datasets")
+    add(GoogleBigQueryListTablesTool, "GoogleBigQueryListTablesTool", "bigquery_list_tables")
+    add(GoogleBigQueryQueryTool, "GoogleBigQueryQueryTool", "google_bigquery_query")
+    add(GoogleDocsCreateTool, "GoogleDocsCreateTool", "google_docs_create")
+    add(GoogleDocsReadTool, "GoogleDocsReadTool", "google_docs_read")
+    add(GoogleDocsWriteTool, "GoogleDocsWriteTool", "google_docs_write")
+    add(GoogleFormsBatchUpdateTool, "GoogleFormsBatchUpdateTool", "google_forms_batch_update")
+    add(GoogleFormsCreateFormTool, "GoogleFormsCreateFormTool", "google_forms_create_form")
+    add(GoogleFormsCreateWatchTool, "GoogleFormsCreateWatchTool", "google_forms_create_watch")
+    add(GoogleFormsDeleteWatchTool, "GoogleFormsDeleteWatchTool", "google_forms_delete_watch")
+    add(GoogleFormsGetFormTool, "GoogleFormsGetFormTool", "google_forms_get_form")
+    add(GoogleFormsGetResponsesTool, "GoogleFormsGetResponsesTool", "google_forms_get_responses")
+    add(GoogleFormsListWatchesTool, "GoogleFormsListWatchesTool", "google_forms_list_watches")
+    add(GoogleFormsRenewWatchTool, "GoogleFormsRenewWatchTool", "google_forms_renew_watch")
+    add(GoogleFormsSetPublishSettingsTool, "GoogleFormsSetPublishSettingsTool", "google_forms_set_publish_settings")
+    add(GoogleMapsAirQualityTool, "GoogleMapsAirQualityTool", "google_maps_air_quality")
+    add(GoogleMapsDirectionsTool, "GoogleMapsDirectionsTool", "google_maps_directions")
+    add(GoogleMapsDistanceMatrixTool, "GoogleMapsDistanceMatrixTool", "google_maps_distance_matrix")
+    add(GoogleMapsElevationTool, "GoogleMapsElevationTool", "google_maps_elevation")
+    add(GoogleMapsGeocodeTool, "GoogleMapsGeocodeTool", "google_maps_geocode")
+    add(GoogleMapsGeolocateTool, "GoogleMapsGeolocateTool", "google_maps_geolocate")
+    add(GoogleMapsPlaceDetailsTool, "GoogleMapsPlaceDetailsTool", "google_maps_place_details")
+    add(GoogleMapsPlacesSearchTool, "GoogleMapsPlacesSearchTool", "google_maps_places_search")
+    add(GoogleMapsReverseGeocodeTool, "GoogleMapsReverseGeocodeTool", "google_maps_reverse_geocode")
+    add(GoogleMapsSnapToRoadsTool, "GoogleMapsSnapToRoadsTool", "google_maps_snap_to_roads")
+    add(GoogleMapsSpeedLimitsTool, "GoogleMapsSpeedLimitsTool", "google_maps_speed_limits")
+    add(GoogleMapsTimezoneTool, "GoogleMapsTimezoneTool", "google_maps_timezone")
+    add(GoogleMapsValidateAddressTool, "GoogleMapsValidateAddressTool", "google_maps_validate_address")
+    add(GoogleMeetCreateSpaceTool, "GoogleMeetCreateSpaceTool", "google_meet_create_space")
+    add(GoogleMeetEndConferenceTool, "GoogleMeetEndConferenceTool", "google_meet_end_conference")
+    add(GoogleMeetGetConferenceRecordTool, "GoogleMeetGetConferenceRecordTool", "google_meet_get_conference_record")
+    add(GoogleMeetGetSpaceTool, "GoogleMeetGetSpaceTool", "google_meet_get_space")
+    add(GoogleMeetListConferenceRecordsTool, "GoogleMeetListConferenceRecordsTool", "google_meet_list_conference_records")
+    add(GoogleMeetListParticipantsTool, "GoogleMeetListParticipantsTool", "google_meet_list_participants")
+    add(GoogleSheetsAppendTool, "GoogleSheetsAppendTool", "google_sheets_append")
+    add(GoogleSheetsBatchClearTool, "GoogleSheetsBatchClearTool", "google_sheets_batch_clear_v2")
+    add(GoogleSheetsBatchGetTool, "GoogleSheetsBatchGetTool", "google_sheets_batch_get")
+    add(GoogleSheetsBatchUpdateTool, "GoogleSheetsBatchUpdateTool", "google_sheets_batch_update_v2")
+    add(GoogleSheetsClearTool, "GoogleSheetsClearTool", "google_sheets_clear")
+    add(GoogleSheetsCopySheetTool, "GoogleSheetsCopySheetTool", "google_sheets_copy_sheet_v2")
+    add(GoogleSheetsCreateSpreadsheetTool, "GoogleSheetsCreateSpreadsheetTool", "google_sheets_create_spreadsheet")
+    add(GoogleSheetsDeleteRowsTool, "GoogleSheetsDeleteRowsTool", "delete_rows_from_google_sheets_v2")
+    add(GoogleSheetsDeleteSheetTool, "GoogleSheetsDeleteSheetTool", "google_sheets_delete_sheet")
+    add(GoogleSheetsDeleteSpreadsheetTool, "GoogleSheetsDeleteSpreadsheetTool", "google_sheets_delete_spreadsheet")
+    add(GoogleSheetsGetSpreadsheetTool, "GoogleSheetsGetSpreadsheetTool", "google_sheets_get_spreadsheet")
+    add(GoogleSheetsReadTool, "GoogleSheetsReadTool", "google_sheets_read")
+    add(GoogleSheetsUpdateTool, "GoogleSheetsUpdateTool", "google_sheets_update")
+    add(GoogleSheetsWriteTool, "GoogleSheetsWriteTool", "google_sheets_write")
+    add(GoogleSlidesAddImageTool, "GoogleSlidesAddImageTool", "google_slides_add_image")
+    add(GoogleSlidesAddSlideTool, "GoogleSlidesAddSlideTool", "google_slides_add_slide")
+    add(GoogleSlidesCreateTool, "GoogleSlidesCreateTool", "google_slides_create")
+    add(GoogleSlidesCreateShapeTool, "GoogleSlidesCreateShapeTool", "create_shape_in_google_slides")
+    add(GoogleSlidesCreateTableTool, "GoogleSlidesCreateTableTool", "google_slides_create_table")
+    add(GoogleSlidesDeleteObjectTool, "GoogleSlidesDeleteObjectTool", "google_slides_delete_object")
+    add(GoogleSlidesDuplicateObjectTool, "GoogleSlidesDuplicateObjectTool", "google_slides_duplicate_object")
+    add(GoogleSlidesGetPageTool, "GoogleSlidesGetPageTool", "google_slides_get_page")
+    add(GoogleSlidesGetThumbnailTool, "GoogleSlidesGetThumbnailTool", "google_slides_get_thumbnail")
+    add(GoogleSlidesInsertTextTool, "GoogleSlidesInsertTextTool", "google_slides_insert_text")
+    add(GoogleSlidesReadTool, "GoogleSlidesReadTool", "google_slides_read")
+    add(GoogleSlidesReplaceAllTextTool, "GoogleSlidesReplaceAllTextTool", "google_slides_replace_all_text")
+    add(GoogleSlidesUpdateSlidesPositionTool, "GoogleSlidesUpdateSlidesPositionTool", "google_slides_update_slides_position")
+    add(GoogleSlidesWriteTool, "GoogleSlidesWriteTool", "google_slides_write")
+    add(GoogleTasksCreateTool, "GoogleTasksCreateTool", "google_tasks_create")
+    add(GoogleTasksDeleteTool, "GoogleTasksDeleteTool", "google_tasks_delete")
+    add(GoogleTasksGetTool, "GoogleTasksGetTool", "google_tasks_get")
+    add(GoogleTasksListTool, "GoogleTasksListTool", "google_tasks_list")
+    add(GoogleTasksListTaskListsTool, "GoogleTasksListTaskListsTool", "google_tasks_list_task_lists")
+    add(GoogleTasksUpdateTool, "GoogleTasksUpdateTool", "google_tasks_update")
+    add(GranolaGetNoteTool, "GranolaGetNoteTool", "granola_get_note")
+    add(GranolaListNotesTool, "GranolaListNotesTool", "granola_list_notes")
+    add(GreenhouseGetApplicationTool, "GreenhouseGetApplicationTool", "greenhouse_get_application")
+    add(GreenhouseGetCandidateTool, "GreenhouseGetCandidateTool", "greenhouse_get_candidate")
+    add(GreenhouseGetJobTool, "GreenhouseGetJobTool", "greenhouse_get_job")
+    add(GreenhouseGetUserTool, "GreenhouseGetUserTool", "greenhouse_get_user")
+    add(GreenhouseListApplicationsTool, "GreenhouseListApplicationsTool", "greenhouse_list_applications")
+    add(GreenhouseListCandidatesTool, "GreenhouseListCandidatesTool", "greenhouse_list_candidates")
+    add(GreenhouseListDepartmentsTool, "GreenhouseListDepartmentsTool", "greenhouse_list_departments")
+    add(GreenhouseListJobStagesTool, "GreenhouseListJobStagesTool", "greenhouse_list_job_stages")
+    add(GreenhouseListJobsTool, "GreenhouseListJobsTool", "greenhouse_list_jobs")
+    add(GreenhouseListOfficesTool, "GreenhouseListOfficesTool", "greenhouse_list_offices")
+    add(GreenhouseListUsersTool, "GreenhouseListUsersTool", "greenhouse_list_users")
+    add(GuardrailsValidateTool, "GuardrailsValidateTool", "guardrails_validate")
+    add(HexCancelRunTool, "HexCancelRunTool", "hex_cancel_run")
+    add(HexCreateCollectionTool, "HexCreateCollectionTool", "hex_create_collection")
+    add(HexGetCollectionTool, "HexGetCollectionTool", "hex_get_collection")
+    add(HexGetDataConnectionTool, "HexGetDataConnectionTool", "hex_get_data_connection")
+    add(HexGetGroupTool, "HexGetGroupTool", "hex_get_group")
+    add(HexGetProjectTool, "HexGetProjectTool", "hex_get_project")
+    add(HexGetProjectRunsTool, "HexGetProjectRunsTool", "hex_get_project_runs")
+    add(HexGetQueriedTablesTool, "HexGetQueriedTablesTool", "hex_get_queried_tables")
+    add(HexGetRunStatusTool, "HexGetRunStatusTool", "hex_get_run_status")
+    add(HexListCollectionsTool, "HexListCollectionsTool", "hex_list_collections")
+    add(HexListDataConnectionsTool, "HexListDataConnectionsTool", "hex_list_data_connections")
+    add(HexListGroupsTool, "HexListGroupsTool", "hex_list_groups")
+    add(HexListProjectsTool, "HexListProjectsTool", "hex_list_projects")
+    add(HexListUsersTool, "HexListUsersTool", "hex_list_users")
+    add(HexRunProjectTool, "HexRunProjectTool", "hex_run_project")
+    add(HexUpdateProjectTool, "HexUpdateProjectTool", "hex_update_project")
+    add(HunterCompaniesFindTool, "HunterCompaniesFindTool", "hunter_companies_find")
+    add(HunterDiscoverTool, "HunterDiscoverTool", "hunter_discover")
+    add(HunterDomainSearchTool, "HunterDomainSearchTool", "hunter_domain_search")
+    add(HunterEmailCountTool, "HunterEmailCountTool", "hunter_email_count")
+    add(HunterEmailFinderTool, "HunterEmailFinderTool", "hunter_email_finder")
+    add(HunterEmailVerifierTool, "HunterEmailVerifierTool", "hunter_email_verifier")
+    add(IncidentioActionsListTool, "IncidentioActionsListTool", "incidentio_actions_list")
+    add(IncidentioActionsShowTool, "IncidentioActionsShowTool", "incidentio_actions_show")
+    add(IncidentioCustomFieldsCreateTool, "IncidentioCustomFieldsCreateTool", "incident_io_custom_fields_create")
+    add(IncidentioCustomFieldsDeleteTool, "IncidentioCustomFieldsDeleteTool", "incident_io_custom_fields_delete")
+    add(IncidentioCustomFieldsListTool, "IncidentioCustomFieldsListTool", "incidentio_custom_fields_list")
+    add(IncidentioCustomFieldsShowTool, "IncidentioCustomFieldsShowTool", "incidentio_custom_fields_show")
+    add(IncidentioCustomFieldsUpdateTool, "IncidentioCustomFieldsUpdateTool", "incident_io_custom_fields_update")
+    add(IncidentioEscalationPathsCreateTool, "IncidentioEscalationPathsCreateTool", "incidentio_escalation_paths_create")
+    add(IncidentioEscalationPathsDeleteTool, "IncidentioEscalationPathsDeleteTool", "incidentio_escalation_paths_delete")
+    add(IncidentioEscalationPathsShowTool, "IncidentioEscalationPathsShowTool", "incidentio_escalation_paths_show")
+    add(IncidentioEscalationPathsUpdateTool, "IncidentioEscalationPathsUpdateTool", "incidentio_escalation_paths_update")
+    add(IncidentioEscalationsCreateTool, "IncidentioEscalationsCreateTool", "incidentio_escalations_create")
+    add(IncidentioEscalationsListTool, "IncidentioEscalationsListTool", "incidentio_escalations_list")
+    add(IncidentioEscalationsShowTool, "IncidentioEscalationsShowTool", "show_escalation")
+    add(IncidentioFollowUpsListTool, "IncidentioFollowUpsListTool", "incidentio_follow_ups_list")
+    add(IncidentioFollowUpsShowTool, "IncidentioFollowUpsShowTool", "incidentio_follow_ups_show")
+    add(IncidentioIncidentRolesCreateTool, "IncidentioIncidentRolesCreateTool", "incidentio_incident_roles_create")
+    add(IncidentioIncidentRolesDeleteTool, "IncidentioIncidentRolesDeleteTool", "incidentio_incident_roles_delete")
+    add(IncidentioIncidentRolesListTool, "IncidentioIncidentRolesListTool", "incidentio_incident_roles_list")
+    add(IncidentioRolesShowTool, "IncidentioRolesShowTool", "show_incident_role")
+    add(IncidentioRolesUpdateTool, "IncidentioRolesUpdateTool", "update_incident_role")
+    add(IncidentioIncidentStatusesListTool, "IncidentioIncidentStatusesListTool", "incidentio_incident_statuses_list")
+    add(IncidentioIncidentTimestampsListTool, "IncidentioIncidentTimestampsListTool", "incidentio_incident_timestamps_list")
+    add(IncidentioIncidentTimestampsShowTool, "IncidentioIncidentTimestampsShowTool", "incidentio_incident_timestamps_show")
+    add(IncidentioIncidentTypesListTool, "IncidentioIncidentTypesListTool", "incidentio_incident_types_list")
+    add(IncidentioIncidentUpdatesListTool, "IncidentioIncidentUpdatesListTool", "incidentio_incident_updates_list")
+    add(IncidentioIncidentsCreateTool, "IncidentioIncidentsCreateTool", "incident_io_incidents_create")
+    add(IncidentioIncidentsListTool, "IncidentioIncidentsListTool", "incident_io_incidents_list")
+    add(IncidentioIncidentsShowTool, "IncidentioIncidentsShowTool", "incidentio_incidents_show")
+    add(IncidentioIncidentsUpdateTool, "IncidentioIncidentsUpdateTool", "incidentio_incidents_update")
+    add(IncidentioScheduleEntriesListTool, "IncidentioScheduleEntriesListTool", "incidentio_schedule_entries_list")
+    add(IncidentioScheduleOverridesCreateTool, "IncidentioScheduleOverridesCreateTool", "incidentio_schedule_overrides_create")
+    add(IncidentioSchedulesCreateTool, "IncidentioSchedulesCreateTool", "incidentio_schedules_create")
+    add(IncidentioSchedulesDeleteTool, "IncidentioSchedulesDeleteTool", "incidentio_schedules_delete")
+    add(IncidentioSchedulesListTool, "IncidentioSchedulesListTool", "incidentio_schedules_list")
+    add(IncidentioSchedulesShowTool, "IncidentioSchedulesShowTool", "show_schedule")
+    add(IncidentioSchedulesUpdateTool, "IncidentioSchedulesUpdateTool", "incidentio_schedules_update")
+    add(IncidentioSeveritiesListTool, "IncidentioSeveritiesListTool", "incidentio_severities_list")
+    add(IncidentioUsersListTool, "IncidentioUsersListTool", "incidentio_users_list")
+    add(IncidentioUsersShowTool, "IncidentioUsersShowTool", "incidentio_users_show")
+    add(IncidentioWorkflowsCreateTool, "IncidentioWorkflowsCreateTool", "incidentio_workflows_create")
+    add(IncidentioWorkflowsDeleteTool, "IncidentioWorkflowsDeleteTool", "incident_io_workflows_delete")
+    add(IncidentioWorkflowsListTool, "IncidentioWorkflowsListTool", "incidentio_workflows_list")
+    add(IncidentioWorkflowsShowTool, "IncidentioWorkflowsShowTool", "incidentio_workflows_show")
+    add(IncidentioWorkflowsUpdateTool, "IncidentioWorkflowsUpdateTool", "incidentio_workflows_update")
+    add(IntercomAssignConversationTool, "IntercomAssignConversationTool", "assign_conversation_in_intercom")
+    add(IntercomAttachContactToCompanyTool, "IntercomAttachContactToCompanyTool", "intercom_attach_contact_to_company")
+    add(IntercomCloseConversationTool, "IntercomCloseConversationTool", "intercom_close_conversation")
+    add(IntercomCreateCompanyTool, "IntercomCreateCompanyTool", "intercom_create_company")
+    add(IntercomCreateContactTool, "IntercomCreateContactTool", "create_contact_in_intercom")
+    add(IntercomCreateEventTool, "IntercomCreateEventTool", "intercom_create_event")
+    add(IntercomCreateMessageTool, "IntercomCreateMessageTool", "intercom_create_message")
+    add(IntercomCreateTagTool, "IntercomCreateTagTool", "intercom_create_tag")
+    add(IntercomCreateTicketTool, "IntercomCreateTicketTool", "intercom_create_ticket")
+    add(IntercomDeleteContactTool, "IntercomDeleteContactTool", "intercom_delete_contact")
+    add(IntercomDetachContactFromCompanyTool, "IntercomDetachContactFromCompanyTool", "detach_contact_from_company_in_intercom")
+    add(IntercomGetCompanyTool, "IntercomGetCompanyTool", "intercom_get_company")
+    add(IntercomGetContactTool, "IntercomGetContactTool", "intercom_get_contact")
+    add(IntercomGetTicketTool, "IntercomGetTicketTool", "intercom_get_ticket")
+    add(IntercomListAdminsTool, "IntercomListAdminsTool", "intercom_list_admins")
+    add(IntercomListCompaniesTool, "IntercomListCompaniesTool", "intercom_list_companies")
+    add(IntercomListContactsTool, "IntercomListContactsTool", "intercom_list_contacts")
+    add(IntercomListConversationsTool, "IntercomListConversationsTool", "intercom_list_conversations")
+    add(IntercomListTagsTool, "IntercomListTagsTool", "intercom_list_tags")
+    add(IntercomOpenConversationTool, "IntercomOpenConversationTool", "open_conversation_in_intercom")
+    add(IntercomReplyConversationTool, "IntercomReplyConversationTool", "intercom_reply_conversation")
+    add(IntercomSearchContactsTool, "IntercomSearchContactsTool", "intercom_search_contacts")
+    add(IntercomSearchConversationsTool, "IntercomSearchConversationsTool", "search_conversations_in_intercom")
+    add(IntercomSnoozeConversationTool, "IntercomSnoozeConversationTool", "snooze_conversation_in_intercom")
+    add(IntercomTagContactTool, "IntercomTagContactTool", "tag_contact_in_intercom")
+    add(IntercomTagConversationTool, "IntercomTagConversationTool", "intercom_tag_conversation")
+    add(IntercomUntagContactTool, "IntercomUntagContactTool", "untag_contact_in_intercom")
+    add(IntercomUpdateContactTool, "IntercomUpdateContactTool", "intercom_update_contact")
+    add(IntercomUpdateTicketTool, "IntercomUpdateTicketTool", "update_ticket_in_intercom")
+    add(KalshiAmendOrderTool, "KalshiAmendOrderTool", "kalshi_amend_order")
+    add(KalshiCancelOrderTool, "KalshiCancelOrderTool", "kalshi_cancel_order")
+    add(KalshiCreateOrderTool, "KalshiCreateOrderTool", "kalshi_create_order")
+    add(KalshiGetBalanceTool, "KalshiGetBalanceTool", "kalshi_get_balance")
+    add(KalshiGetCandlesticksTool, "KalshiGetCandlesticksTool", "kalshi_get_candlesticks")
+    add(KalshiGetEventTool, "KalshiGetEventTool", "kalshi_get_event")
+    add(KalshiGetEventsTool, "KalshiGetEventsTool", "kalshi_get_events")
+    add(KalshiGetExchangeStatusTool, "KalshiGetExchangeStatusTool", "kalshi_get_exchange_status")
+    add(KalshiGetFillsTool, "KalshiGetFillsTool", "kalshi_get_fills")
+    add(KalshiGetMarketTool, "KalshiGetMarketTool", "kalshi_get_market")
+    add(KalshiGetMarketsTool, "KalshiGetMarketsTool", "kalshi_get_markets_v2")
+    add(KalshiGetOrderTool, "KalshiGetOrderTool", "kalshi_get_order")
+    add(KalshiGetOrderbookTool, "KalshiGetOrderbookTool", "kalshi_get_orderbook")
+    add(KalshiGetOrdersTool, "KalshiGetOrdersTool", "kalshi_get_orders")
+    add(KalshiGetPositionsTool, "KalshiGetPositionsTool", "kalshi_get_positions")
+    add(KalshiGetSeriesByTickerTool, "KalshiGetSeriesByTickerTool", "kalshi_get_series_by_ticker")
+    add(KalshiGetTradesTool, "KalshiGetTradesTool", "kalshi_get_trades")
+    add(LangsmithCreateRunTool, "LangsmithCreateRunTool", "langsmith_create_run")
+    add(LangsmithCreateRunsBatchTool, "LangsmithCreateRunsBatchTool", "langsmith_create_runs_batch")
+    add(LLMChatTool, "LLMChatTool", "llm_chat")
+    add(LoopsCreateContactTool, "LoopsCreateContactTool", "loops_create_contact")
+    add(LoopsCreateContactPropertyTool, "LoopsCreateContactPropertyTool", "loops_create_contact_property")
+    add(LoopsDeleteContactTool, "LoopsDeleteContactTool", "loops_delete_contact")
+    add(LoopsFindContactTool, "LoopsFindContactTool", "loops_find_contact")
+    add(LoopsListContactPropertiesTool, "LoopsListContactPropertiesTool", "loops_list_contact_properties")
+    add(LoopsListMailingListsTool, "LoopsListMailingListsTool", "loops_list_mailing_lists")
+    add(LoopsListTransactionalEmailsTool, "LoopsListTransactionalEmailsTool", "loops_list_transactional_emails")
+    add(LoopsSendEventTool, "LoopsSendEventTool", "loops_send_event")
+    add(LoopsSendTransactionalEmailTool, "LoopsSendTransactionalEmailTool", "loops_send_transactional_email")
+    add(LoopsUpdateContactTool, "LoopsUpdateContactTool", "loops_update_contact")
+    add(LumaAddGuestsTool, "LumaAddGuestsTool", "luma_add_guests")
+    add(LumaCreateEventTool, "LumaCreateEventTool", "luma_create_event")
+    add(LumaGetEventTool, "LumaGetEventTool", "luma_get_event")
+    add(LumaGetGuestsTool, "LumaGetGuestsTool", "luma_get_guests")
+    add(LumaListEventsTool, "LumaListEventsTool", "luma_list_events")
+    add(LumaUpdateEventTool, "LumaUpdateEventTool", "luma_update_event")
+    add(MemoryAddTool, "MemoryAddTool", "memory_add")
+    add(MemoryDeleteTool, "MemoryDeleteTool", "memory_delete")
+    add(MemoryGetTool, "MemoryGetTool", "get_memory")
+    add(MemoryGetAllTool, "MemoryGetAllTool", "memory_get_all")
+    add(MicrosoftDataverseAssociateTool, "MicrosoftDataverseAssociateTool", "microsoft_dataverse_associate")
+    add(MicrosoftDataverseCreateMultipleTool, "MicrosoftDataverseCreateMultipleTool", "microsoft_dataverse_create_multiple")
+    add(MicrosoftDataverseCreateRecordTool, "MicrosoftDataverseCreateRecordTool", "microsoft_dataverse_create_record")
+    add(MicrosoftDataverseDeleteRecordTool, "MicrosoftDataverseDeleteRecordTool", "microsoft_dataverse_delete_record")
+    add(MicrosoftDataverseDisassociateTool, "MicrosoftDataverseDisassociateTool", "microsoft_dataverse_disassociate")
+    add(MicrosoftDataverseDownloadFileTool, "MicrosoftDataverseDownloadFileTool", "microsoft_dataverse_download_file")
+    add(MicrosoftDataverseExecuteActionTool, "MicrosoftDataverseExecuteActionTool", "microsoft_dataverse_execute_action")
+    add(MicrosoftDataverseExecuteFunctionTool, "MicrosoftDataverseExecuteFunctionTool", "execute_microsoft_dataverse_function")
+    add(MicrosoftDataverseFetchXmlQueryTool, "MicrosoftDataverseFetchXmlQueryTool", "microsoft_dataverse_fetchxml_query")
+    add(MicrosoftDataverseGetRecordTool, "MicrosoftDataverseGetRecordTool", "microsoft_dataverse_get_record")
+    add(MicrosoftDataverseListRecordsTool, "MicrosoftDataverseListRecordsTool", "microsoft_dataverse_list_records")
+    add(MicrosoftDataverseSearchTool, "MicrosoftDataverseSearchTool", "microsoft_dataverse_search")
+    add(MicrosoftDataverseUpdateMultipleTool, "MicrosoftDataverseUpdateMultipleTool", "microsoft_dataverse_update_multiple")
+    add(MicrosoftDataverseUpdateRecordTool, "MicrosoftDataverseUpdateRecordTool", "microsoft_dataverse_update_record")
+    add(MicrosoftDataverseUploadFileTool, "MicrosoftDataverseUploadFileTool", "microsoft_dataverse_upload_file")
+    add(MicrosoftDataverseUpsertRecordTool, "MicrosoftDataverseUpsertRecordTool", "microsoft_dataverse_upsert_record")
+    add(MicrosoftDataverseWhoAmITool, "MicrosoftDataverseWhoAmITool", "microsoft_dataverse_whoami")
+    add(MicrosoftExcelReadTool, "MicrosoftExcelReadTool", "microsoft_excel_read")
+    add(MicrosoftExcelTableAddTool, "MicrosoftExcelTableAddTool", "microsoft_excel_table_add")
+    add(MicrosoftExcelWorksheetAddTool, "MicrosoftExcelWorksheetAddTool", "microsoft_excel_worksheet_add")
+    add(MicrosoftExcelWriteTool, "MicrosoftExcelWriteTool", "microsoft_excel_write")
+    add(MicrosoftPlannerCreateBucketTool, "MicrosoftPlannerCreateBucketTool", "microsoft_planner_create_bucket")
+    add(MicrosoftPlannerCreateTaskTool, "MicrosoftPlannerCreateTaskTool", "microsoft_planner_create_task")
+    add(MicrosoftPlannerDeleteBucketTool, "MicrosoftPlannerDeleteBucketTool", "microsoft_planner_delete_bucket")
+    add(MicrosoftPlannerDeleteTaskTool, "MicrosoftPlannerDeleteTaskTool", "microsoft_planner_delete_task")
+    add(MicrosoftPlannerGetTaskDetailsTool, "MicrosoftPlannerGetTaskDetailsTool", "microsoft_planner_get_task_details")
+    add(MicrosoftPlannerListBucketsTool, "MicrosoftPlannerListBucketsTool", "microsoft_planner_list_buckets")
+    add(MicrosoftPlannerListPlansTool, "MicrosoftPlannerListPlansTool", "microsoft_planner_list_plans")
+    add(MicrosoftPlannerReadBucketTool, "MicrosoftPlannerReadBucketTool", "microsoft_planner_read_bucket")
+    add(MicrosoftPlannerReadPlanTool, "MicrosoftPlannerReadPlanTool", "microsoft_planner_read_plan")
+    add(MicrosoftPlannerReadTool, "MicrosoftPlannerReadTool", "microsoft_planner_read_task")
+    add(MicrosoftPlannerUpdateBucketTool, "MicrosoftPlannerUpdateBucketTool", "microsoft_planner_update_bucket")
+    add(MicrosoftPlannerUpdateTaskTool, "MicrosoftPlannerUpdateTaskTool", "microsoft_planner_update_task")
+    add(MicrosoftPlannerUpdateTaskDetailsTool, "MicrosoftPlannerUpdateTaskDetailsTool", "microsoft_planner_update_task_details")
+    add(MicrosoftTeamsDeleteChannelMessageTool, "MicrosoftTeamsDeleteChannelMessageTool", "microsoft_teams_delete_channel_message")
+    add(MicrosoftTeamsDeleteChatMessageTool, "MicrosoftTeamsDeleteChatMessageTool", "microsoft_teams_delete_chat_message")
+    add(MicrosoftTeamsGetMessageTool, "MicrosoftTeamsGetMessageTool", "microsoft_teams_get_message")
+    add(MicrosoftTeamsListChannelMembersTool, "MicrosoftTeamsListChannelMembersTool", "microsoft_teams_list_channel_members")
+    add(MicrosoftTeamsListMembersTool, "MicrosoftTeamsListMembersTool", "microsoft_teams_list_team_members")
+    add(MicrosoftTeamsReadChannelTool, "MicrosoftTeamsReadChannelTool", "microsoft_teams_read_channel")
+    add(MicrosoftTeamsReadChatTool, "MicrosoftTeamsReadChatTool", "microsoft_teams_read_chat")
+    add(MicrosoftTeamsReplyToMessageTool, "MicrosoftTeamsReplyToMessageTool", "microsoft_teams_reply_to_message")
+    add(MicrosoftTeamsFileUploadTool, "MicrosoftTeamsFileUploadTool", "microsoft_teams_upload_files")
+    add(MicrosoftTeamsSetReactionTool, "MicrosoftTeamsSetReactionTool", "microsoft_teams_set_reaction")
+    add(MicrosoftTeamsUnsetReactionTool, "MicrosoftTeamsUnsetReactionTool", "microsoft_teams_unset_reaction")
+    add(MicrosoftTeamsUpdateChannelMessageTool, "MicrosoftTeamsUpdateChannelMessageTool", "update_microsoft_teams_channel_message")
+    add(MicrosoftTeamsUpdateChatMessageTool, "MicrosoftTeamsUpdateChatMessageTool", "update_microsoft_teams_chat_message")
+    add(MicrosoftTeamsWriteChannelTool, "MicrosoftTeamsWriteChannelTool", "microsoft_teams_write_channel")
+    add(MicrosoftTeamsWriteChatTool, "MicrosoftTeamsWriteChatTool", "microsoft_teams_write_chat")
+    add(Neo4jCreateTool, "Neo4jCreateTool", "neo4j_create")
+    add(Neo4jDeleteTool, "Neo4jDeleteTool", "neo4j_delete")
+    add(Neo4jExecuteTool, "Neo4jExecuteTool", "neo4j_execute")
+    add(Neo4jIntrospectTool, "Neo4jIntrospectTool", "neo4j_introspect")
+    add(Neo4jMergeTool, "Neo4jMergeTool", "neo4j_merge")
+    add(Neo4jQueryTool, "Neo4jQueryTool", "neo4j_query")
+    add(Neo4jUpdateTool, "Neo4jUpdateTool", "neo4j_update")
+    add(OutlookCopyTool, "OutlookCopyTool", "outlook_copy")
+    add(OutlookDeleteTool, "OutlookDeleteTool", "outlook_delete")
+    add(OutlookDraftTool, "OutlookDraftTool", "outlook_draft")
+    add(OutlookForwardTool, "OutlookForwardTool", "outlook_forward")
+    add(OutlookMarkReadTool, "OutlookMarkReadTool", "outlook_mark_read")
+    add(OutlookMarkUnreadTool, "OutlookMarkUnreadTool", "outlook_mark_unread")
+    add(OutlookMoveTool, "OutlookMoveTool", "outlook_move")
+    add(OutlookReadTool, "OutlookReadTool", "outlook_read")
+    add(OutlookSendTool, "OutlookSendTool", "outlook_send")
+    add(PagerDutyAddNoteTool, "PagerDutyAddNoteTool", "pagerduty_add_note")
+    add(PagerDutyCreateIncidentTool, "PagerDutyCreateIncidentTool", "pagerduty_create_incident")
+    add(PagerDutyListIncidentsTool, "PagerDutyListIncidentsTool", "pagerduty_list_incidents")
+    add(PagerDutyListOncallsTool, "PagerDutyListOncallsTool", "pagerduty_list_oncalls")
+    add(PagerDutyListServicesTool, "PagerDutyListServicesTool", "pagerduty_list_services")
+    add(PagerDutyUpdateIncidentTool, "PagerDutyUpdateIncidentTool", "pagerduty_update_incident")
+    add(ParallelDeepResearchTool, "ParallelDeepResearchTool", "parallel_deep_research")
+    add(ParallelExtractTool, "ParallelExtractTool", "parallel_extract")
+    add(ParallelSearchTool, "ParallelSearchTool", "parallel_search")
+    add(PipedriveCreateActivityTool, "PipedriveCreateActivityTool", "pipedrive_create_activity")
+    add(PipedriveCreateDealTool, "PipedriveCreateDealTool", "pipedrive_create_deal")
+    add(PipedriveCreateLeadTool, "PipedriveCreateLeadTool", "pipedrive_create_lead")
+    add(PipedriveCreateProjectTool, "PipedriveCreateProjectTool", "pipedrive_create_project")
+    add(PipedriveDeleteLeadTool, "PipedriveDeleteLeadTool", "pipedrive_delete_lead")
+    add(PipedriveGetActivitiesTool, "PipedriveGetActivitiesTool", "pipedrive_get_activities")
+    add(PipedriveGetAllDealsTool, "PipedriveGetAllDealsTool", "pipedrive_get_all_deals")
+    add(PipedriveGetDealTool, "PipedriveGetDealTool", "pipedrive_get_deal")
+    add(PipedriveGetFilesTool, "PipedriveGetFilesTool", "pipedrive_get_files")
+    add(PipedriveGetLeadsTool, "PipedriveGetLeadsTool", "pipedrive_get_leads")
+    add(PipedriveGetMailMessagesTool, "PipedriveGetMailMessagesTool", "pipedrive_get_mail_messages")
+    add(PipedriveGetMailThreadTool, "PipedriveGetMailThreadTool", "pipedrive_get_mail_thread")
+    add(PipedriveGetPipelineDealsTool, "PipedriveGetPipelineDealsTool", "pipedrive_get_pipeline_deals")
+    add(PipedriveGetPipelinesTool, "PipedriveGetPipelinesTool", "pipedrive_get_pipelines")
+    add(PipedriveGetProjectsTool, "PipedriveGetProjectsTool", "pipedrive_get_projects")
+    add(PipedriveUpdateActivityTool, "PipedriveUpdateActivityTool", "pipedrive_update_activity")
+    add(PipedriveUpdateDealTool, "PipedriveUpdateDealTool", "pipedrive_update_deal")
+    add(PipedriveUpdateLeadTool, "PipedriveUpdateLeadTool", "pipedrive_update_lead")
+    add(PostgreSQLDeleteTool, "PostgreSQLDeleteTool", "postgresql_delete")
+    add(PostgresExecuteTool, "PostgresExecuteTool", "postgresql_execute")
+    add(PostgreSQLInsertTool, "PostgreSQLInsertTool", "postgresql_insert")
+    add(PostgreSQLIntrospectTool, "PostgreSQLIntrospectTool", "postgresql_introspect")
+    add(PostgreSQLQueryTool, "PostgreSQLQueryTool", "postgresql_query")
+    add(PostgreSQLUpdateTool, "PostgreSQLUpdateTool", "postgresql_update")
+    add(RedditDeleteTool, "RedditDeleteTool", "reddit_delete")
+    add(RedditEditTool, "RedditEditTool", "reddit_edit")
+    add(RedditGetCommentsTool, "RedditGetCommentsTool", "reddit_get_comments")
+    add(RedditGetControversialTool, "RedditGetControversialTool", "reddit_get_controversial")
+    add(RedditGetMeTool, "RedditGetMeTool", "reddit_get_me")
+    add(RedditGetMessagesTool, "RedditGetMessagesTool", "reddit_get_messages")
+    add(RedditGetPostsTool, "RedditGetPostsTool", "reddit_get_posts")
+    add(RedditGetSubredditInfoTool, "RedditGetSubredditInfoTool", "reddit_get_subreddit_info")
+    add(RedditGetUserTool, "RedditGetUserTool", "reddit_get_user")
+    add(RedditHotPostsTool, "RedditHotPostsTool", "reddit_hot_posts")
+    add(RedditReplyTool, "RedditReplyTool", "reddit_reply")
+    add(RedditSaveTool, "RedditSaveTool", "reddit_save")
+    add(RedditSearchTool, "RedditSearchTool", "reddit_search")
+    add(RedditSendMessageTool, "RedditSendMessageTool", "reddit_send_message")
+    add(RedditSubmitPostTool, "RedditSubmitPostTool", "reddit_submit_post")
+    add(RedditSubscribeTool, "RedditSubscribeTool", "reddit_subscribe")
+    add(RedditVoteTool, "RedditVoteTool", "reddit_vote")
+    add(RedisExpireTool, "RedisExpireTool", "redis_expire")
+    add(RedisGetTool, "RedisGetTool", "redis_get")
+    add(RedisHgetTool, "RedisHgetTool", "redis_hget")
+    add(RedisHGetAllTool, "RedisHGetAllTool", "redis_hgetall")
+    add(RedisHSetTool, "RedisHSetTool", "redis_hset")
+    add(RedisIncrTool, "RedisIncrTool", "redis_incr")
+    add(RedisIncrbyTool, "RedisIncrbyTool", "redis_incrby")
+    add(RedisKeysTool, "RedisKeysTool", "redis_keys")
+    add(RedisLLenTool, "RedisLLenTool", "redis_llen")
+    add(RedisLPopTool, "RedisLPopTool", "redis_lpop")
+    add(RedisLPushTool, "RedisLPushTool", "redis_lpush")
+    add(RedisLRangeTool, "RedisLRangeTool", "redis_lrange")
+    add(RedisRPopTool, "RedisRPopTool", "redis_rpop")
+    add(RedisRPushTool, "RedisRPushTool", "redis_rpush")
+    add(RedisSetTool, "RedisSetTool", "redis_set")
+    add(RedisSetnxTool, "RedisSetnxTool", "redis_setnx")
+    add(RedisTtlTool, "RedisTtlTool", "redis_ttl")
+    add(ReductoParserTool, "ReductoParserTool", "reducto_parser")
+    add(S3CopyObjectTool, "S3CopyObjectTool", "s3_copy_object")
+    add(S3DeleteObjectTool, "S3DeleteObjectTool", "s3_delete_object")
+    add(S3GetObjectTool, "S3GetObjectTool", "s3_get_object")
+    add(S3ListObjectsTool, "S3ListObjectsTool", "s3_list_objects")
+    add(S3PutObjectTool, "S3PutObjectTool", "s3_put_object")
+    add(ShopifyAdjustInventoryTool, "ShopifyAdjustInventoryTool", "shopify_adjust_inventory")
+    add(ShopifyCancelOrderTool, "ShopifyCancelOrderTool", "shopify_cancel_order")
+    add(ShopifyCreateCustomerTool, "ShopifyCreateCustomerTool", "shopify_create_customer")
+    add(ShopifyCreateFulfillmentTool, "ShopifyCreateFulfillmentTool", "shopify_create_fulfillment")
+    add(ShopifyCreateProductTool, "ShopifyCreateProductTool", "shopify_create_product")
+    add(ShopifyDeleteCustomerTool, "ShopifyDeleteCustomerTool", "shopify_delete_customer")
+    add(ShopifyDeleteProductTool, "ShopifyDeleteProductTool", "shopify_delete_product")
+    add(ShopifyGetCollectionTool, "ShopifyGetCollectionTool", "shopify_get_collection")
+    add(ShopifyGetCustomerTool, "ShopifyGetCustomerTool", "shopify_get_customer")
+    add(ShopifyGetInventoryLevelTool, "ShopifyGetInventoryLevelTool", "shopify_get_inventory_level")
+    add(ShopifyGetOrderTool, "ShopifyGetOrderTool", "shopify_get_order")
+    add(ShopifyGetProductTool, "ShopifyGetProductTool", "shopify_get_product")
+    add(ShopifyListCollectionsTool, "ShopifyListCollectionsTool", "shopify_list_collections")
+    add(ShopifyListCustomersTool, "ShopifyListCustomersTool", "shopify_list_customers")
+    add(ShopifyListInventoryItemsTool, "ShopifyListInventoryItemsTool", "shopify_list_inventory_items")
+    add(ShopifyListLocationsTool, "ShopifyListLocationsTool", "shopify_list_locations")
+    add(ShopifyListOrdersTool, "ShopifyListOrdersTool", "shopify_list_orders")
+    add(ShopifyListProductsTool, "ShopifyListProductsTool", "shopify_list_products")
+    add(ShopifyUpdateCustomerTool, "ShopifyUpdateCustomerTool", "shopify_update_customer")
+    add(ShopifyUpdateOrderTool, "ShopifyUpdateOrderTool", "shopify_update_order")
+    add(ShopifyUpdateProductTool, "ShopifyUpdateProductTool", "shopify_update_product")
+    add(SixtyfourEnrichCompanyTool, "SixtyfourEnrichCompanyTool", "sixtyfour_enrich_company")
+    add(SixtyfourEnrichLeadTool, "SixtyfourEnrichLeadTool", "sixtyfour_enrich_lead")
+    add(SixtyfourFindEmailTool, "SixtyfourFindEmailTool", "sixtyfour_find_email")
+    add(SixtyfourFindPhoneTool, "SixtyfourFindPhoneTool", "sixtyfour_find_phone")
+    add(SmsSendTool, "SmsSendTool", "sms_send")
+    add(TrelloAddCommentTool, "TrelloAddCommentTool", "trello_add_comment")
+    add(TrelloCreateCardTool, "TrelloCreateCardTool", "trello_create_card")
+    add(TrelloGetActionsTool, "TrelloGetActionsTool", "trello_get_actions")
+    add(TrelloListCardsTool, "TrelloListCardsTool", "trello_list_cards")
+    add(TrelloListListsTool, "TrelloListListsTool", "trello_list_lists")
+    add(TrelloUpdateCardTool, "TrelloUpdateCardTool", "trello_update_card")
+    add(VercelAddDomainTool, "VercelAddDomainTool", "vercel_add_domain")
+    add(VercelAddProjectDomainTool, "VercelAddProjectDomainTool", "vercel_add_project_domain")
+    add(VercelCancelDeploymentTool, "VercelCancelDeploymentTool", "vercel_cancel_deployment")
+    add(VercelCreateAliasTool, "VercelCreateAliasTool", "vercel_create_alias")
+    add(VercelCreateCheckTool, "VercelCreateCheckTool", "vercel_create_check")
+    add(VercelCreateDeploymentTool, "VercelCreateDeploymentTool", "vercel_create_deployment")
+    add(VercelCreateDnsRecordTool, "VercelCreateDnsRecordTool", "vercel_create_dns_record")
+    add(VercelCreateEdgeConfigTool, "VercelCreateEdgeConfigTool", "vercel_create_edge_config")
+    add(VercelCreateEnvVarTool, "VercelCreateEnvVarTool", "vercel_create_env_var")
+    add(VercelCreateProjectTool, "VercelCreateProjectTool", "vercel_create_project")
+    add(VercelCreateWebhookTool, "VercelCreateWebhookTool", "vercel_create_webhook")
+    add(VercelDeleteAliasTool, "VercelDeleteAliasTool", "vercel_delete_alias")
+    add(VercelDeleteDeploymentTool, "VercelDeleteDeploymentTool", "vercel_delete_deployment")
+    add(VercelDeleteDnsRecordTool, "VercelDeleteDnsRecordTool", "vercel_delete_dns_record")
+    add(VercelDeleteDomainTool, "VercelDeleteDomainTool", "vercel_delete_domain")
+    add(VercelDeleteEnvVarTool, "VercelDeleteEnvVarTool", "vercel_delete_env_var")
+    add(VercelDeleteProjectTool, "VercelDeleteProjectTool", "vercel_delete_project")
+    add(VercelDeleteWebhookTool, "VercelDeleteWebhookTool", "vercel_delete_webhook")
+    add(VercelGetAliasTool, "VercelGetAliasTool", "vercel_get_alias")
+    add(VercelGetCheckTool, "VercelGetCheckTool", "vercel_get_check")
+    add(VercelGetDeploymentTool, "VercelGetDeploymentTool", "vercel_get_deployment")
+    add(VercelGetDeploymentEventsTool, "VercelGetDeploymentEventsTool", "vercel_get_deployment_events")
+    add(VercelGetDomainTool, "VercelGetDomainTool", "vercel_get_domain")
+    add(VercelGetDomainConfigTool, "VercelGetDomainConfigTool", "vercel_get_domain_config")
+    add(VercelGetEdgeConfigTool, "VercelGetEdgeConfigTool", "vercel_get_edge_config")
+    add(VercelGetEdgeConfigItemsTool, "VercelGetEdgeConfigItemsTool", "vercel_get_edge_config_items")
+    add(VercelGetEnvVarsTool, "VercelGetEnvVarsTool", "vercel_get_env_vars")
+    add(VercelGetProjectTool, "VercelGetProjectTool", "vercel_get_project")
+    add(VercelGetTeamTool, "VercelGetTeamTool", "vercel_get_team")
+    add(VercelGetUserTool, "VercelGetUserTool", "vercel_get_user")
+    add(VercelListAliasesTool, "VercelListAliasesTool", "vercel_list_aliases")
+    add(VercelListChecksTool, "VercelListChecksTool", "vercel_list_checks")
+    add(VercelListDeploymentFilesTool, "VercelListDeploymentFilesTool", "vercel_list_deployment_files")
+    add(VercelListDeploymentsTool, "VercelListDeploymentsTool", "vercel_list_deployments")
+    add(VercelListDnsRecordsTool, "VercelListDnsRecordsTool", "vercel_list_dns_records")
+    add(VercelListDomainsTool, "VercelListDomainsTool", "vercel_list_domains")
+    add(VercelListEdgeConfigsTool, "VercelListEdgeConfigsTool", "vercel_list_edge_configs")
+    add(VercelListProjectDomainsTool, "VercelListProjectDomainsTool", "vercel_list_project_domains")
+    add(VercelListProjectsTool, "VercelListProjectsTool", "vercel_list_projects")
+    add(VercelListTeamMembersTool, "VercelListTeamMembersTool", "vercel_list_team_members")
+    add(VercelListTeamsTool, "VercelListTeamsTool", "vercel_list_teams")
+    add(VercelListWebhooksTool, "VercelListWebhooksTool", "vercel_list_webhooks")
+    add(VercelPauseProjectTool, "VercelPauseProjectTool", "vercel_pause_project")
+    add(VercelRemoveProjectDomainTool, "VercelRemoveProjectDomainTool", "vercel_remove_project_domain")
+    add(VercelRerequestCheckTool, "VercelRerequestCheckTool", "vercel_rerequest_check")
+    add(VercelUnpauseProjectTool, "VercelUnpauseProjectTool", "vercel_unpause_project")
+    add(VercelUpdateCheckTool, "VercelUpdateCheckTool", "vercel_update_check")
+    add(VercelUpdateEdgeConfigItemsTool, "VercelUpdateEdgeConfigItemsTool", "vercel_update_edge_config_items")
+    add(VercelUpdateEnvVarTool, "VercelUpdateEnvVarTool", "vercel_update_env_var")
+    add(VercelUpdateProjectTool, "VercelUpdateProjectTool", "vercel_update_project")
+    add(FalaiVideoTool, "FalaiVideoTool", "fal_ai_video_generation")
+    add(LumaVideoTool, "LumaVideoTool", "luma_dream_machine_video")
+    add(MinimaxVideoTool, "MinimaxVideoTool", "minimax_hailuo_video")
+    add(RunwayVideoTool, "RunwayVideoTool", "video_runway")
+    add(VeoVideoTool, "VeoVideoTool", "video_veo")
+    add(WebflowCreateItemTool, "WebflowCreateItemTool", "webflow_create_item")
+    add(WebflowDeleteItemTool, "WebflowDeleteItemTool", "webflow_delete_item")
+    add(WebflowGetItemTool, "WebflowGetItemTool", "webflow_get_item")
+    add(WebflowListItemsTool, "WebflowListItemsTool", "webflow_list_items")
+    add(WebflowUpdateItemTool, "WebflowUpdateItemTool", "webflow_update_item")
+    add(WikipediaContentTool, "WikipediaContentTool", "wikipedia_content")
+    add(WikipediaRandomPageTool, "WikipediaRandomPageTool", "wikipedia_random")
+    add(WikipediaSearchTool, "WikipediaSearchTool", "wikipedia_search")
+    add(WikipediaSummaryTool, "WikipediaSummaryTool", "wikipedia_summary")
+    add(WordPressCreateCategoryTool, "WordPressCreateCategoryTool", "wordpress_create_category")
+    add(WordPressCreateCommentTool, "WordPressCreateCommentTool", "wordpress_create_comment")
+    add(WordPressCreatePageTool, "WordPressCreatePageTool", "wordpress_create_page")
+    add(WordPressCreatePostTool, "WordPressCreatePostTool", "wordpress_create_post")
+    add(WordPressCreateTagTool, "WordPressCreateTagTool", "wordpress_create_tag")
+    add(WordPressDeleteCommentTool, "WordPressDeleteCommentTool", "wordpress_delete_comment")
+    add(WordPressDeleteMediaTool, "WordPressDeleteMediaTool", "wordpress_delete_media")
+    add(WordPressDeletePageTool, "WordPressDeletePageTool", "wordpress_delete_page")
+    add(WordPressDeletePostTool, "WordPressDeletePostTool", "wordpress_delete_post")
+    add(WordPressGetCurrentUserTool, "WordPressGetCurrentUserTool", "wordpress_get_current_user")
+    add(WordPressGetMediaTool, "WordPressGetMediaTool", "wordpress_get_media")
+    add(WordPressGetPageTool, "WordPressGetPageTool", "wordpress_get_page")
+    add(WordPressGetPostTool, "WordPressGetPostTool", "wordpress_get_post")
+    add(WordPressGetUserTool, "WordPressGetUserTool", "wordpress_get_user")
+    add(WordPressListCategoriesTool, "WordPressListCategoriesTool", "wordpress_list_categories")
+    add(WordPressListCommentsTool, "WordPressListCommentsTool", "wordpress_list_comments")
+    add(WordPressListMediaTool, "WordPressListMediaTool", "wordpress_list_media")
+    add(WordPressListPagesTool, "WordPressListPagesTool", "wordpress_list_pages")
+    add(WordPressListPostsTool, "WordPressListPostsTool", "wordpress_list_posts")
+    add(WordPressListTagsTool, "WordPressListTagsTool", "wordpress_list_tags")
+    add(WordPressListUsersTool, "WordPressListUsersTool", "wordpress_list_users")
+    add(WordPressSearchContentTool, "WordPressSearchContentTool", "wordpress_search_content")
+    add(WordPressUpdateCommentTool, "WordPressUpdateCommentTool", "wordpress_update_comment")
+    add(WordPressUpdatePageTool, "WordPressUpdatePageTool", "wordpress_update_page")
+    add(WordPressUpdatePostTool, "WordPressUpdatePostTool", "wordpress_update_post")
+    add(WordPressUploadMediaTool, "WordPressUploadMediaTool", "wordpress_upload_media")
+    add(WorkdayAssignOnboardingTool, "WorkdayAssignOnboardingTool", "workday_assign_onboarding")
+    add(WorkdayChangeJobTool, "WorkdayChangeJobTool", "workday_change_job")
+    add(WorkdayCreatePrehireTool, "WorkdayCreatePrehireTool", "workday_create_prehire")
+    add(WorkdayGetCompensationTool, "WorkdayGetCompensationTool", "get_workday_compensation")
+    add(WorkdayGetOrganizationsTool, "WorkdayGetOrganizationsTool", "workday_get_organizations")
+    add(WorkdayGetWorkerTool, "WorkdayGetWorkerTool", "workday_get_worker")
+    add(WorkdayHireEmployeeTool, "WorkdayHireEmployeeTool", "workday_hire_employee")
+    add(WorkdayListWorkersTool, "WorkdayListWorkersTool", "workday_list_workers")
+    add(WorkdayTerminateWorkerTool, "WorkdayTerminateWorkerTool", "workday_terminate_worker")
+    add(WorkdayUpdateWorkerTool, "WorkdayUpdateWorkerTool", "workday_update_worker")
+    add(XCreateBookmarkTool, "XCreateBookmarkTool", "x_create_bookmark")
+    add(XCreateTweetTool, "XCreateTweetTool", "x_create_tweet")
+    add(XDeleteBookmarkTool, "XDeleteBookmarkTool", "x_delete_bookmark")
+    add(XDeleteTweetTool, "XDeleteTweetTool", "x_delete_tweet")
+    add(XGetBlockingTool, "XGetBlockingTool", "x_get_blocking")
+    add(XGetBookmarksTool, "XGetBookmarksTool", "x_get_bookmarks")
+    add(XGetFollowersTool, "XGetFollowersTool", "x_get_followers")
+    add(XGetFollowingTool, "XGetFollowingTool", "x_get_following")
+    add(XGetLikedTweetsTool, "XGetLikedTweetsTool", "x_get_liked_tweets")
+    add(XGetLikingUsersTool, "XGetLikingUsersTool", "x_get_liking_users")
+    add(XGetMeTool, "XGetMeTool", "x_get_me")
+    add(XGetPersonalizedTrendsTool, "XGetPersonalizedTrendsTool", "x_get_personalized_trends")
+    add(XGetQuoteTweetsTool, "XGetQuoteTweetsTool", "x_get_quote_tweets")
+    add(XGetRetweetedByTool, "XGetRetweetedByTool", "x_get_retweeted_by")
+    add(XGetTrendsByWoeidTool, "XGetTrendsByWoeidTool", "x_get_trends_by_woeid")
+    add(XGetTweetsByIdsTool, "XGetTweetsByIdsTool", "x_get_tweets_by_ids")
+    add(XGetUsageTool, "XGetUsageTool", "x_get_usage")
+    add(XGetUserMentionsTool, "XGetUserMentionsTool", "x_get_user_mentions")
+    add(XGetUserTimelineTool, "XGetUserTimelineTool", "x_get_user_timeline")
+    add(XGetUserTweetsTool, "XGetUserTweetsTool", "x_get_user_tweets")
+    add(XHideReplyTool, "XHideReplyTool", "x_hide_reply")
+    add(XManageBlockTool, "XManageBlockTool", "x_manage_block")
+    add(XManageFollowTool, "XManageFollowTool", "x_manage_follow")
+    add(XManageLikeTool, "XManageLikeTool", "x_manage_like")
+    add(XManageMuteTool, "XManageMuteTool", "x_manage_mute")
+    add(XManageRetweetTool, "XManageRetweetTool", "x_manage_retweet")
+    add(XReadTool, "XReadTool", "x_read")
+    add(XSearchTool, "XSearchTool", "x_search")
+    add(XSearchTweetsTool, "XSearchTweetsTool", "x_search_tweets")
+    add(XSearchUsersTool, "XSearchUsersTool", "x_search_users")
+    add(XUserTool, "XUserTool", "x_user")
+    add(XWriteTool, "XWriteTool", "x_write")
+    add(YouTubeChannelInfoTool, "YouTubeChannelInfoTool", "youtube_channel_info")
+    add(YouTubeChannelPlaylistsTool, "YouTubeChannelPlaylistsTool", "youtube_channel_playlists")
+    add(YouTubeChannelVideosTool, "YouTubeChannelVideosTool", "youtube_channel_videos")
+    add(YouTubeCommentsTool, "YouTubeCommentsTool", "youtube_comments")
+    add(YouTubePlaylistItemsTool, "YouTubePlaylistItemsTool", "youtube_playlist_items")
+    add(YouTubeSearchTool, "YouTubeSearchTool", "youtube_search")
+    add(YouTubeTrendingTool, "YouTubeTrendingTool", "youtube_trending")
+    add(YouTubeVideoCategoriesTool, "YouTubeVideoCategoriesTool", "youtube_video_categories")
+    add(YouTubeVideoDetailsTool, "YouTubeVideoDetailsTool", "youtube_video_details")
+    add(ZendeskAutocompleteOrganizationsTool, "ZendeskAutocompleteOrganizationsTool", "zendesk_autocomplete_organizations")
+    add(ZendeskCreateOrganizationTool, "ZendeskCreateOrganizationTool", "zendesk_create_organization")
+    add(ZendeskCreateOrganizationsBulkTool, "ZendeskCreateOrganizationsBulkTool", "zendesk_create_organizations_bulk")
+    add(ZendeskCreateTicketTool, "ZendeskCreateTicketTool", "zendesk_create_ticket")
+    add(ZendeskCreateTicketsBulkTool, "ZendeskCreateTicketsBulkTool", "zendesk_create_tickets_bulk")
+    add(ZendeskCreateUserTool, "ZendeskCreateUserTool", "zendesk_create_user")
+    add(ZendeskCreateUsersBulkTool, "ZendeskCreateUsersBulkTool", "zendesk_create_users_bulk")
+    add(ZendeskDeleteOrganizationTool, "ZendeskDeleteOrganizationTool", "zendesk_delete_organization")
+    add(ZendeskDeleteUserTool, "ZendeskDeleteUserTool", "zendesk_delete_user")
+    add(ZendeskGetCurrentUserTool, "ZendeskGetCurrentUserTool", "zendesk_get_current_user")
+    add(ZendeskGetOrganizationTool, "ZendeskGetOrganizationTool", "zendesk_get_organization")
+    add(ZendeskGetTicketTool, "ZendeskGetTicketTool", "zendesk_get_ticket")
+    add(ZendeskGetTicketsTool, "ZendeskGetTicketsTool", "zendesk_get_tickets")
+    add(ZendeskGetUserTool, "ZendeskGetUserTool", "zendesk_get_user")
+    add(ZendeskGetUsersTool, "ZendeskGetUsersTool", "zendesk_get_users")
+    add(ZendeskMergeTicketsTool, "ZendeskMergeTicketsTool", "zendesk_merge_tickets")
+    add(ZendeskSearchTool, "ZendeskSearchTool", "zendesk_search")
+    add(ZendeskSearchCountTool, "ZendeskSearchCountTool", "zendesk_search_count")
+    add(ZendeskSearchUsersTool, "ZendeskSearchUsersTool", "zendesk_search_users")
+    add(ZendeskUpdateOrganizationTool, "ZendeskUpdateOrganizationTool", "zendesk_update_organization")
+    add(ZendeskUpdateTicketTool, "ZendeskUpdateTicketTool", "zendesk_update_ticket")
+    add(ZendeskUpdateTicketsBulkTool, "ZendeskUpdateTicketsBulkTool", "zendesk_update_tickets_bulk")
+    add(ZendeskUpdateUserTool, "ZendeskUpdateUserTool", "zendesk_update_user")
+    add(ZepAddMessagesTool, "ZepAddMessagesTool", "zep_add_messages")
+    add(ZepAddUserTool, "ZepAddUserTool", "zep_add_user")
+    add(ZepCreateThreadTool, "ZepCreateThreadTool", "create_thread")
+    add(ZepDeleteThreadTool, "ZepDeleteThreadTool", "zep_delete_thread")
+    add(ZepGetContextTool, "ZepGetContextTool", "get_user_context")
+    add(ZepGetMessagesTool, "ZepGetMessagesTool", "zep_get_messages")
+    add(ZepGetThreadsTool, "ZepGetThreadsTool", "get_threads")
+    add(ZepGetUserTool, "ZepGetUserTool", "zep_get_user")
+    add(ZepGetUserThreadsTool, "ZepGetUserThreadsTool", "get_user_threads")
+    add(ZoomCreateMeetingTool, "ZoomCreateMeetingTool", "zoom_create_meeting")
+    add(ZoomDeleteMeetingTool, "ZoomDeleteMeetingTool", "zoom_delete_meeting")
+    add(ZoomDeleteRecordingTool, "ZoomDeleteRecordingTool", "zoom_delete_recording")
+    add(ZoomGetMeetingTool, "ZoomGetMeetingTool", "zoom_get_meeting")
+    add(ZoomGetMeetingInvitationTool, "ZoomGetMeetingInvitationTool", "zoom_get_meeting_invitation")
+    add(ZoomGetMeetingRecordingsTool, "ZoomGetMeetingRecordingsTool", "zoom_get_meeting_recordings")
+    add(ZoomListMeetingsTool, "ZoomListMeetingsTool", "zoom_list_meetings")
+    add(ZoomListPastParticipantsTool, "ZoomListPastParticipantsTool", "zoom_list_past_participants")
+    add(ZoomListRecordingsTool, "ZoomListRecordingsTool", "zoom_list_recordings")
+    add(ZoomUpdateMeetingTool, "ZoomUpdateMeetingTool", "zoom_update_meeting")
 
     # System tools (default)
     add(HTTPTool, "HTTPTool", "http_request")
@@ -1844,6 +6159,87 @@ _BUNDLE_CATEGORY: dict[str, str] = {
     "Google_driveTool": "productivity",
     "GoogleCalendarTool": "productivity",
     "StripeTool": "payments",
+    "AgentmailTool": "communication",
+    "AhrefsTool": "analytics",
+    "AirtableTool": "productivity",
+    "AirweaveTool": "data",
+    "ApolloTool": "crm",
+    "AsanaTool": "project_management",
+    "AshbyTool": "recruiting",
+    "AttioTool": "crm",
+    "BoxTool": "productivity",
+    "BoxSignTool": "productivity",
+    "CalcomTool": "scheduling",
+    "CloudwatchTool": "monitoring",
+    "ConfluenceTool": "productivity",
+    "CursorTool": "engineering",
+    "DatabricksTool": "data",
+    "DatadogTool": "monitoring",
+    "DevinTool": "engineering",
+    "DiscordTool": "communication",
+    "DocusignTool": "documents",
+    "DropboxTool": "productivity",
+    "DspyTool": "engineering",
+    "DuckduckgoTool": "search",
+    "EvernoteTool": "productivity",
+    "ExaTool": "search",
+    "ExtendTool": "data",
+    "FileTool": "productivity",
+    "FirecrawlTool": "search",
+    "GammaTool": "productivity",
+    "GitlabTool": "engineering",
+    "GongTool": "crm",
+    "GoogleAdsTool": "marketing",
+    "GoogleBigqueryTool": "data",
+    "GoogleDocsTool": "productivity",
+    "GoogleFormsTool": "productivity",
+    "GoogleMapsTool": "search",
+    "GoogleMeetTool": "communication",
+    "GoogleSheetsTool": "productivity",
+    "GoogleSlidesTool": "productivity",
+    "GoogleTasksTool": "productivity",
+    "GranolaTool": "productivity",
+    "GreenhouseTool": "recruiting",
+    "GuardrailsTool": "engineering",
+    "HexTool": "data",
+    "HunterTool": "crm",
+    "IncidentioTool": "monitoring",
+    "IntercomTool": "communication",
+    "KalshiTool": "finance",
+    "LangsmithTool": "engineering",
+    "LlmTool": "engineering",
+    "LoopsTool": "marketing",
+    "LumaTool": "scheduling",
+    "MemoryTool": "productivity",
+    "MicrosoftDataverseTool": "data",
+    "MicrosoftExcelTool": "productivity",
+    "MicrosoftPlannerTool": "project_management",
+    "MicrosoftTeamsTool": "communication",
+    "Neo4jTool": "data",
+    "OutlookTool": "communication",
+    "PagerdutyTool": "monitoring",
+    "ParallelTool": "engineering",
+    "PipedriveTool": "crm",
+    "PostgresqlTool": "data",
+    "RedditTool": "communication",
+    "RedisTool": "data",
+    "ReductoTool": "data",
+    "S3Tool": "data",
+    "ShopifyTool": "ecommerce",
+    "SixtyfourTool": "finance",
+    "SmsTool": "communication",
+    "TrelloTool": "project_management",
+    "VercelTool": "engineering",
+    "VideoTool": "productivity",
+    "WebflowTool": "engineering",
+    "WikipediaTool": "search",
+    "WordpressTool": "marketing",
+    "WorkdayTool": "hr",
+    "XTool": "communication",
+    "YoutubeTool": "communication",
+    "ZendeskTool": "communication",
+    "ZepTool": "data",
+    "ZoomTool": "communication",
 }
 
 _BUNDLE_DESCRIPTION: dict[str, str] = {
@@ -1858,6 +6254,87 @@ _BUNDLE_DESCRIPTION: dict[str, str] = {
     "Google_driveTool": "Full Google Drive integration: upload, download, search, share, and manage files.",
     "GoogleCalendarTool": "Full Google Calendar integration: create, update, delete events, manage calendars, and check availability.",
     "StripeTool": "Full Stripe integration: customers, invoices, subscriptions, and payment intents.",
+    "AgentmailTool": "Full AgentMail integration: inboxes, threads, messages, and drafts.",
+    "AhrefsTool": "Full Ahrefs integration: backlinks, domain rating, and keyword research.",
+    "AirtableTool": "Full Airtable integration: create, read, and update records across bases.",
+    "AirweaveTool": "Airweave semantic search integration.",
+    "ApolloTool": "Full Apollo.io integration: contacts, accounts, sequences, and enrichment.",
+    "AsanaTool": "Full Asana integration: tasks, projects, and comments.",
+    "AshbyTool": "Full Ashby ATS integration: jobs, applications, and candidates.",
+    "AttioTool": "Full Attio CRM integration: contacts, records, and notes.",
+    "BoxTool": "Full Box integration: upload, download, share, and manage files.",
+    "BoxSignTool": "Full Box Sign integration: send and track signature requests.",
+    "CalcomTool": "Full Cal.com integration: scheduling and availability management.",
+    "CloudwatchTool": "Full AWS CloudWatch integration: logs, metrics, and alarms.",
+    "ConfluenceTool": "Full Confluence integration: pages, spaces, and comments.",
+    "CursorTool": "Full Cursor integration: AI-powered development tasks.",
+    "DatabricksTool": "Full Databricks integration: notebooks, jobs, and data pipelines.",
+    "DatadogTool": "Full Datadog integration: metrics, logs, monitors, and dashboards.",
+    "DevinTool": "Full Devin integration: AI software engineering tasks.",
+    "DiscordTool": "Full Discord integration: messages, channels, roles, and server management.",
+    "DocusignTool": "Full DocuSign integration: envelopes, templates, and signatures.",
+    "DropboxTool": "Full Dropbox integration: files, folders, sharing, and collaboration.",
+    "DspyTool": "Full DSPy integration: LLM optimization workflows.",
+    "DuckduckgoTool": "DuckDuckGo web search integration.",
+    "EvernoteTool": "Full Evernote integration: notes, notebooks, and tags.",
+    "ExaTool": "Full Exa AI semantic search integration.",
+    "ExtendTool": "Extend document extraction integration.",
+    "FileTool": "Local file system tool integration.",
+    "FirecrawlTool": "Full Firecrawl integration: web scraping and crawling.",
+    "GammaTool": "Full Gamma integration: AI presentation creation.",
+    "GitlabTool": "Full GitLab integration: repos, issues, merge requests, and pipelines.",
+    "GongTool": "Full Gong integration: calls, transcripts, and CRM activity.",
+    "GoogleAdsTool": "Full Google Ads integration: campaigns, ad groups, and reporting.",
+    "GoogleBigqueryTool": "Full BigQuery integration: datasets, tables, and SQL queries.",
+    "GoogleDocsTool": "Full Google Docs integration: create, read, and edit documents.",
+    "GoogleFormsTool": "Full Google Forms integration: create forms and retrieve responses.",
+    "GoogleMapsTool": "Full Google Maps integration: places, geocoding, and directions.",
+    "GoogleMeetTool": "Full Google Meet integration: create and manage video meetings.",
+    "GoogleSheetsTool": "Full Google Sheets integration: read, write, and update spreadsheets.",
+    "GoogleSlidesTool": "Full Google Slides integration: create and edit presentations.",
+    "GoogleTasksTool": "Full Google Tasks integration: task lists and tasks.",
+    "GranolaTool": "Granola meeting notes integration.",
+    "GreenhouseTool": "Full Greenhouse integration: jobs, candidates, and offers.",
+    "GuardrailsTool": "Guardrails AI integration for output validation.",
+    "HexTool": "Full Hex integration: notebooks, projects, and data analysis.",
+    "HunterTool": "Full Hunter.io integration: email finding and verification.",
+    "IncidentioTool": "Full Incident.io integration: incidents, alerts, and escalations.",
+    "IntercomTool": "Full Intercom integration: contacts, conversations, and messages.",
+    "KalshiTool": "Full Kalshi integration: prediction markets and contracts.",
+    "LangsmithTool": "Full LangSmith integration: tracing, evaluation, and datasets.",
+    "LlmTool": "LLM tool for direct model calls.",
+    "LoopsTool": "Full Loops integration: email marketing and sequences.",
+    "LumaTool": "Full Luma integration: events and guest management.",
+    "MemoryTool": "Memory tool for persistent agent storage.",
+    "MicrosoftDataverseTool": "Full Microsoft Dataverse integration: tables, records, and queries.",
+    "MicrosoftExcelTool": "Full Microsoft Excel integration: workbooks, sheets, and cells.",
+    "MicrosoftPlannerTool": "Full Microsoft Planner integration: plans, buckets, and tasks.",
+    "MicrosoftTeamsTool": "Full Microsoft Teams integration: messages, channels, and meetings.",
+    "Neo4jTool": "Full Neo4j integration: graph queries and data management.",
+    "OutlookTool": "Full Outlook integration: email, calendar, and contacts.",
+    "PagerdutyTool": "Full PagerDuty integration: incidents, escalations, and on-call schedules.",
+    "ParallelTool": "Parallel task execution tool.",
+    "PipedriveTool": "Full Pipedrive integration: deals, contacts, and activities.",
+    "PostgresqlTool": "Full PostgreSQL integration: queries and database management.",
+    "RedditTool": "Full Reddit integration: posts, comments, and subreddits.",
+    "RedisTool": "Full Redis integration: key-value storage and pub/sub.",
+    "ReductoTool": "Full Reducto integration: document parsing and extraction.",
+    "S3Tool": "Full AWS S3 integration: buckets, objects, and storage management.",
+    "ShopifyTool": "Full Shopify integration: products, orders, and customers.",
+    "SixtyfourTool": "Sixtyfour AI analysis integration.",
+    "SmsTool": "SMS messaging integration.",
+    "TrelloTool": "Full Trello integration: boards, lists, cards, and members.",
+    "VercelTool": "Full Vercel integration: deployments, projects, and domains.",
+    "VideoTool": "Video processing and management tool.",
+    "WebflowTool": "Full Webflow integration: sites, collections, and CMS content.",
+    "WikipediaTool": "Wikipedia search and article retrieval.",
+    "WordpressTool": "Full WordPress integration: posts, pages, media, and users.",
+    "WorkdayTool": "Full Workday integration: HR, payroll, and workforce management.",
+    "XTool": "Full X (Twitter) integration: tweets, users, and timelines.",
+    "YoutubeTool": "Full YouTube integration: videos, channels, comments, and playlists.",
+    "ZendeskTool": "Full Zendesk integration: tickets, users, and organizations.",
+    "ZepTool": "Full Zep integration: memory and session management.",
+    "ZoomTool": "Full Zoom integration: meetings, recordings, and participants.",
 }
 
 HIDDEN_PROVIDER_BUNDLE_ROOTS: set[str] = {

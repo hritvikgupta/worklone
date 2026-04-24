@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomUntagContactTool(BaseTool):
-    name = "Untag Contact in Intercom"
+    name = "untag_contact_in_intercom"
     description = "Remove a tag from a specific contact"
     category = "integration"
 

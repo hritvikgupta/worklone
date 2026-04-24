@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class VercelListEdgeConfigsTool(BaseTool):
-    name = "Vercel List Edge Configs"
+    name = "vercel_list_edge_configs"
     description = "List all Edge Config stores for a team"
     category = "integration"
 

@@ -6,7 +6,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomSearchConversationsTool(BaseTool):
-    name = "Search Conversations in Intercom"
+    name = "search_conversations_in_intercom"
     description = "Search for conversations in Intercom using a query. Returns API-aligned fields only."
     category = "integration"
 

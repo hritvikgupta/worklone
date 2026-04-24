@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class ApolloOrganizationSearchTool(BaseTool):
-    name = "Apollo Organization Search"
+    name = "apollo_organization_search"
     description = "Search Apollo's database for companies using filters"
     category = "integration"
 

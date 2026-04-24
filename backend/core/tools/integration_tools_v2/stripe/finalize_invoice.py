@@ -2,7 +2,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class StripeFinalizeInvoiceTool(BaseTool):
-    name = "Stripe Finalize Invoice"
+    name = "stripe_finalize_invoice"
     description = "Finalize a draft invoice"
     category = "integration"
 

@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class ShopifyAdjustInventoryTool(BaseTool):
-    name = "Shopify Adjust Inventory"
+    name = "shopify_adjust_inventory"
     description = "Adjust inventory quantity for a product variant at a specific location"
     category = "integration"
 

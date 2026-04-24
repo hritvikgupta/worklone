@@ -1,6 +1,9 @@
 from typing import Any, Dict
 import json
-from psycopg import AsyncConnection
+try:
+    from psycopg import AsyncConnection
+except ImportError:
+    AsyncConnection = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class PostgresExecuteTool(BaseTool):

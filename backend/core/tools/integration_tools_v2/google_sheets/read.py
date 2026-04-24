@@ -27,8 +27,7 @@ class GoogleSheetsReadTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google",
+        connection = await resolve_oauth_connection("google_sheets",
             context=context,
             context_token_keys=("accessToken",),
             env_token_keys=("GOOGLE_SHEETS_ACCESS_TOKEN",),

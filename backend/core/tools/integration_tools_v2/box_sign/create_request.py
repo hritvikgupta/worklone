@@ -26,8 +26,7 @@ class BoxSignCreateRequestTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "box",
+        connection = await resolve_oauth_connection("box_sign",
             context=context,
             context_token_keys=("provider_token",),
             env_token_keys=("BOX_ACCESS_TOKEN",),

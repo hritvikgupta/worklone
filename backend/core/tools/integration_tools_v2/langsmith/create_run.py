@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class LangsmithCreateRunTool(BaseTool):
-    name = "LangSmith Create Run"
+    name = "langsmith_create_run"
     description = "Forward a single run to LangSmith for ingestion."
     category = "integration"
 

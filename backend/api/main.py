@@ -10,6 +10,10 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+# Clear settings cache so AUTH_MODE/.env values are picked up after load_dotenv
+from backend.core.config.settings import get_settings
+get_settings.cache_clear()
+
 from backend.api.routes import router
 from backend.core.errors import register_exception_handlers
 from backend.core.logging import RequestContextMiddleware, configure_logging, get_logger

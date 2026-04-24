@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioIncidentsCreateTool(BaseTool):
-    name = "incident.io Incidents Create"
+    name = "incident_io_incidents_create"
     description = "Create a new incident in incident.io. Requires idempotency_key, severity_id, and visibility. Optionally accepts name, summary, type, and status."
     category = "integration"
 

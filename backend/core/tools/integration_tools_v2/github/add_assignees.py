@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GitHubAddAssigneesTool(BaseTool):
-    name = "GitHub Add Assignees"
+    name = "github_add_assignees"
     description = "Add assignees to an issue in a GitHub repository"
     category = "integration"
 

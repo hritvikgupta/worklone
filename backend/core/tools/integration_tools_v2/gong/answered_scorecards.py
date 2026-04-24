@@ -4,7 +4,7 @@ import base64
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GongAnsweredScorecardsTool(BaseTool):
-    name = "Gong Answered Scorecards"
+    name = "gong_answered_scorecards"
     description = "Retrieve answered scorecards for reviewed users or by date range from Gong."
     category = "integration"
 

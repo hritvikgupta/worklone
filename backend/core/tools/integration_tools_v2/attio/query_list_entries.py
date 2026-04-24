@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class AttioQueryListEntriesTool(BaseTool):
-    name = "Attio Query List Entries"
+    name = "attio_query_list_entries"
     description = "Query entries in an Attio list with optional filter, sort, and pagination"
     category = "integration"
 

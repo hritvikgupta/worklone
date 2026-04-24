@@ -54,7 +54,7 @@ class AirtableListRecordsTool(BaseTool):
                 },
                 "filterFormula": {
                     "type": "string",
-                    "description": 'Formula to filter records (e.g., "({Field Name} = \\'Value\\')")',
+                    "description": "Formula to filter records (e.g., \"({Field Name} = 'Value')\")",
                 },
             },
             "required": ["baseId", "tableId"],

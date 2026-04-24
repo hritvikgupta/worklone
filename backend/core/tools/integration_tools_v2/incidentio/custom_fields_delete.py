@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioCustomFieldsDeleteTool(BaseTool):
-    name = "incident.io Custom Fields Delete"
+    name = "incident_io_custom_fields_delete"
     description = "Delete a custom field from incident.io."
     category = "integration"
 

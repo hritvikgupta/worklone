@@ -33,11 +33,21 @@ def _get_provider_env_value(provider: str, suffix: str) -> str:
     return ""
 
 
-def _provider_credential_namespace(provider: str) -> str:
+PROVIDER_AUTH_ALIASES = {
+    "google_email": "google",
+    "gmail": "google",
+    "google_calendar": "google",
+    "google_drive": "google",
+}
+
+
+def _canonical_provider(provider: str) -> str:
     normalized = provider.strip().lower().replace("-", "_")
-    if normalized in {"google_calendar", "google_drive"}:
-        return "google"
-    return normalized
+    return PROVIDER_AUTH_ALIASES.get(normalized, normalized)
+
+
+def _provider_credential_namespace(provider: str) -> str:
+    return _canonical_provider(provider)
 
 
 def _oauth_cred_key(provider: str, suffix: str) -> str:
@@ -144,7 +154,7 @@ class OAuthConnection:
 
 
 async def refresh_oauth_access_token(connection: OAuthConnection) -> str:
-    provider = connection.provider
+    provider = _canonical_provider(connection.provider)
     refresh_token = connection.refresh_token.strip()
     client_id = _resolve_provider_client_value(connection.user_id, provider, "CLIENT_ID")
     client_secret = _resolve_provider_client_value(connection.user_id, provider, "CLIENT_SECRET")
@@ -203,8 +213,8 @@ async def resolve_oauth_connection(
     placeholder_predicate: Optional[Callable[[str], bool]] = None,
     allow_refresh: bool = True,
 ) -> OAuthConnection:
-    # Normalize hyphens to underscores so "google-calendar" matches "google_calendar" in DB
-    provider = provider.replace("-", "_")
+    # Normalize aliases so every tool in a provider family shares one auth config.
+    provider = _canonical_provider(provider)
     db = AuthDB()
     user_id = str((context or {}).get("user_id") or "").strip()
     row = db.get_integration(user_id, provider) if user_id else None

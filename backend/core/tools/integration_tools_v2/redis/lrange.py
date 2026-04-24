@@ -4,7 +4,7 @@ import redis.asyncio
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class RedisLRangeTool(BaseTool):
-    name = "Redis LRANGE"
+    name = "redis_lrange"
     description = "Get a range of elements from a list stored at a key in Redis."
     category = "integration"
 

@@ -4,7 +4,7 @@ import base64
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GongInteractionStatsTool(BaseTool):
-    name = "Gong Interaction Stats"
+    name = "gong_interaction_stats"
     description = "Retrieve interaction statistics for users by date range from Gong. Only includes calls with Whisper enabled."
     category = "integration"
 

@@ -4,8 +4,11 @@ import base64
 import os
 import time
 from urllib.parse import urlencode
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+try:
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding
+except ImportError:
+    hashes = serialization = padding = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class KalshiGetOrdersTool(BaseTool):
@@ -167,6 +170,9 @@ class KalshiGetOrdersTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if serialization is None or hashes is None or padding is None:
+            return ToolResult(success=False, output="", error="cryptography is not installed. Install it to use Kalshi trading tools.")
+
         key_id, private_key_pem = self._get_credentials(context)
         if self._is_placeholder_token(key_id or "") or self._is_placeholder_token(private_key_pem or ""):
             return ToolResult(success=False, output="", error="Kalshi credentials not configured.")

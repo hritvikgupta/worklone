@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class StripeListCustomersTool(BaseTool):
-    name = "Stripe List Customers"
+    name = "stripe_list_customers"
     description = "List all customers"
     category = "integration"
 

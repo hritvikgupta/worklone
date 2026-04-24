@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DSPyChainOfThoughtTool(BaseTool):
-    name = "DSPy Chain of Thought"
+    name = "dspy_chain_of_thought"
     description = "Run a Chain of Thought prediction using a self-hosted DSPy ChainOfThought program endpoint"
     category = "integration"
 

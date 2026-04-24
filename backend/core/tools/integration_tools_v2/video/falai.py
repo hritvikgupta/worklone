@@ -4,7 +4,7 @@ import asyncio
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class FalaiVideoTool(BaseTool):
-    name = "Fal.ai Video Generation"
+    name = "fal_ai_video_generation"
     description = "Generate videos using Fal.ai platform with access to multiple models including Veo 3.1, Sora 2, Kling 2.5, MiniMax Hailuo, and more"
     category = "integration"
 

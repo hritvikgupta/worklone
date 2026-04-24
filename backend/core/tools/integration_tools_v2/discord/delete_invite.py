@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DiscordDeleteInviteTool(BaseTool):
-    name = "Discord Delete Invite"
+    name = "discord_delete_invite"
     description = "Delete a Discord invite"
     category = "integration"
 

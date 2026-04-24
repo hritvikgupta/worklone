@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class GongListLibraryFoldersTool(BaseTool):
-    name = "Gong List Library Folders"
+    name = "gong_list_library_folders"
     description = "Retrieve library folders from Gong."
     category = "integration"
 

@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class DatadogCancelDowntimeTool(BaseTool):
-    name = "Datadog Cancel Downtime"
+    name = "datadog_cancel_downtime"
     description = "Cancel a scheduled downtime."
     category = "integration"
 

@@ -29,8 +29,8 @@ class ExaFindSimilarLinksTool(BaseTool):
         connection = await resolve_oauth_connection(
             "exa",
             context=context,
-            context_token_keys=("apiKey",},
-            env_token_keys=("EXA_API_KEY",},
+            context_token_keys=("apiKey",),
+            env_token_keys=("EXA_API_KEY",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=False,
         )

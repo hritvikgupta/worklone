@@ -2,12 +2,19 @@ from typing import Any, Dict
 import base64
 import json
 import urllib.parse
-import boto3
-from botocore.exceptions import ClientError, NoCredentialsError
+try:
+    import boto3
+except ImportError:
+    boto3 = None
+try:
+    from botocore.exceptions import ClientError, NoCredentialsError
+except ImportError:
+    ClientError = Exception
+    NoCredentialsError = Exception
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class S3PutObjectTool(BaseTool):
-    name = "S3 Put Object"
+    name = "s3_put_object"
     description = "Upload a file to an AWS S3 bucket"
     category = "integration"
 
@@ -78,6 +85,9 @@ class S3PutObjectTool(BaseTool):
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
         try:
+            if boto3 is None:
+                return ToolResult(success=False, output="", error="boto3 is not installed. Install it to use AWS tools.")
+
             access_key_id = parameters["accessKeyId"]
             secret_access_key = parameters["secretAccessKey"]
             region_name = parameters["region"]

@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection
 
 class ZepGetContextTool(BaseTool):
-    name = "Get User Context"
+    name = "get_user_context"
     description = "Retrieve user context from a thread with summary or basic mode"
     category = "integration"
 

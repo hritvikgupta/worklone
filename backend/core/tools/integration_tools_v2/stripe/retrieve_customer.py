@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class StripeRetrieveCustomerTool(BaseTool):
-    name = "Stripe Retrieve Customer"
+    name = "stripe_retrieve_customer"
     description = "Retrieve an existing customer by ID"
     category = "integration"
 

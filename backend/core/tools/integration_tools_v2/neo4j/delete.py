@@ -1,5 +1,8 @@
 from typing import Any, Dict
-from neo4j import AsyncGraphDatabase
+try:
+    from neo4j import AsyncGraphDatabase
+except ImportError:
+    AsyncGraphDatabase = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class Neo4jDeleteTool(BaseTool):
@@ -55,6 +58,9 @@ class Neo4jDeleteTool(BaseTool):
         }
 
     async def execute(self, parameters: Dict[str, Any], context: dict | None = None) -> ToolResult:
+        if AsyncGraphDatabase is None:
+            return ToolResult(success=False, output="", error="neo4j is not installed. Install it to use Neo4j tools.")
+
         driver = None
         try:
             host: str = parameters["host"]

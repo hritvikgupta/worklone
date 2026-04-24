@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomTagContactTool(BaseTool):
-    name = "Tag Contact in Intercom"
+    name = "tag_contact_in_intercom"
     description = "Add a tag to a specific contact"
     category = "integration"
 

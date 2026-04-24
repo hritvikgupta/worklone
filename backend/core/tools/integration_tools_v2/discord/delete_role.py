@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class DiscordDeleteRoleTool(BaseTool):
-    name = "Discord Delete Role"
+    name = "discord_delete_role"
     description = "Delete a role from a Discord server"
     category = "integration"
 

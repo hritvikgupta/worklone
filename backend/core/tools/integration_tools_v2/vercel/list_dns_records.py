@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class VercelListDnsRecordsTool(BaseTool):
-    name = "Vercel List DNS Records"
+    name = "vercel_list_dns_records"
     description = "List all DNS records for a domain in a Vercel account"
     category = "integration"
 

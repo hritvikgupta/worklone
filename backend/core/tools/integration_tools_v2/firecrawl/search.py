@@ -28,8 +28,8 @@ class FirecrawlSearchTool(BaseTool):
         connection = await resolve_oauth_connection(
             "firecrawl",
             context=context,
-            context_token_keys=("apiKey",},
-            env_token_keys=("FIRECRAWL_API_KEY",},
+            context_token_keys=("apiKey",),
+            env_token_keys=("FIRECRAWL_API_KEY",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=False,
         )

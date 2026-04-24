@@ -3,8 +3,11 @@ import httpx
 import base64
 import time
 import json
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import padding
+try:
+    from cryptography.hazmat.primitives import serialization, hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+except ImportError:
+    serialization = hashes = padding = None
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class KalshiCreateOrderTool(BaseTool):
@@ -132,6 +135,9 @@ class KalshiCreateOrderTool(BaseTool):
         }
 
     async def execute(self, parameters: dict, context: dict = None) -> ToolResult:
+        if serialization is None or hashes is None or padding is None:
+            return ToolResult(success=False, output="", error="cryptography is not installed. Install it to use Kalshi trading tools.")
+
         key_id = parameters.get("keyId")
         private_key = parameters.get("privateKey")
         if self._is_placeholder_token(key_id) or self._is_placeholder_token(private_key):

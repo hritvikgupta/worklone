@@ -6,7 +6,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GoogleBigQueryListDatasetsTool(BaseTool):
-    name = "BigQuery List Datasets"
+    name = "bigquery_list_datasets"
     description = "List all datasets in a Google BigQuery project"
     category = "integration"
 
@@ -27,8 +27,7 @@ class GoogleBigQueryListDatasetsTool(BaseTool):
         ]
 
     async def _resolve_access_token(self, context: dict | None) -> str:
-        connection = await resolve_oauth_connection(
-            "google",
+        connection = await resolve_oauth_connection("google_bigquery",
             context=context,
             context_token_keys=("access_token",),
             env_token_keys=("GOOGLE_BIGQUERY_ACCESS_TOKEN",),

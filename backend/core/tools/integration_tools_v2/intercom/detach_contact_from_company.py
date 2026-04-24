@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IntercomDetachContactFromCompanyTool(BaseTool):
-    name = "Detach Contact from Company in Intercom"
+    name = "detach_contact_from_company_in_intercom"
     description = "Remove a contact from a company in Intercom"
     category = "integration"
 
@@ -29,8 +29,8 @@ class IntercomDetachContactFromCompanyTool(BaseTool):
         connection = await resolve_oauth_connection(
             "intercom",
             context=context,
-            context_token_keys=("provider_token",},
-            env_token_keys=("INTERCOM_ACCESS_TOKEN",},
+            context_token_keys=("provider_token",),
+            env_token_keys=("INTERCOM_ACCESS_TOKEN",),
             placeholder_predicate=self._is_placeholder_token,
             allow_refresh=True,
         )

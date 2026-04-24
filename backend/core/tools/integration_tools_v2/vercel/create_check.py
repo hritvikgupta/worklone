@@ -3,7 +3,7 @@ import httpx
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class VercelCreateCheckTool(BaseTool):
-    name = "Vercel Create Check"
+    name = "vercel_create_check"
     description = "Create a new deployment check"
     category = "integration"
 

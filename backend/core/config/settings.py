@@ -22,7 +22,10 @@ def get_settings() -> AppSettings:
     log_level = os.getenv("LOG_LEVEL", "INFO").strip().upper() or "INFO"
     include_request_id = os.getenv("LOG_INCLUDE_REQUEST_ID", "true").strip().lower() != "false"
     provider_error_body_limit = int(os.getenv("PROVIDER_ERROR_BODY_LIMIT", "600"))
-    deployment_mode = os.getenv("DEPLOYMENT_MODE", "self_hosted").strip().lower() or "self_hosted"
+    # AUTH_MODE takes priority, falls back to DEPLOYMENT_MODE
+    deployment_mode = (
+        os.getenv("AUTH_MODE") or os.getenv("DEPLOYMENT_MODE") or "self_hosted"
+    ).strip().lower()
     if deployment_mode not in {"cloud", "self_hosted"}:
         deployment_mode = "self_hosted"
     return AppSettings(

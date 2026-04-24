@@ -4,7 +4,7 @@ import os
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class ApolloTaskCreateTool(BaseTool):
-    name = "Apollo Create Task"
+    name = "apollo_create_task"
     description = "Create a new task in Apollo"
     category = "integration"
 

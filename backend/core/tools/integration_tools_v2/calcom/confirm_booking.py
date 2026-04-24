@@ -5,7 +5,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class CalcomConfirmBookingTool(BaseTool):
-    name = "Cal.com Confirm Booking"
+    name = "cal_com_confirm_booking"
     description = "Confirm a pending booking that requires confirmation"
     category = "integration"
 

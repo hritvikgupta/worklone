@@ -50,7 +50,13 @@ class GmailSearchTool(BaseTool):
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Search query for emails",
+                    "description": (
+                        "Gmail search query. "
+                        "Use bare keywords (e.g. 'deloitte', 'invoice march') to search subject, body, AND sender — safest default. "
+                        "Use 'from:email@domain.com' ONLY when you know the exact sender address. "
+                        "Use 'subject:keyword' to target the subject line only. "
+                        "Do NOT use 'from:company' to find emails about a company — use a bare keyword."
+                    ),
                 },
                 "maxResults": {
                     "type": "number",

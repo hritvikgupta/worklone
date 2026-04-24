@@ -4,7 +4,7 @@ from typing import Dict
 from backend.core.tools.system_tools.base import BaseTool, ToolResult, CredentialRequirement
 
 class IncidentioWorkflowsDeleteTool(BaseTool):
-    name = "incident.io Workflows Delete"
+    name = "incident_io_workflows_delete"
     description = "Delete a workflow in incident.io."
     category = "integration"
 

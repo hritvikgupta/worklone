@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class IncidentioRolesUpdateTool(BaseTool):
-    name = "Update Incident Role"
+    name = "update_incident_role"
     description = "Update an existing incident role in incident.io"
     category = "integration"
 

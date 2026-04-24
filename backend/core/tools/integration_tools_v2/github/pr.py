@@ -4,7 +4,7 @@ from backend.core.tools.system_tools.base import BaseTool, ToolResult, Credentia
 from backend.lib.oauth.oauth_common import resolve_oauth_connection, refresh_oauth_access_token
 
 class GitHubPrTool(BaseTool):
-    name = "GitHub PR Reader"
+    name = "github_pr_reader"
     description = "Fetch PR details including diff and files changed"
     category = "integration"
 

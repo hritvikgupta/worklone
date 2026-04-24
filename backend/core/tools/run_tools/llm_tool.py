@@ -91,14 +91,17 @@ class LLMTool(BaseTool):
                 error="Prompt is required",
             )
 
-        api_key = os.getenv("OPENROUTER_API_KEY", "")
-        nvidia_api_key = os.getenv("NVIDIA_API_KEY", "")
-
         # Detect provider from model prefix using centralized config
-        from backend.services.llm_config import get_provider_config, detect_provider, get_headers, get_payload_extras
-        
+        from backend.services.llm_config import get_provider_config, detect_provider, get_headers, get_payload_extras, get_user_provider_config
+
+        owner_id = (context or {}).get("owner_id", "")
+        if owner_id:
+            llm_config = get_user_provider_config(owner_id, model)
+            model = llm_config.get("model") or model
+        else:
+            llm_config = get_provider_config(model)
+
         provider_name = detect_provider(model)
-        llm_config = get_provider_config(model)
         effective_api_key = llm_config["api_key"]
         base_url = llm_config["base_url"]
 
