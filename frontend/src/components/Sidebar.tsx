@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, UserRound, BookOpen, MessageSquare, Zap, Github, CalendarClock, FolderOpen, LogOut, Sun, Moon, Briefcase, ChevronDown, Coins, DollarSign, Clock, Settings, Home as HomeIcon } from 'lucide-react';
+import { LayoutDashboard, Users, UserRound, BookOpen, MessageSquare, Zap, Github, CalendarClock, FolderOpen, LogOut, Sun, Moon, Briefcase, ChevronDown, Coins, DollarSign, Clock, Settings, Home as HomeIcon, Swords } from 'lucide-react';
 import { SettingsModal } from '@/src/components/SettingsModal';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +25,7 @@ const navItems = [
   { to: '/current-sprint', label: 'Current Sprint', icon: Zap },
   { to: '/workflows', label: 'Workflows', icon: CalendarClock },
   { to: '/agent-files', label: 'Agent Files', icon: FolderOpen },
+  // { to: '/agent-arena', label: 'Agent Arena', icon: Swords },
   { to: '/teams', label: 'Teams', icon: Users },
   { to: '/skill-library', label: 'Skill Library', icon: BookOpen },
   { to: '/integrations', label: 'Integrations', icon: Github },

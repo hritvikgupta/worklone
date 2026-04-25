@@ -27,8 +27,16 @@ import { AgentsPage } from './components/pages/AgentsPage';
 import { AgentProfilePage } from './components/pages/AgentProfilePage';
 import { AgentWorkspacePage } from './components/pages/AgentWorkspacePage';
 import { SkillLibraryPage } from './components/pages/SkillLibraryPage';
+import { AgentArenaPage } from './components/pages/AgentArenaPage';
 import { OnboardingPage } from './components/OnboardingPage';
 import { getOnboardingStatus } from '@/src/api/onboarding';
+
+function LoginRedirectHandler() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const redirect = params.get('redirect') || '/home';
+  return <Navigate to={redirect} replace />;
+}
 
 function AuthenticatedShell() {
   const location = useLocation();
@@ -90,7 +98,9 @@ function AuthenticatedShell() {
             <Route path="/agent-files" element={<AgentFilesPage />} />
             <Route path="/agents" element={<AgentsPage />} />
             <Route path="/skill-library" element={<SkillLibraryPage />} />
+            <Route path="/agent-arena" element={<AgentArenaPage />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/login" element={<LoginRedirectHandler />} />
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </motion.main>
@@ -192,6 +202,7 @@ export default function App() {
           <Route path="/documentation/:docSlug" element={<DocumentationPage />} />
           <Route path="/waitlist" element={<WaitlistPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/agent-arena" element={<Navigate to="/login?redirect=/agent-arena" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </>
       )}

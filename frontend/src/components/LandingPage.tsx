@@ -215,6 +215,12 @@ export function LandingPage() {
               </div>
             </div>
             <Link
+              to="/agent-arena"
+              className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
+            >
+              Agent Arena
+            </Link>
+            <Link
               to="/documentation"
               className="text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950"
             >
