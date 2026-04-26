@@ -91,6 +91,7 @@ def _workflow_to_summary(workflow) -> dict:
         "created_by_actor_name": workflow.created_by_actor_name,
         "trigger_count": len(workflow.triggers),
         "task_count": len(workflow.tasks) if hasattr(workflow, "tasks") else 0,
+        "allowed_tools": workflow.allowed_tools if hasattr(workflow, "allowed_tools") else [],
     }
 
 
@@ -259,6 +260,7 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
+    from backend.core.tools.catalog import create_all_tools
     from backend.core.tools.run_tools.llm_tool import LLMTool
     from backend.core.workflows.utils import generate_id
     from backend.services.llm_config import get_user_provider_config
@@ -269,6 +271,9 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
     resolved_model = user_cfg.get("model") or request.model or "qwen/qwen3-max-thinking"
 
     llm = LLMTool()
+    available_tool_names = sorted({tool.name for tool in create_all_tools()})
+    available_tool_set = set(available_tool_names)
+    available_tools_text = ", ".join(available_tool_names)
 
     sys_prompt = f"""
     You are an expert workflow architect. Parse the user's prompt into a JSON workflow definition.
@@ -281,11 +286,18 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
         "name": "Short descriptive name",
         "description": "Clear description of what it does",
         "schedule": "cron expression if requested, or null",
+        "allowed_tools": [
+            "tool_name_1",
+            "tool_name_2"
+        ],
         "tasks": [
             "Step 1 natural language description",
             "Step 2 natural language description"
         ]
     }}
+
+    Choose allowed_tools using only names from this catalog:
+    {available_tools_text}
     """
 
     response = await llm.execute({
@@ -324,6 +336,11 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
         ) from e
         
     workflow_id = generate_id("wf")
+    requested_tools = wf_data.get("allowed_tools", []) or []
+    if not isinstance(requested_tools, list):
+        requested_tools = []
+    requested_tools = [str(t).strip() for t in requested_tools if str(t).strip()]
+    allowed_tools = [t for t in dict.fromkeys(requested_tools) if t in available_tool_set]
     
     # Store workflow
     workflow = store.create_workflow(
@@ -331,7 +348,8 @@ async def generate_workflow(request: GenerateRequest, user=Depends(get_current_u
         name=wf_data.get("name", "Generated Workflow"),
         description=wf_data.get("description", ""),
         user_id=user["id"],
-        tasks=wf_data.get("tasks", [])
+        tasks=wf_data.get("tasks", []),
+        allowed_tools=allowed_tools,
     )
     
     # Add schedule trigger if parsed
@@ -409,6 +427,7 @@ class UpdateWorkflowRequest(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     tasks: Optional[list[dict]] = None  # [{"id": "...", "description": "...", "status": "..."}]
+    allowed_tools: Optional[list[str]] = None
 
 @router.put("/workflows/{workflow_id}")
 async def update_workflow(workflow_id: str, request: UpdateWorkflowRequest, user=Depends(get_current_user)):
@@ -416,6 +435,7 @@ async def update_workflow(workflow_id: str, request: UpdateWorkflowRequest, user
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
+    from backend.core.tools.catalog import create_all_tools
     from backend.core.workflows.types import Trigger, TriggerType, SchedulePreset, WorkflowStatus
     from backend.core.workflows.schedules.normalize import next_run_from_cron
     from backend.core.workflows.utils import generate_id as gen_id
@@ -498,6 +518,11 @@ async def update_workflow(workflow_id: str, request: UpdateWorkflowRequest, user
                 error=t_data.get("error", "")
             ))
         workflow.tasks = new_tasks
+
+    if request.allowed_tools is not None:
+        available = {tool.name for tool in create_all_tools()}
+        cleaned = [str(t).strip() for t in request.allowed_tools if str(t).strip()]
+        workflow.allowed_tools = [t for t in dict.fromkeys(cleaned) if t in available]
 
     workflow.updated_at = datetime.now()
     store.save_workflow(workflow)

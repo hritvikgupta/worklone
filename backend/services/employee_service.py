@@ -182,6 +182,20 @@ class EmployeeService:
                 output = str(sanitized_event.get("output") or "")
                 if output.strip():
                     thinking_parts.append(output)
+            elif sanitized_event.get("type") == "confirmation_required":
+                # Save the intermediate assistant message before the pause
+                confirm_msg = str(sanitized_event.get("message") or "")
+                if session_id and confirm_msg:
+                    thinking = "\n\n".join(part.strip() for part in thinking_parts if part.strip()) or None
+                    self.db.save_message(
+                        session_id=session_id,
+                        role="assistant",
+                        content=confirm_msg,
+                        model=model,
+                        thinking=thinking,
+                    )
+                # Reset for the next phase after resume
+                thinking_parts = []
             elif sanitized_event.get("type") == "final":
                 final_response = str(sanitized_event.get("content") or "").strip()
 

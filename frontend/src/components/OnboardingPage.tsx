@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { Check, ChevronDown, Eye, EyeOff, Key, Loader2, Search } from 'lucide-react'
+import { getIntegrations } from '@/lib/auth-api'
 import { saveOnboardingProfile } from '@/src/api/onboarding'
 import {
   listLLMProviders,
@@ -65,6 +66,7 @@ export function OnboardingPage({ onCompleted }: Props) {
   const [modelQuery, setModelQuery] = useState('')
   const [llmSaving, setLlmSaving] = useState(false)
   const [llmError, setLlmError] = useState('')
+  const [deploymentMode, setDeploymentMode] = useState<'cloud' | 'self_hosted'>('self_hosted')
 
   useEffect(() => {
     setLoading(true)
@@ -149,7 +151,7 @@ export function OnboardingPage({ onCompleted }: Props) {
       setLlmError('Select a provider')
       return
     }
-    if (!apiKey && !hasExistingKey) {
+    if (deploymentMode !== 'cloud' && !apiKey && !hasExistingKey) {
       setLlmError('Enter your API key')
       return
     }
@@ -263,32 +265,34 @@ export function OnboardingPage({ onCompleted }: Props) {
                         </Select>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <Label className="text-sm text-foreground">API Key</Label>
-                        <div className="relative">
-                          <Input
-                            type={showKey ? 'text' : 'password'}
-                            value={apiKey}
-                            onChange={e => setApiKey(e.target.value)}
-                            placeholder={hasExistingKey ? '••••••••  (saved — enter new to replace)' : 'sk-...'}
-                            className="h-10 text-sm pr-10"
-                            autoComplete="new-password"
-                            data-form-type="other"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowKey((s) => !s)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
+                      {deploymentMode !== 'cloud' && (
+                        <div className="space-y-1.5">
+                          <Label className="text-sm text-foreground">API Key</Label>
+                          <div className="relative">
+                            <Input
+                              type={showKey ? 'text' : 'password'}
+                              value={apiKey}
+                              onChange={e => setApiKey(e.target.value)}
+                              placeholder={hasExistingKey ? '••••••••  (saved — enter new to replace)' : 'sk-...'}
+                              className="h-10 text-sm pr-10"
+                              autoComplete="new-password"
+                              data-form-type="other"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowKey((s) => !s)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          {hasExistingKey && !apiKey && (
+                            <p className="text-xs text-emerald-600 flex items-center gap-1">
+                              <Check className="w-3 h-3" /> API key saved
+                            </p>
+                          )}
                         </div>
-                        {hasExistingKey && !apiKey && (
-                          <p className="text-xs text-emerald-600 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> API key saved
-                          </p>
-                        )}
-                      </div>
+                      )}
 
                       <div className="space-y-1.5">
                         <Label className="text-sm text-foreground">Default Model</Label>

@@ -65,6 +65,7 @@ class WorkflowStore:
                 handoff_actor_id TEXT DEFAULT '',
                 handoff_actor_name TEXT DEFAULT '',
                 handoff_at TEXT,
+                allowed_tools TEXT DEFAULT '[]',
                 variables TEXT DEFAULT '{}',
                 is_published INTEGER DEFAULT 0,
                 created_at TEXT,
@@ -297,6 +298,7 @@ class WorkflowStore:
         self._ensure_column(conn, "workflows", "handoff_actor_id", "TEXT DEFAULT ''")
         self._ensure_column(conn, "workflows", "handoff_actor_name", "TEXT DEFAULT ''")
         self._ensure_column(conn, "workflows", "handoff_at", "TEXT")
+        self._ensure_column(conn, "workflows", "allowed_tools", "TEXT DEFAULT '[]'")
         conn.commit()
         conn.close()
         logger.info(f"Database initialized: {self.db_path}")
@@ -473,14 +475,15 @@ class WorkflowStore:
                 (id, name, description, version, owner_id, status,
                  created_by_actor_type, created_by_actor_id, created_by_actor_name,
                  handoff_actor_type, handoff_actor_id, handoff_actor_name, handoff_at,
-                 variables, is_published, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 allowed_tools, variables, is_published, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 workflow.id, workflow.name, workflow.description,
                 workflow.version, workflow.owner_id, workflow.status.value,
                 workflow.created_by_actor_type, workflow.created_by_actor_id, workflow.created_by_actor_name,
                 workflow.handoff_actor_type, workflow.handoff_actor_id, workflow.handoff_actor_name,
                 workflow.handoff_at.isoformat() if workflow.handoff_at else None,
+                json.dumps(workflow.allowed_tools or []),
                 json.dumps(workflow.variables),
                 1 if workflow.is_published else 0,
                 workflow.created_at.isoformat(),
@@ -553,6 +556,7 @@ class WorkflowStore:
                 handoff_actor_id=row["handoff_actor_id"] or "",
                 handoff_actor_name=row["handoff_actor_name"] or "",
                 handoff_at=datetime.fromisoformat(row["handoff_at"]) if row["handoff_at"] else None,
+                allowed_tools=json.loads(row["allowed_tools"] or "[]"),
                 variables=json.loads(row["variables"]),
                 is_published=bool(row["is_published"]),
                 created_at=datetime.fromisoformat(row["created_at"]),
@@ -627,6 +631,7 @@ class WorkflowStore:
                     handoff_actor_id=r["handoff_actor_id"] or "",
                     handoff_actor_name=r["handoff_actor_name"] or "",
                     handoff_at=datetime.fromisoformat(r["handoff_at"]) if r["handoff_at"] else None,
+                    allowed_tools=json.loads(r["allowed_tools"] or "[]"),
                     variables=json.loads(r["variables"]),
                     is_published=bool(r["is_published"]),
                     created_at=datetime.fromisoformat(r["created_at"]),
@@ -689,6 +694,7 @@ class WorkflowStore:
         created_by_actor_id: str = "",
         created_by_actor_name: str = "",
         tasks: list[str] = None,
+        allowed_tools: list[str] | None = None,
     ) -> Workflow:
         from backend.core.workflows.types import WorkflowTask, WorkflowTaskStatus
         from backend.core.workflows.utils import generate_id
@@ -714,6 +720,7 @@ class WorkflowStore:
             created_by_actor_id=created_by_actor_id,
             created_by_actor_name=created_by_actor_name,
             tasks=workflow_tasks,
+            allowed_tools=allowed_tools or [],
             created_at=now,
             updated_at=now,
         )
@@ -903,6 +910,7 @@ class WorkflowStore:
                 "handoff_actor_id": workflow.handoff_actor_id,
                 "handoff_actor_name": workflow.handoff_actor_name,
                 "handoff_at": workflow.handoff_at.isoformat() if workflow.handoff_at else None,
+                "allowed_tools": workflow.allowed_tools or [],
             }
             for workflow in self.list_workflows(owner_id)
         ]

@@ -3,7 +3,7 @@
 Agentic Workflow Executor.
 
 This replaces the old DAG executor. It spawns a Coworker agent 
-(with access to all tools) that iterates through the sequential tasks 
+(with workflow-scoped tool access) that iterates through the sequential tasks 
 of a workflow, completing them one by one.
 """
 

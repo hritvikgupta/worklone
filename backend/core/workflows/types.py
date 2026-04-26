@@ -220,6 +220,7 @@ class Workflow:
     handoff_actor_name: str = ""
     handoff_at: Optional[datetime] = None
     tasks: list[WorkflowTask] = field(default_factory=list)
+    allowed_tools: list[str] = field(default_factory=list)
     triggers: list[Trigger] = field(default_factory=list)
     variables: dict = field(default_factory=dict)
     is_published: bool = False  # Only published workflows can be triggered

@@ -121,6 +121,18 @@ export function AgentList({ agents, onAgentClick, selectedAgentId, onRename, onD
                         <MessageSquare className="h-3.5 w-3.5" />
                         Chat
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 gap-1.5 px-2 text-[11px] text-rose-600 hover:text-rose-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete?.(agent);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button

@@ -33,10 +33,8 @@ const CONFIGURED_INTEGRATION_IDS = new Set([
   // OAuth providers (original)
   "google","slack","notion","github","jira","salesforce","linear","hubspot","stripe","google_drive","google_calendar",
   // OAuth providers (new)
-  "airtable","asana","attio","box","box_sign","calcom","confluence","docusign","dropbox",
+  "airtable","asana","attio","box","box_sign","calcom","dropbox",
   "google_ads","google_bigquery","google_docs","google_forms","google_meet","google_sheets","google_slides","google_tasks",
-  "microsoft_dataverse","microsoft_excel","microsoft_planner","microsoft_teams","outlook",
-  "pipedrive","reddit","shopify","webflow","wordpress","x","zoom",
   // API key providers
   "agentmail","ahrefs","airweave","apollo","ashby","cursor","datadog","devin","discord",
   "evernote","exa","extend","firecrawl","gamma","gitlab","gong","google_maps","granola",

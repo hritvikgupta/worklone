@@ -26,11 +26,7 @@ import {
   Mic,
 } from "lucide-react"
 import { createPortal } from "react-dom"
-import {
-  ChainOfThought,
-  ChainOfThoughtStep,
-  ChainOfThoughtTrigger,
-} from "@/components/ui/chain-of-thought"
+import { Sparkles, Wrench, AlertCircle } from "lucide-react"
 import type {
   ChatUser,
   ChatConfig,
@@ -299,6 +295,73 @@ function ChatMessageReply({
   )
 }
 
+// ─── ActivityList ─────────────────────────────────────────────────────────────
+
+function ActivityStep({ activity }: { activity: NonNullable<ChatMessageData['activities']>[number] }) {
+  const isRunning = activity.status === 'running'
+  const isError = activity.status === 'error'
+  const isTool = activity.type === 'tool'
+  const [open, setOpen] = React.useState(isRunning)
+
+  React.useEffect(() => { if (isRunning) setOpen(true) }, [isRunning])
+
+  if (!isTool) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--chat-text-tertiary)] hover:text-[var(--chat-text-secondary)] transition-colors"
+        >
+          <Sparkles className="h-2.5 w-2.5 shrink-0" />
+          <span>{isRunning ? 'Thinking…' : 'Thought'}</span>
+          {open ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
+        </button>
+        {open && activity.label && (
+          <div className="mt-1 pl-3 border-l-2 border-[var(--chat-border)] text-[11.5px] leading-[1.55] text-[var(--chat-text-tertiary)] whitespace-pre-wrap">
+            {activity.label}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-[5px] text-[12px] font-medium transition-colors cursor-pointer",
+          isError
+            ? "border-red-300/60 text-red-500 bg-red-500/5"
+            : "border-[var(--chat-border-strong)] text-[var(--chat-text-secondary)] bg-[var(--chat-bg-sidebar)] hover:bg-[var(--chat-accent-soft)]"
+        )}
+      >
+        {isError
+          ? <AlertCircle className="h-3 w-3 shrink-0 text-red-400" />
+          : <Wrench className="h-3 w-3 shrink-0 text-[var(--chat-text-tertiary)]" />
+        }
+        <span className="max-w-[180px] truncate">{activity.label}</span>
+        {activity.meta && (
+          <span className="font-normal text-[11px] text-[var(--chat-text-tertiary)] max-w-[100px] truncate">· {activity.meta}</span>
+        )}
+        {isRunning && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" />}
+        {!isRunning && !isError && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />}
+        {open ? <ChevronDown className="h-3 w-3 shrink-0 opacity-40" /> : <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />}
+      </button>
+    </div>
+  )
+}
+
+function ActivityList({ activities }: { activities: NonNullable<ChatMessageData['activities']> }) {
+  return (
+    <div className="mb-2 flex flex-col gap-1.5">
+      {activities.map(a => <ActivityStep key={a.id} activity={a} />)}
+    </div>
+  )
+}
+
 // ─── ChatMessage ──────────────────────────────────────────────────────────────
 
 interface ChatMessageProps {
@@ -462,15 +525,7 @@ function ChatMessage({
 
             {/* Chain of thought / agent activity */}
             {!isOutgoing && message.activities && message.activities.length > 0 && (
-              <ChainOfThought defaultOpen={message.activities.some(a => a.status === 'running')}>
-                {message.activities.map((activity) => (
-                  <ChainOfThoughtStep key={activity.id} status={activity.status}>
-                    <ChainOfThoughtTrigger type={activity.type} meta={activity.meta}>
-                      {activity.label}
-                    </ChainOfThoughtTrigger>
-                  </ChainOfThoughtStep>
-                ))}
-              </ChainOfThought>
+              <ActivityList activities={message.activities} />
             )}
 
             {/* Text content */}

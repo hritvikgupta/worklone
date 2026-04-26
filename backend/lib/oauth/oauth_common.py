@@ -17,14 +17,19 @@ from backend.db.stores.auth_store import AuthDB
 from backend.db.stores.workflow_store import WorkflowStore
 
 
+def _is_google_family_provider(provider: str) -> bool:
+    normalized = provider.strip().lower().replace("-", "_")
+    return normalized in {"google", "gmail", "google_email"} or normalized.startswith("google_")
+
+
 def _get_provider_env_value(provider: str, suffix: str) -> str:
     provider_upper = provider.upper().replace("-", "_")
     candidates = [
         f"PROVIDER_{provider_upper}_{suffix}",
         f"{provider_upper}_{suffix}",
     ]
-    # Google Drive and Calendar share the same OAuth app credentials as Gmail
-    if provider_upper in ("GOOGLE_DRIVE", "GOOGLE_CALENDAR"):
+    # All Google-family tools share the same OAuth app credentials.
+    if _is_google_family_provider(provider):
         candidates += [f"PROVIDER_GOOGLE_{suffix}", f"GOOGLE_{suffix}"]
     for key in candidates:
         value = os.getenv(key, "").strip()
@@ -47,7 +52,18 @@ def _canonical_provider(provider: str) -> str:
 
 
 def _provider_credential_namespace(provider: str) -> str:
+    normalized = provider.strip().lower().replace("-", "_")
+    if _is_google_family_provider(provider):
+        return "google"
     return _canonical_provider(provider)
+
+
+def _provider_credential_names(provider: str) -> tuple[str, ...]:
+    normalized = provider.strip().lower().replace("-", "_")
+    namespace = _provider_credential_namespace(provider)
+    if namespace == normalized:
+        return (normalized,)
+    return (normalized, namespace)
 
 
 def _oauth_cred_key(provider: str, suffix: str) -> str:
@@ -58,7 +74,12 @@ def _get_provider_user_value(user_id: str, provider: str, suffix: str) -> str:
     if not user_id:
         return ""
     store = WorkflowStore()
-    return (store.get_credential(user_id, _oauth_cred_key(provider, suffix)) or "").strip()
+    suffix_key = suffix.lower()
+    for namespace in _provider_credential_names(provider):
+        value = (store.get_credential(user_id, f"oauth_{suffix_key}_{namespace}") or "").strip()
+        if value:
+            return value
+    return ""
 
 
 def _resolve_provider_client_value(user_id: str, provider: str, suffix: str) -> str:
@@ -161,7 +182,7 @@ async def refresh_oauth_access_token(connection: OAuthConnection) -> str:
     if not refresh_token or not client_id or not client_secret:
         return ""
 
-    if provider in ("google", "google-drive", "google_drive", "google-calendar", "google_calendar"):
+    if _is_google_family_provider(provider):
         url = "https://oauth2.googleapis.com/token"
         request_kwargs: dict[str, Any] = {
             "data": {

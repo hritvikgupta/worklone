@@ -26,6 +26,7 @@ import {
   Play,
   Pause,
   Mic,
+  Wrench,
 } from "lucide-react"
 import { createPortal } from "react-dom"
 import type {
@@ -51,6 +52,45 @@ import {
   ChainOfThoughtTrigger,
 } from "@/components/prompt-kit/chain-of-thought"
 import { ListChecks } from "lucide-react"
+
+// ─── Activity UI ─────────────────────────────────────────────────────────────
+
+function ThinkingStep({ text, done }: { text: string; done?: boolean }) {
+  if (!text) return null
+  return (
+    <div className="text-[12px] leading-[1.6] text-neutral-400 whitespace-pre-wrap italic">
+      {text}
+    </div>
+  )
+}
+
+function ActivityStep({ activity }: { activity: NonNullable<ChatMessageData['activities']>[number] }) {
+  const isRunning = activity.status === 'running'
+  const isError = activity.status === 'error'
+  const isTool = activity.type === 'tool'
+
+  if (!isTool) return <ThinkingStep text={activity.label} done={!isRunning} />
+
+  return (
+    <div
+      className={cn(
+        "inline-flex items-center gap-2 border px-3 py-[6px] text-[12px] font-medium",
+        isError
+          ? "border-red-300/60 text-red-500 bg-red-500/5"
+          : "border-[var(--chat-border-strong)] text-[var(--chat-text-secondary)] bg-[var(--chat-bg-sidebar)]"
+      )}
+    >
+      <Wrench className="h-3 w-3 shrink-0 text-[var(--chat-text-tertiary)]" />
+      <span className="max-w-[220px] truncate">{activity.label}</span>
+      {activity.meta && (
+        <span className="font-normal text-[11px] text-[var(--chat-text-tertiary)] max-w-[140px] truncate">· {activity.meta}</span>
+      )}
+      {isRunning && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 animate-pulse" />}
+      {!isRunning && !isError && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />}
+      {isError && <AlertCircle className="h-3 w-3 shrink-0 text-red-400" />}
+    </div>
+  )
+}
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -462,57 +502,15 @@ function ChatMessage({
               />
             )}
 
-            {/* Chain of Thought / Activities */}
-            {!isOutgoing && message.activities && message.activities.length > 0 ? (
-              <div className="mb-2 w-full max-w-full">
-                <ChainOfThought defaultExpanded={message.activities.some(a => a.status === 'running')}>
-                  {message.activities.map((activity) => (
-                    <ChainOfThoughtStep key={activity.id}>
-                      <ChainOfThoughtTrigger>
-                        <span className="flex items-center gap-2">
-                          {activity.status === 'running' ? (
-                            <span className="block h-2.5 w-2.5 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                          ) : activity.status === 'error' ? (
-                            <AlertCircle className="h-3 w-3 text-red-400" />
-                          ) : (
-                            <Check className="h-3 w-3 text-emerald-400" />
-                          )}
-                          {activity.label}
-                          {activity.meta && (
-                            <span className="text-[10px] opacity-60">· {activity.meta}</span>
-                          )}
-                        </span>
-                      </ChainOfThoughtTrigger>
-                      {(activity.detail || activity.meta) && (
-                        <ChainOfThoughtContent>
-                          {activity.meta && (
-                            <ChainOfThoughtItem>
-                              {activity.meta}
-                            </ChainOfThoughtItem>
-                          )}
-                          {activity.status === 'error' && activity.detail && (
-                            <ChainOfThoughtItem>
-                              <span className="text-red-400">{activity.detail}</span>
-                            </ChainOfThoughtItem>
-                          )}
-                        </ChainOfThoughtContent>
-                      )}
-                    </ChainOfThoughtStep>
-                  ))}
-                </ChainOfThought>
-              </div>
-            ) : !isOutgoing && message.thinking ? (
-              <div className="mb-2 w-full max-w-full">
-                <ChainOfThought defaultExpanded={false}>
-                  <ChainOfThoughtStep>
-                    <ChainOfThoughtTrigger>Reasoning through the next step</ChainOfThoughtTrigger>
-                    <ChainOfThoughtContent>
-                      <ChainOfThoughtItem>
-                        <span className="whitespace-pre-wrap">{message.thinking}</span>
-                      </ChainOfThoughtItem>
-                    </ChainOfThoughtContent>
-                  </ChainOfThoughtStep>
-                </ChainOfThought>
+            {/* Activities / thinking */}
+            {!isOutgoing && (message.activities?.length || message.thinking) ? (
+              <div className="mb-2 flex flex-col gap-1.5">
+                {(message.activities || []).map((activity) => (
+                  <ActivityStep key={activity.id} activity={activity} />
+                ))}
+                {!message.activities?.length && message.thinking && (
+                  <ThinkingStep text={message.thinking} done />
+                )}
               </div>
             ) : null}
 

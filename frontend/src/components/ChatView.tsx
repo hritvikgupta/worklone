@@ -106,6 +106,7 @@ export function ChatView() {
   const [isResuming, setIsResuming] = useState(false);
 
   const isStreamingRef = useRef(false);
+  const pendingNewAssistantRef = useRef<{ id: string; employeeId: string; senderName: string } | null>(null);
 
   useEffect(() => {
     async function fetchEmployees() {
@@ -209,23 +210,79 @@ export function ChatView() {
 
   const handlePlanDecision = async (approved: boolean) => {
     if (!pendingResume) return;
+    const captured = pendingResume;
+    setPendingResume(null);
     setIsResuming(true);
+
+    // Add user bubble
+    const userMsg: ChatMessageData = {
+      id: `user-${Date.now()}`,
+      senderId: 'currentUser',
+      senderName: 'You',
+      text: approved ? 'Approved' : 'Rejected',
+      timestamp: new Date(),
+      status: 'read',
+    };
+    // Add new empty assistant bubble for the next phase
+    const next = pendingNewAssistantRef.current;
+    pendingNewAssistantRef.current = null;
+    setMessages(prev => {
+      const msgs = prev[captured.employeeId] || [];
+      const newMsgs: ChatMessageData[] = [userMsg];
+      if (next) {
+        newMsgs.push({ id: next.id, senderId: captured.employeeId, senderName: next.senderName, text: '', timestamp: new Date(), status: 'sending', activities: [] });
+      }
+      return { ...prev, [captured.employeeId]: [...msgs, ...newMsgs] };
+    });
+    setActivePlans(prev => {
+      const plan = prev[captured.employeeId];
+      if (!plan) return prev;
+      return { ...prev, [captured.employeeId]: { ...plan, status: approved ? 'approved' : 'proposed' } };
+    });
+
     try {
-      await resumeEmployeeChat(pendingResume.employeeId, {
+      await resumeEmployeeChat(captured.employeeId, {
         approved,
         message: approved ? 'Approved' : 'Rejected',
-        session_id: pendingResume.sessionId,
-      });
-      setActivePlans(prev => {
-        const plan = prev[pendingResume.employeeId];
-        if (!plan) return prev;
-        return { ...prev, [pendingResume.employeeId]: { ...plan, status: approved ? 'approved' : 'proposed' } };
+        session_id: captured.sessionId,
       });
     } catch (e) {
       console.error('Failed to resume:', e);
     } finally {
-      setPendingResume(null);
       setIsResuming(false);
+    }
+  };
+
+  const handleResumeWithInput = async (employeeId: string, text: string) => {
+    if (!pendingResume || pendingResume.employeeId !== employeeId) return;
+    const captured = pendingResume;
+    setPendingResume(null);
+    const userMsg: ChatMessageData = {
+      id: `user-${Date.now()}`,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      text,
+      timestamp: new Date(),
+      status: 'read',
+    };
+    const next = pendingNewAssistantRef.current;
+    pendingNewAssistantRef.current = null;
+    setMessages(prev => {
+      const msgs = prev[employeeId] || [];
+      const newMsgs: ChatMessageData[] = [userMsg];
+      if (next) {
+        newMsgs.push({ id: next.id, senderId: employeeId, senderName: next.senderName, text: '', timestamp: new Date(), status: 'sending', activities: [] });
+      }
+      return { ...prev, [employeeId]: [...msgs, ...newMsgs] };
+    });
+    try {
+      await resumeEmployeeChat(captured.employeeId, {
+        approved: true,
+        message: text,
+        session_id: captured.sessionId,
+      });
+    } catch (e) {
+      console.error('Failed to resume with input:', e);
     }
   };
 
@@ -269,6 +326,7 @@ export function ChatView() {
     isStreamingRef.current = true;
 
     const assistantMessageId = `assistant-${Date.now()}`;
+    let currentAssistantId = assistantMessageId;
     const assistantMessage: ChatMessageData = {
       id: assistantMessageId,
       senderId: employeeId,
@@ -293,7 +351,32 @@ export function ChatView() {
       let answerBuffer = '';
       let thinkingBuffer = '';
       let activities: NonNullable<ChatMessageData['activities']> = [];
-      
+      let toolsCompletedSinceLastThink = 0;
+
+      const advancePlanTask = (toStatus: 'in_progress' | 'done') => {
+        setActivePlans(prev => {
+          const plan = prev[employeeId];
+          if (!plan || plan.status === 'proposed' || plan.status === 'completed') return prev;
+          if (toStatus === 'in_progress') {
+            const firstTodo = plan.tasks.findIndex(t => t.status === 'todo');
+            if (firstTodo < 0 || plan.tasks.some(t => t.status === 'in_progress')) return prev;
+            const nextTasks = plan.tasks.map((t, i) => i === firstTodo ? { ...t, status: 'in_progress' } : t);
+            return { ...prev, [employeeId]: { ...plan, tasks: nextTasks } };
+          } else {
+            const inProg = plan.tasks.findIndex(t => t.status === 'in_progress');
+            if (inProg < 0) return prev;
+            const nextTasks = plan.tasks.map((t, i) => {
+              if (i === inProg) return { ...t, status: 'done' };
+              return t;
+            });
+            const nextTodo = nextTasks.findIndex(t => t.status === 'todo');
+            if (nextTodo >= 0) nextTasks[nextTodo] = { ...nextTasks[nextTodo], status: 'in_progress' };
+            const allDone = nextTasks.every(t => t.status === 'done');
+            return { ...prev, [employeeId]: { ...plan, status: allDone ? 'completed' : 'running', tasks: nextTasks } };
+          }
+        });
+      };
+
       const stream = streamEmployeeChatEvents(employeeId, {
         message: text,
         conversation_history: history,
@@ -312,7 +395,7 @@ export function ChatView() {
             return {
               ...prev,
               [employeeId]: convoMessages.map(m =>
-                m.id === assistantMessageId ? {
+                m.id === currentAssistantId ? {
                   ...m,
                   text: answerBuffer,
                   status: 'sending',
@@ -345,6 +428,13 @@ export function ChatView() {
         if (event.type === 'thinking') {
           const thought = event.content || '';
           if (thought) {
+            // Advance task when a new think cycle starts after tools ran
+            if (toolsCompletedSinceLastThink > 0) {
+              advancePlanTask('done');
+            } else {
+              advancePlanTask('in_progress');
+            }
+            toolsCompletedSinceLastThink = 0;
             thinkingBuffer += `${thought}\n\n`;
             answerBuffer = '';
             activities = activities.map(a =>
@@ -425,10 +515,12 @@ export function ChatView() {
               detail: event.success === false ? (event.message || event.output || 'Tool failed') : undefined,
             };
           }
+          if (event.success !== false && event.tool !== 'manage_tasks') {
+            toolsCompletedSinceLastThink++;
+          }
         } else if (event.type === 'confirmation_required') {
           const confirmMsg = event.message || 'Waiting for your approval to continue.';
           const askType = event.ask_type || 'approval';
-          // Update plan with the ask_user message as description
           if (event.plan) {
             setActivePlans(prev => ({
               ...prev,
@@ -441,9 +533,24 @@ export function ChatView() {
               },
             }));
           }
-          // Show the agent's question as the answer bubble
-          answerBuffer = confirmMsg;
-          activities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
+          // Finalize the current assistant bubble with the question text
+          const doneActivities = activities.map(a => a.status === 'running' ? { ...a, status: 'done' } : a);
+          const finishedId = currentAssistantId;
+          setMessages(prev => ({
+            ...prev,
+            [employeeId]: (prev[employeeId] || []).map(m =>
+              m.id === finishedId ? { ...m, text: confirmMsg, activities: doneActivities, status: 'read' } : m
+            ),
+          }));
+          // Prepare a new assistant bubble for the next phase (added to state by handlePlanDecision/handleResumeWithInput)
+          const nextId = `assistant-${Date.now()}-r`;
+          currentAssistantId = nextId;
+          pendingNewAssistantRef.current = { id: nextId, employeeId, senderName: activeEmployee.name };
+          // Reset buffers for next phase
+          answerBuffer = '';
+          activities = [];
+          thinkingBuffer = '';
+          toolsCompletedSinceLastThink = 0;
           setIsLoading(false);
           setPendingResume({
             employeeId,
@@ -496,12 +603,12 @@ export function ChatView() {
           const convoMessages = prev[employeeId] || [];
           return {
             ...prev,
-            [employeeId]: convoMessages.map(m => 
-              m.id === assistantMessageId ? { 
-                ...m, 
+            [employeeId]: convoMessages.map(m =>
+              m.id === currentAssistantId ? {
+                ...m,
                 text: answerBuffer,
                 thinking: thinkingBuffer || undefined,
-                activities: [...activities] 
+                activities: [...activities]
               } : m
             )
           };
@@ -522,7 +629,7 @@ export function ChatView() {
           ...prev,
           [employeeId]: convoMessages.map(m => {
             if (m.id === userMessage.id) return { ...m, status: 'read' };
-            if (m.id === assistantMessageId) return { ...m, status: 'read' };
+            if (m.id === currentAssistantId) return { ...m, status: 'read' };
             return m;
           })
         };
@@ -722,6 +829,13 @@ export function ChatView() {
                     </div>
                   )}
 
+                  {pendingResume && pendingResume.employeeId === employeeId && pendingResume.askType === 'input' && (
+                    <div className="flex items-center gap-2 border-t border-[var(--chat-border)] px-2.5 py-2 text-[11px] text-[var(--chat-text-secondary)]">
+                      <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+                      Type your response in the message box below
+                    </div>
+                  )}
+
                   {pendingResume && pendingResume.employeeId === employeeId && pendingResume.askType === 'approval' && selectedPlan.status !== 'approved' && selectedPlan.status !== 'running' && selectedPlan.status !== 'completed' && (
                     <div className="flex items-center justify-end gap-2 border-t border-[var(--chat-border)] px-2.5 py-2">
                       <Button
@@ -755,6 +869,8 @@ export function ChatView() {
           const busyLabel = paneBusyCtx
             ? `${activeEmployee?.name || 'Employee'} is busy on ${paneBusyCtx.kind}${paneBusyCtx.run_id ? ` · ${paneBusyCtx.run_id}` : ''} — please wait`
             : `${activeEmployee?.name || 'Employee'} is busy — please wait`;
+          const hasInputPending = pendingResume?.employeeId === employeeId && pendingResume.askType === 'input';
+          const isComposerDisabled = paneBusy && !hasInputPending;
 
           const composerBanner = paneBusy ? (
             <div className="shrink-0 border-t border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-medium text-amber-800">
@@ -785,11 +901,14 @@ export function ChatView() {
                   onSelectConversation={() => {}}
                   messages={messages[employeeId] || []}
                   onSend={(text) => {
-                    if (paneBusy) return;
-                    void handleSend(employeeId, text);
+                    if (hasInputPending) {
+                      void handleResumeWithInput(employeeId, text);
+                    } else if (!paneBusy) {
+                      void handleSend(employeeId, text);
+                    }
                   }}
-                  composerDisabled={paneBusy}
-                  composerPlaceholder={paneBusy ? busyLabel : undefined}
+                  composerDisabled={isComposerDisabled}
+                  composerPlaceholder={isComposerDisabled ? busyLabel : hasInputPending ? 'Type your response…' : undefined}
                   title="Employees"
                   theme="lunar"
                   className="h-full w-full"

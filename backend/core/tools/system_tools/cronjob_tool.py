@@ -5,11 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
+from backend.core.tools.run_tools.llm_tool import LLMTool
 from backend.core.tools.system_tools.base import BaseTool, ToolResult
 from backend.core.workflows.schedules.normalize import next_run_from_cron
 from backend.core.workflows.types import WorkflowStatus, WorkflowTask, WorkflowTaskStatus
 from backend.core.workflows.utils import generate_id
 from backend.db.stores.workflow_store import WorkflowStore
+from backend.services.llm_config import get_user_provider_config
 
 
 CRONJOB_MARKER = "employee_cronjob_v1"
@@ -76,7 +78,7 @@ class CronjobTool(BaseTool):
         if action == "list":
             return self._list(store, owner_id, parameters)
         if action == "update":
-            return self._update(store, owner_id, parameters)
+            return await self._update(store, owner_id, parameters)
         if action == "pause":
             return self._pause_resume(store, owner_id, parameters, pause=True)
         if action == "resume":
@@ -104,6 +106,16 @@ class CronjobTool(BaseTool):
             return ToolResult(False, "", error=f"Invalid or unsupported cron expression: '{schedule}'.")
 
         tasks = await self._decompose_prompt_to_tasks(prompt, owner_id=owner_id)
+        allowed_tools = await self._infer_allowed_tools(prompt=prompt, tasks=tasks, owner_id=owner_id)
+        if not allowed_tools:
+            return ToolResult(
+                False,
+                "",
+                error=(
+                    "Couldn't determine a safe tool allowlist for this cron job. "
+                    "Please make the prompt more specific about target systems/actions."
+                ),
+            )
 
         workflow_id = generate_id("wf")
         actor_type = (ctx.get("actor_type") or "employee").strip() or "employee"
@@ -119,6 +131,7 @@ class CronjobTool(BaseTool):
             created_by_actor_id=actor_id,
             created_by_actor_name=actor_name,
             tasks=tasks,
+            allowed_tools=allowed_tools,
         )
         store.add_trigger(
             workflow_id=workflow.id,
@@ -136,6 +149,7 @@ class CronjobTool(BaseTool):
             "schedule": schedule,
             "timezone": timezone,
             "prompt": prompt,
+            "allowed_tools": allowed_tools,
             "created_at": datetime.now().isoformat(),
         }
         store.save_workflow(workflow)
@@ -183,7 +197,7 @@ class CronjobTool(BaseTool):
 
         return ToolResult(True, "\n".join(lines), data={"jobs": jobs})
 
-    def _update(self, store: WorkflowStore, owner_id: str, params: dict) -> ToolResult:
+    async def _update(self, store: WorkflowStore, owner_id: str, params: dict) -> ToolResult:
         workflow = self._get_job_or_error(store, owner_id, params.get("job_id"))
         if isinstance(workflow, ToolResult):
             return workflow
@@ -238,6 +252,27 @@ class CronjobTool(BaseTool):
 
         if not changed:
             return ToolResult(False, "", error="No updates provided.")
+
+        if params.get("prompt") is not None:
+            prompt_value = (params.get("prompt") or "").strip()
+            tasks = [t.description for t in workflow.tasks] if workflow.tasks else [prompt_value]
+            new_allowed_tools = await self._infer_allowed_tools(
+                prompt=prompt_value,
+                tasks=tasks,
+                owner_id=owner_id,
+            )
+            if new_allowed_tools:
+                workflow.allowed_tools = new_allowed_tools
+                workflow.variables.setdefault("cronjob", {})["allowed_tools"] = new_allowed_tools
+            else:
+                return ToolResult(
+                    False,
+                    "",
+                    error=(
+                        "Prompt update would leave this cron job without a valid tool allowlist. "
+                        "Please use a more specific prompt."
+                    ),
+                )
 
         workflow.updated_at = datetime.now()
         store.save_workflow(workflow)
@@ -390,9 +425,6 @@ class CronjobTool(BaseTool):
         """
         import json as _json
 
-        from backend.core.tools.run_tools.llm_tool import LLMTool
-        from backend.services.llm_config import get_user_provider_config
-
         system_prompt = (
             "You are an expert workflow architect. Parse the user's request "
             "into a sequential list of natural language step descriptions. "
@@ -431,3 +463,60 @@ class CronjobTool(BaseTool):
             return tasks if tasks else [prompt]
         except Exception:
             return [prompt]
+
+    async def _infer_allowed_tools(self, prompt: str, tasks: list[str], owner_id: str = "") -> list[str]:
+        """Infer minimal workflow tool allowlist from prompt/tasks using live catalog."""
+        import json as _json
+        from backend.core.tools.catalog import create_all_tools
+
+        catalog_names = sorted({tool.name for tool in create_all_tools()})
+        catalog_set = set(catalog_names)
+        if not catalog_names:
+            return []
+
+        tasks_text = "\n".join(f"- {t}" for t in (tasks or []))
+        system_prompt = (
+            "You are selecting tools for a scheduled workflow. "
+            "Return ONLY JSON of the form: {\"allowed_tools\": [\"tool_a\", \"tool_b\"]}. "
+            "Pick the minimum necessary set. "
+            "Use exact names from the provided catalog only. "
+            "If uncertain, return an empty list."
+        )
+        user_prompt = (
+            f"Workflow prompt:\n{prompt}\n\n"
+            f"Workflow tasks:\n{tasks_text}\n\n"
+            f"Tool catalog:\n{', '.join(catalog_names)}"
+        )
+
+        try:
+            llm_config = get_user_provider_config(owner_id, "") if owner_id else None
+            model = (llm_config or {}).get("model") or "openai/gpt-4o-mini"
+            response = await LLMTool().execute(
+                {
+                    "prompt": user_prompt,
+                    "system_prompt": system_prompt,
+                    "model": model,
+                    "response_format": {"type": "json_object"},
+                },
+                context={"owner_id": owner_id} if owner_id else None,
+            )
+            if not response.success:
+                return []
+
+            content = (response.data or {}).get("content", "").strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+
+            parsed = _json.loads(content.strip() or "{}")
+            requested = parsed.get("allowed_tools") or []
+            if not isinstance(requested, list):
+                return []
+
+            cleaned = [str(t).strip() for t in requested if str(t).strip()]
+            return [t for t in dict.fromkeys(cleaned) if t in catalog_set]
+        except Exception:
+            return []

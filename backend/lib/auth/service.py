@@ -4,6 +4,8 @@ Auth Service - Authentication and OAuth integration management
 
 import os
 import json
+import time
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 from backend.core.config import get_settings
@@ -11,7 +13,24 @@ from backend.db.stores.auth_store import AuthDB
 from backend.db.stores.workflow_store import WorkflowStore
 from backend.lib.oauth.providers import OAUTH_PROVIDERS, API_KEY_PROVIDERS
 
-HIDDEN_AVAILABLE_PROVIDERS = {"salesforce"}
+HIDDEN_AVAILABLE_PROVIDERS = {
+    "salesforce",
+    "docusign",
+    "confluence",
+    "reddit",
+    "x",
+    "zoom",
+    "pipedrive",
+    "webflow",
+    "shopify",
+    "wordpress",
+    "microsoft_dataverse",
+    "microsoft_excel",
+    "microsoft_planner",
+    "microsoft_teams",
+    "outlook",
+}
+_PKCE_TTL_SECONDS = 10 * 60
 
 
 class AuthService:
@@ -20,6 +39,39 @@ class AuthService:
     def __init__(self):
         self.db = AuthDB()
         self.workflow_store = WorkflowStore()
+    
+    @staticmethod
+    def _pkce_key(provider: str, state: str) -> str:
+        state_hash = hashlib.sha256(state.encode("utf-8")).hexdigest()
+        return f"oauth_pkce:{provider}:{state_hash}"
+
+    def _store_pkce_verifier(self, user_id: str, provider: str, state: str, code_verifier: str) -> None:
+        payload = {
+            "code_verifier": code_verifier,
+            "expires_at": time.time() + _PKCE_TTL_SECONDS,
+        }
+        self.workflow_store.set_credential(
+            user_id,
+            self._pkce_key(provider, state),
+            json.dumps(payload),
+            f"PKCE verifier for {provider}",
+        )
+
+    def _pop_pkce_verifier(self, user_id: str, provider: str, state: str) -> Optional[str]:
+        key = self._pkce_key(provider, state)
+        raw = self.workflow_store.get_credential(user_id, key)
+        self.workflow_store.delete_credential(user_id, key)
+        if not raw:
+            return None
+        try:
+            payload = json.loads(raw)
+        except Exception:  # noqa: BLE001
+            return None
+        expires_at = float(payload.get("expires_at", 0))
+        if expires_at <= time.time():
+            return None
+        code_verifier = payload.get("code_verifier")
+        return code_verifier if isinstance(code_verifier, str) and code_verifier else None
 
     @staticmethod
     def _is_placeholder_secret(value: str) -> bool:
@@ -110,6 +162,19 @@ class AuthService:
         return os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
 
     @staticmethod
+    def _get_provider_oauth_url(provider: str, provider_config: Dict[str, Any], key: str) -> str:
+        """Allow per-provider OAuth URL overrides via env."""
+        suffix = "AUTH_URL" if key == "auth_url" else "TOKEN_URL"
+        env_key = f"PROVIDER_{provider.upper()}_{suffix}"
+        override = os.getenv(env_key, "").strip()
+        return override or provider_config[key]
+
+    @staticmethod
+    def _is_google_family_provider(provider: str) -> bool:
+        normalized = provider.strip().lower().replace("-", "_")
+        return normalized in {"google", "gmail", "google_email"} or normalized.startswith("google_")
+
+    @staticmethod
     def _get_provider_env_value(provider: str, suffix: str) -> tuple[str, str]:
         """
         Resolve provider-specific env vars with compatibility fallbacks.
@@ -122,8 +187,8 @@ class AuthService:
             f"PROVIDER_{provider_upper}_{suffix}",
             f"{provider_upper}_{suffix}",
         ]
-        # Google family tools use the same OAuth app as Gmail.
-        if provider_upper in ("GOOGLE_EMAIL", "GMAIL", "GOOGLE_DRIVE", "GOOGLE_CALENDAR"):
+        # All Google-family tools use the same OAuth app.
+        if AuthService._is_google_family_provider(provider):
             candidates += [f"PROVIDER_GOOGLE_{suffix}", f"GOOGLE_{suffix}"]
         for key in candidates:
             value = os.getenv(key, "").strip()
@@ -134,18 +199,31 @@ class AuthService:
     @staticmethod
     def _provider_credential_namespace(provider: str) -> str:
         normalized = provider.strip().lower().replace("-", "_")
-        if normalized in {"google_email", "gmail", "google_calendar", "google_drive"}:
+        if normalized in {"google", "gmail", "google_email"} or normalized.startswith("google_"):
             return "google"
         return normalized
+
+    @staticmethod
+    def _provider_credential_names(provider: str) -> tuple[str, ...]:
+        normalized = provider.strip().lower().replace("-", "_")
+        namespace = AuthService._provider_credential_namespace(provider)
+        if namespace == normalized:
+            return (normalized,)
+        return (normalized, namespace)
 
     @classmethod
     def _oauth_cred_key(cls, provider: str, suffix: str) -> str:
         return f"oauth_{suffix.lower()}_{cls._provider_credential_namespace(provider)}"
 
     def _get_provider_user_value(self, user_id: str, provider: str, suffix: str) -> tuple[str, str]:
+        suffix_key = suffix.lower()
+        for namespace in self._provider_credential_names(provider):
+            cred_key = f"oauth_{suffix_key}_{namespace}"
+            value = (self.workflow_store.get_credential(user_id, cred_key) or "").strip()
+            if value:
+                return value, cred_key
         cred_key = self._oauth_cred_key(provider, suffix)
-        value = (self.workflow_store.get_credential(user_id, cred_key) or "").strip()
-        return value, cred_key
+        return "", cred_key
 
     def _resolve_provider_client_value(self, user_id: str, provider: str, suffix: str) -> tuple[str, str]:
         mode = get_settings().deployment_mode
@@ -191,6 +269,8 @@ class AuthService:
 
     def get_oauth_url(self, provider: str, frontend_url: str, user_id: str) -> Dict[str, Any]:
         """Generate OAuth authorization URL with explicit error context."""
+        import base64
+        import hashlib
         import urllib.parse
         import secrets
 
@@ -227,7 +307,7 @@ class AuthService:
             "state": full_state,
         }
 
-        if provider in ("google", "google_drive", "google_calendar"):
+        if self._is_google_family_provider(provider):
             params["scope"] = provider_config["scopes"]
             params["access_type"] = "offline"
             params["prompt"] = "consent"
@@ -243,8 +323,21 @@ class AuthService:
         elif provider == "notion":
             # Notion requires owner to be explicit in OAuth authorize URL.
             params["owner"] = "user"
+        elif provider_config.get("scopes"):
+            # Most OAuth providers (including Airtable) require scope on authorize.
+            params["scope"] = provider_config["scopes"]
 
-        auth_url = provider_config["auth_url"]
+        if provider == "airtable":
+            # Airtable OAuth expects PKCE in the authorization request.
+            code_verifier = secrets.token_urlsafe(64)
+            code_challenge = base64.urlsafe_b64encode(
+                hashlib.sha256(code_verifier.encode("utf-8")).digest()
+            ).decode("ascii").rstrip("=")
+            self._store_pkce_verifier(user_id, provider, full_state, code_verifier)
+            params["code_challenge_method"] = "S256"
+            params["code_challenge"] = code_challenge
+
+        auth_url = self._get_provider_oauth_url(provider, provider_config, "auth_url")
         query_string = urllib.parse.urlencode(params)
         return {"success": True, "auth_url": f"{auth_url}?{query_string}"}
 
@@ -303,6 +396,14 @@ class AuthService:
                     "client_id": client_id,
                     "client_secret": client_secret,
                 }
+                if provider == "airtable":
+                    code_verifier = self._pop_pkce_verifier(user_id, provider, state)
+                    if not code_verifier:
+                        return {
+                            "success": False,
+                            "error": "Token exchange failed: missing or expired PKCE verifier; retry Airtable connect.",
+                        }
+                    token_data["code_verifier"] = code_verifier
 
                 token_headers = {}
                 token_request_kwargs: Dict[str, Any] = {}
@@ -313,6 +414,18 @@ class AuthService:
                     token_headers["Accept"] = "application/json"
                     token_headers["Content-Type"] = "application/json"
                     token_request_kwargs["json"] = token_data
+                elif provider == "airtable":
+                    # Airtable token exchange can require client auth via HTTP Basic.
+                    basic = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("ascii")
+                    token_headers["Accept"] = "application/json"
+                    token_headers["Authorization"] = f"Basic {basic}"
+                    token_request_kwargs["data"] = {
+                        "grant_type": "authorization_code",
+                        "code": code,
+                        "redirect_uri": callback_url,
+                        "client_id": client_id,
+                        "code_verifier": token_data.get("code_verifier", ""),
+                    }
                 elif provider == "notion":
                     # Notion OAuth token exchange requires HTTP Basic auth with client_id:client_secret
                     # and a JSON body (not form-encoded client credentials).
@@ -329,7 +442,7 @@ class AuthService:
                     token_request_kwargs["data"] = token_data
 
                 response = await client.post(
-                    provider_config["token_url"],
+                    self._get_provider_oauth_url(provider, provider_config, "token_url"),
                     headers=token_headers,
                     **token_request_kwargs,
                 )

@@ -73,12 +73,14 @@ export function OnboardingModal({ open, onCompleted }: Props) {
     setProfileError('')
     setLlmError('')
     setApiKey('')
+    const token = localStorage.getItem('auth_token') || ''
     Promise.all([
       getOnboardingStatus(),
       listLLMProviders().catch(() => [] as LLMProvider[]),
       getLLMSettings().catch(() => null),
+      getIntegrations(token).catch(() => ({ deployment_mode: 'self_hosted' })),
     ])
-      .then(([onboarding, llmProviders, llmSettings]) => {
+      .then(([onboarding, llmProviders, llmSettings, integrationsData]) => {
         if (onboarding?.onboarded) {
           onCompleted()
           return
@@ -93,6 +95,7 @@ export function OnboardingModal({ open, onCompleted }: Props) {
           setHasExistingKey(llmSettings.has_api_key)
           setProviderKeys(llmSettings.provider_keys || {})
         }
+        setDeploymentMode(integrationsData.deployment_mode as 'cloud' | 'self_hosted')
       })
       .finally(() => setLoading(false))
   }, [open, onCompleted])
@@ -162,7 +165,7 @@ export function OnboardingModal({ open, onCompleted }: Props) {
       setLlmError('Select a provider')
       return
     }
-    if (!apiKey && !hasExistingKey) {
+    if (deploymentMode !== 'cloud' && !apiKey && !hasExistingKey) {
       setLlmError('Enter your API key')
       return
     }
@@ -282,32 +285,34 @@ export function OnboardingModal({ open, onCompleted }: Props) {
                         </Select>
                       </div>
 
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">API Key</Label>
-                        <div className="relative">
-                          <Input
-                            type={showKey ? 'text' : 'password'}
-                            value={apiKey}
-                            onChange={e => setApiKey(e.target.value)}
-                            placeholder={hasExistingKey ? '••••••••  (saved — enter new to replace)' : 'sk-…'}
-                            className="h-9 text-sm pr-9"
-                            autoComplete="new-password"
-                            data-form-type="other"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowKey((s) => !s)}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
+                      {deploymentMode !== 'cloud' && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">API Key</Label>
+                          <div className="relative">
+                            <Input
+                              type={showKey ? 'text' : 'password'}
+                              value={apiKey}
+                              onChange={e => setApiKey(e.target.value)}
+                              placeholder={hasExistingKey ? '••••••••  (saved — enter new to replace)' : 'sk-…'}
+                              className="h-9 text-sm pr-9"
+                              autoComplete="new-password"
+                              data-form-type="other"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowKey((s) => !s)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                          {hasExistingKey && !apiKey && (
+                            <p className="text-[11px] text-emerald-500 flex items-center gap-1">
+                              <Check className="w-3 h-3" /> API key saved
+                            </p>
+                          )}
                         </div>
-                        {hasExistingKey && !apiKey && (
-                          <p className="text-[11px] text-emerald-500 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> API key saved
-                          </p>
-                        )}
-                      </div>
+                      )}
 
                       <div className="space-y-1.5">
                         <Label className="text-xs">Default Model</Label>

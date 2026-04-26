@@ -3,7 +3,7 @@ Co-Worker — Workflow Executor Agent (True ReAct)
 
 A copy of GenericEmployeeAgent's ReAct loop, but:
 - No DB loading — identity/prompt is hardcoded like Katy
-- ALL tools from catalog (not selective)
+- Tools are filtered by workflow allowlist when configured
 - Same _tool_context with user_id so OAuth works
 - Same _stream_llm, same tool execution, same everything
 """
@@ -87,7 +87,7 @@ You are Harry, a precise, reliable, and methodical workflow execution specialist
 - Report failures honestly rather than masking them
 
 ## Tool Access
-You have access to all tools in the system. Use them to accomplish tasks.
+You have access only to tools attached to this workflow (or all tools if no allowlist is set). Use only the available tools below.
 
 Available tools:
 {tools_text}
@@ -170,7 +170,7 @@ class CoWorkerAgent:
 
     Exact copy of GenericEmployeeAgent's ReAct loop, but:
     - No DB loading — identity is hardcoded (like Katy)
-    - ALL tools from catalog
+    - Workflow-scoped tool access (allowlist-aware)
     - Same _tool_context with user_id so OAuth/credentials resolve
     - Same _stream_llm, same tool execution flow
     """
@@ -209,6 +209,28 @@ class CoWorkerAgent:
         for tool in create_all_tools():
             self.tool_registry.register(tool)
         logger.info(f"Registered {len(self.tool_registry.list_names())} tools")
+
+    def _apply_allowed_tools(self, allowed_tools: list[str], *, strict: bool = False) -> None:
+        """Restrict registry to workflow-specific allowlist."""
+        cleaned = [name.strip() for name in (allowed_tools or []) if isinstance(name, str) and name.strip()]
+        if not cleaned:
+            if strict:
+                for name in list(self.tool_registry.list_names()):
+                    self.tool_registry.unregister(name)
+                logger.warning("Strict workflow has empty allowlist; no tools enabled")
+                return
+            logger.info("Workflow has no allowlist; using full tool registry")
+            return
+
+        allowed_set = set(cleaned)
+        for name in list(self.tool_registry.list_names()):
+            if name not in allowed_set:
+                self.tool_registry.unregister(name)
+
+        unknown = sorted(name for name in allowed_set if not self.tool_registry.has(name))
+        if unknown:
+            logger.warning("Workflow allowlist contains unknown tools: %s", unknown)
+        logger.info("Applied workflow tool allowlist: %d tools enabled", len(self.tool_registry.list_names()))
 
     def _tool_context(self, tool_name: str) -> Dict[str, Any]:
         """
@@ -259,6 +281,8 @@ class CoWorkerAgent:
             if not workflow:
                 yield {"type": "error", "message": f"Workflow {workflow_id} not found"}
                 return
+            strict = bool(getattr(workflow, "variables", {}).get("system_tool") == "employee_cronjob_v1")
+            self._apply_allowed_tools(getattr(workflow, "allowed_tools", []) or [], strict=strict)
         except Exception as e:
             yield {"type": "error", "message": f"Failed to load workflow: {str(e)}"}
             return

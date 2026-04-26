@@ -136,6 +136,7 @@ export function AgentWorkspacePage() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
 
   const isStreamingRef = useRef(false);
+  const pendingNewAssistantRef = useRef<{ id: string; senderName: string } | null>(null);
   const configFormData = useMemo(() => (employee ? toConfigForm(employee) : null), [employee]);
   const { isBusy, busyIn } = useEmployeePresence([employeeId], user?.id);
 
@@ -202,22 +203,72 @@ export function AgentWorkspacePage() {
 
   const handlePlanDecision = async (approved: boolean) => {
     if (!pendingResume) return;
+    const captured = pendingResume;
+    setPendingResume(null);
     setIsResuming(true);
+    const userMsg: ChatMessageData = {
+      id: `user-${Date.now()}`,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      text: approved ? 'Approved' : 'Rejected',
+      timestamp: new Date(),
+      status: 'read',
+    };
+    const next = pendingNewAssistantRef.current;
+    pendingNewAssistantRef.current = null;
+    setMessages((prev) => {
+      const newMsgs: ChatMessageData[] = [userMsg];
+      if (next) {
+        newMsgs.push({ id: next.id, senderId: employeeId, senderName: next.senderName, text: '', timestamp: new Date(), status: 'sending', activities: [] });
+      }
+      return [...prev, ...newMsgs];
+    });
+    setActivePlan((prev) => {
+      if (!prev) return prev;
+      return { ...prev, status: approved ? 'approved' : 'proposed' };
+    });
     try {
-      await resumeEmployeeChat(pendingResume.employeeId, {
+      await resumeEmployeeChat(captured.employeeId, {
         approved,
         message: approved ? 'Approved' : 'Rejected',
-        session_id: pendingResume.sessionId,
-      });
-      setActivePlan((prev) => {
-        if (!prev) return prev;
-        return { ...prev, status: approved ? 'approved' : 'proposed' };
+        session_id: captured.sessionId,
       });
     } catch (e) {
       console.error('Failed to resume:', e);
     } finally {
-      setPendingResume(null);
       setIsResuming(false);
+    }
+  };
+
+  const handleResumeWithInput = async (text: string) => {
+    if (!pendingResume || pendingResume.employeeId !== employeeId) return;
+    const captured = pendingResume;
+    setPendingResume(null);
+    const userMsg: ChatMessageData = {
+      id: `user-${Date.now()}`,
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      text,
+      timestamp: new Date(),
+      status: 'read',
+    };
+    const next = pendingNewAssistantRef.current;
+    pendingNewAssistantRef.current = null;
+    setMessages((prev) => {
+      const newMsgs: ChatMessageData[] = [userMsg];
+      if (next) {
+        newMsgs.push({ id: next.id, senderId: employeeId, senderName: next.senderName, text: '', timestamp: new Date(), status: 'sending', activities: [] });
+      }
+      return [...prev, ...newMsgs];
+    });
+    try {
+      await resumeEmployeeChat(captured.employeeId, {
+        approved: true,
+        message: text,
+        session_id: captured.sessionId,
+      });
+    } catch (e) {
+      console.error('Failed to resume with input:', e);
     }
   };
 
@@ -253,6 +304,7 @@ export function AgentWorkspacePage() {
     isStreamingRef.current = true;
 
     const assistantMessageId = `assistant-${Date.now()}`;
+    let currentAssistantId = assistantMessageId;
     const assistantMessage: ChatMessageData = {
       id: assistantMessageId,
       senderId: employeeId,
@@ -274,6 +326,27 @@ export function AgentWorkspacePage() {
       let answerBuffer = '';
       let thinkingBuffer = '';
       let activities: NonNullable<ChatMessageData['activities']> = [];
+      let toolsCompletedSinceLastThink = 0;
+
+      const advancePlanTask = (toStatus: 'in_progress' | 'done') => {
+        setActivePlan((prev) => {
+          if (!prev || prev.status === 'proposed' || prev.status === 'completed') return prev;
+          if (toStatus === 'in_progress') {
+            const firstTodo = prev.tasks.findIndex((t) => t.status === 'todo');
+            if (firstTodo < 0 || prev.tasks.some((t) => t.status === 'in_progress')) return prev;
+            const nextTasks = prev.tasks.map((t, i) => i === firstTodo ? { ...t, status: 'in_progress' } : t);
+            return { ...prev, tasks: nextTasks };
+          } else {
+            const inProg = prev.tasks.findIndex((t) => t.status === 'in_progress');
+            if (inProg < 0) return prev;
+            const nextTasks = prev.tasks.map((t, i) => i === inProg ? { ...t, status: 'done' } : t);
+            const nextTodo = nextTasks.findIndex((t) => t.status === 'todo');
+            if (nextTodo >= 0) nextTasks[nextTodo] = { ...nextTasks[nextTodo], status: 'in_progress' };
+            const allDone = nextTasks.every((t) => t.status === 'done');
+            return { ...prev, status: allDone ? 'completed' : 'running', tasks: nextTasks };
+          }
+        });
+      };
 
       const stream = streamEmployeeChatEvents(employeeId, {
         message: text,
@@ -290,7 +363,7 @@ export function AgentWorkspacePage() {
           }
           setMessages((prev) =>
             prev.map((m) =>
-              m.id === assistantMessageId
+              m.id === currentAssistantId
                 ? {
                     ...m,
                     text: answerBuffer,
@@ -324,6 +397,12 @@ export function AgentWorkspacePage() {
         if (event.type === 'thinking') {
           const thought = event.content || '';
           if (thought) {
+            if (toolsCompletedSinceLastThink > 0) {
+              advancePlanTask('done');
+            } else {
+              advancePlanTask('in_progress');
+            }
+            toolsCompletedSinceLastThink = 0;
             thinkingBuffer += `${thought}\n\n`;
             answerBuffer = '';
             activities = activities.map((a) =>
@@ -401,6 +480,9 @@ export function AgentWorkspacePage() {
               detail: event.success === false ? event.message || event.output || 'Tool failed' : undefined,
             };
           }
+          if (event.success !== false && event.tool !== 'manage_tasks') {
+            toolsCompletedSinceLastThink++;
+          }
         } else if (event.type === 'confirmation_required') {
           const confirmMsg = event.message || 'Waiting for your approval to continue.';
           const askType = event.ask_type || 'approval';
@@ -413,8 +495,23 @@ export function AgentWorkspacePage() {
               tasks: prev?.tasks || [],
             }));
           }
-          answerBuffer = confirmMsg;
-          activities = activities.map((a) => (a.status === 'running' ? { ...a, status: 'done' } : a));
+          // Finalize the current assistant bubble with the question text
+          const doneActivities = activities.map((a) => (a.status === 'running' ? { ...a, status: 'done' } : a));
+          const finishedId = currentAssistantId;
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === finishedId ? { ...m, text: confirmMsg, activities: doneActivities, status: 'read' } : m,
+            ),
+          );
+          // Prepare next phase bubble (added to state by handlePlanDecision/handleResumeWithInput)
+          const nextId = `assistant-${Date.now()}-r`;
+          currentAssistantId = nextId;
+          pendingNewAssistantRef.current = { id: nextId, senderName: employee.employee.name };
+          // Reset buffers
+          answerBuffer = '';
+          activities = [];
+          thinkingBuffer = '';
+          toolsCompletedSinceLastThink = 0;
           setIsLoading(false);
           setPendingResume({
             employeeId,
@@ -465,7 +562,7 @@ export function AgentWorkspacePage() {
 
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantMessageId
+            m.id === currentAssistantId
               ? {
                   ...m,
                   text: answerBuffer,
@@ -488,7 +585,7 @@ export function AgentWorkspacePage() {
       setMessages((prev) =>
         prev.map((m) => {
           if (m.id === userMessage.id) return { ...m, status: 'read' };
-          if (m.id === assistantMessageId) return { ...m, status: 'read' };
+          if (m.id === currentAssistantId) return { ...m, status: 'read' };
           return m;
         }),
       );
@@ -600,6 +697,8 @@ export function AgentWorkspacePage() {
   const busyLabel = paneBusyCtx
     ? `${employee.employee.name} is busy on ${paneBusyCtx.kind}${paneBusyCtx.run_id ? ` · ${paneBusyCtx.run_id}` : ''} — please wait`
     : `${employee.employee.name} is busy — please wait`;
+  const hasInputPending = pendingResume?.employeeId === employeeId && pendingResume.askType === 'input';
+  const isComposerDisabled = (paneBusy || isLoading) && !hasInputPending;
 
   const headerActions = (
     <div className="flex items-center gap-2">
@@ -692,6 +791,13 @@ export function AgentWorkspacePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {pendingResume && pendingResume.employeeId === employeeId && pendingResume.askType === 'input' && (
+            <div className="flex items-center gap-2 border-t border-[var(--chat-border)] px-2.5 py-2 text-[11px] text-[var(--chat-text-secondary)]">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+              Type your response in the message box below
             </div>
           )}
 
@@ -795,11 +901,14 @@ export function AgentWorkspacePage() {
                     onSelectConversation={() => {}}
                     messages={messages}
                     onSend={(text) => {
-                      if (paneBusy) return;
-                      void handleSend(text);
+                      if (hasInputPending) {
+                        void handleResumeWithInput(text);
+                      } else if (!paneBusy && !isLoading) {
+                        void handleSend(text);
+                      }
                     }}
-                    composerDisabled={paneBusy || isLoading}
-                    composerPlaceholder={paneBusy ? busyLabel : undefined}
+                    composerDisabled={isComposerDisabled}
+                    composerPlaceholder={isComposerDisabled ? busyLabel : hasInputPending ? 'Type your response…' : undefined}
                     title="Employees"
                     theme="lunar"
                     className="h-full w-full"

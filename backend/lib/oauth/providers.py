@@ -119,9 +119,9 @@ OAUTH_PROVIDERS = {
     "calcom": {
         "name": "Cal.com",
         "icon": "calendar-check",
-        "auth_url": "https://app.cal.com/oauth/authorize",
-        "token_url": "https://app.cal.com/oauth/token",
-        "scopes": "READ_BOOKING WRITE_BOOKING READ_PROFILE",
+        "auth_url": "https://app.cal.com/auth/oauth2/authorize",
+        "token_url": "https://api.cal.com/v2/auth/oauth2/token",
+        "scopes": "BOOKING_READ BOOKING_WRITE PROFILE_READ",
     },
     "confluence": {
         "name": "Confluence",
